@@ -233,7 +233,7 @@ export function showBrowser(tab: BrowserTab) {
   useStore.setState({ browserOpen: true, browserTab: tab });
 }
 
-export function toggleBottom(tab: "mixer" | "editor" | "smart") {
+export function toggleBottom(tab: "effects" | "mixer" | "editor" | "smart") {
   useStore.setState((s) => ({ bottom: s.bottom === tab ? null : tab }));
 }
 

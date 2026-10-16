@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { on, rpc } from "./bridge";
 import type { AppInfo, CatalogueEntry, PlanCall, Project, Tick } from "./types";
 
-export type BottomTab = "mixer" | "editor" | "smart";
+export type BottomTab = "effects" | "mixer" | "editor" | "smart";
 export type SidePanel = "assistant" | "collab" | null;
 export type Grid = "bar" | "beat" | "1/8" | "1/16" | "off";
 export type ArrangeTool = "move" | "time" | "split" | "slip" | "erase";
@@ -105,7 +105,7 @@ export const useStore = create<State>((set) => ({
   selectedClips: [],
   editorClip: null,
   automationOpen: {},
-  bottom: "mixer",
+  bottom: "effects",
   bottomHeight: 340,
   browserOpen: true,
   side: null,

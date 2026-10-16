@@ -17,6 +17,7 @@ import { Guide } from "./components/Guide";
 import { KeysStrip } from "./components/Keys";
 import { History } from "./components/History";
 import { MenuBar } from "./components/MenuBar";
+import { EffectsRack } from "./components/EffectsRack";
 import { Mixer } from "./components/Mixer";
 import { AgentApproval, RecoveryBanner, RenderPill, Shortcuts, Toasts } from "./components/Overlays";
 import { Palette } from "./components/Palette";
@@ -28,6 +29,7 @@ import { Welcome } from "./components/Welcome";
 import { ErrorBoundary, Icon, startDrag } from "./components/ui";
 
 const DOCK_TABS: { id: BottomTab; label: string; icon: string; keys: string }[] = [
+  { id: "effects", label: "Effects", icon: "wand", keys: "Selected track" },
   { id: "mixer", label: "Mixer", icon: "mixer", keys: "Tab" },
   { id: "editor", label: "Editor", icon: "piano", keys: "E" },
   { id: "smart", label: "Smart Mix", icon: "sparkles", keys: "Ctrl+M" },
@@ -57,6 +59,7 @@ function Dock() {
       </div>
       <div className="dock-body">
         <ErrorBoundary key={bottom} name={DOCK_TABS.find((t) => t.id === bottom)?.label ?? "Panel"}>
+          {bottom === "effects" && <EffectsRack />}
           {bottom === "mixer" && <Mixer />}
           {bottom === "editor" && <Editor />}
           {bottom === "smart" && <SmartPanel />}
