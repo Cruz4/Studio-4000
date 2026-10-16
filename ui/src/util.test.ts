@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./types";
-import { dbToFader, faderToDb, formatBars, formatDb, formatTime, gridSeconds, meterPos, noteName, secondsPerBar, shade, snap } from "./util";
+import { dbToFader, faderToDb, formatBars, formatDb, formatTime, gridSeconds, meterPos, noteName, parseDb, secondsPerBar, shade, snap } from "./util";
 
 const song = (bpm: number, timeSig: [number, number] = [4, 4]) => ({ bpm, timeSig }) as Project;
 
@@ -71,6 +71,10 @@ describe("levels", () => {
     expect(formatDb(-120)).toBe("-∞");
     expect(formatDb(3.25)).toBe("+3.3");
     expect(formatDb(-6)).toBe("-6.0");
+    expect(parseDb("+3")).toBe(3);
+    expect(parseDb("-12.5 db")).toBe(-12.5);
+    expect(parseDb("-∞")).toBe(-100);
+    expect(parseDb("nope")).toBeNull();
   });
 });
 

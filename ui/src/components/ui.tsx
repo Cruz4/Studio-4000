@@ -1,6 +1,6 @@
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { currentTheme, toggleTheme } from "../theme";
-import { clamp, cx } from "../util";
+import { clamp, cx, formatDb, parseDb } from "../util";
 
 /** Keeps a crash in one panel from blanking the whole window. */
 export class ErrorBoundary extends Component<{ name: string; children: ReactNode; onReset?: () => void; floating?: boolean }, { error: Error | null }> {
@@ -173,6 +173,33 @@ export function Knob({ value, onChange, onCommit, size = 34, bipolar, label, tit
       {label && <span className="small dim">{label}</span>}
     </div>
   );
+}
+
+/** Click to type a level. Double-click returns it to 0 dB. */
+export function DbField({ db, min, max, onChange, digits = 1, className, style }: {
+  db: number; min: number; max: number; onChange: (db: number) => void; digits?: number; className?: string; style?: CSSProperties;
+}) {
+  const [edit, setEdit] = useState<string | null>(null);
+  const wait = useRef(0);
+  const commit = () => {
+    if (edit === null) return;
+    const n = parseDb(edit);
+    if (n !== null) onChange(clamp(n, min, max));
+    setEdit(null);
+  };
+  if (edit !== null) {
+    return <input className={cx("db-field editing", className)} style={style} value={edit} autoFocus
+      onChange={(e) => setEdit(e.target.value)}
+      onBlur={commit}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") setEdit(null); }} />;
+  }
+  return <button type="button" className={cx("db-field", className)} style={style}
+    title="Click to type a dB level. Double-click for 0 dB"
+    onClick={() => { window.clearTimeout(wait.current); wait.current = window.setTimeout(() => setEdit(formatDb(db, digits)), 220); }}
+    onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); window.clearTimeout(wait.current); onChange(0); }}>
+    {formatDb(db, digits)}
+  </button>;
 }
 
 export function ThemeToggle() {

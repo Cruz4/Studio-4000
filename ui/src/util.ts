@@ -35,6 +35,15 @@ export function formatDb(db: number | undefined, digits = 1) {
   return (db > 0 ? "+" : "") + db.toFixed(digits);
 }
 
+/** Reads a typed level such as 0, +3, -12, or -inf. */
+export function parseDb(text: string): number | null {
+  const raw = text.trim().toLowerCase().replace(/db\s*$/i, "").replace("−", "-").replace("∞", "inf").trim();
+  if (raw === "-inf" || raw === "inf" || raw === "-infinity") return -100;
+  if (!raw || raw === "+" || raw === "-") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function gridSeconds(grid: Grid, p: Project | null) {
   const beat = secondsPerBeat(p);
   switch (grid) {

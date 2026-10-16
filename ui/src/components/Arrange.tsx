@@ -8,12 +8,13 @@ import { act, live, loadDevices, onTick, toast, useStore, type ArrangeTool, type
 import { createTrackItems, toggleAutomation, trackMenu } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
+import { useThemeName } from "../theme";
 import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, secondsPerBar, secondsPerBeat, shade, snap } from "../util";
 import { askText } from "./Ask";
 import { openMenu, type MenuItem } from "./ContextMenu";
 import { FxToggle, InsertSlot, SynthSlot } from "./Mixer";
 import { beginTrackReorder } from "../trackReorder";
-import { Icon, startDrag } from "./ui";
+import { DbField, Icon, startDrag } from "./ui";
 import { Waveform } from "./Waveform";
 
 const TOOL_LABEL: Record<ArrangeTool, string> = { move: "Move", time: "Time", split: "Split", slip: "Slip", erase: "Erase" };
@@ -67,6 +68,7 @@ export async function uploadAndImport(files: File[], trackId: string | undefined
 
 function Ruler({ project, pps, view, grid }: { project: Project; pps: number; view: { left: number; width: number }; grid: Grid }) {
   const headerW = useHeaderWidth((s) => s.w);
+  const theme = useThemeName();
   const ref = useRef<HTMLCanvasElement>(null);
   const spBar = secondsPerBar(project);
   const spBeat = secondsPerBeat(project);
@@ -83,28 +85,32 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
     const barPx = spBar * pps;
     const every = barPx < 28 ? Math.ceil(28 / barPx / 4) * 4 : 1;
     const t0 = view.left / pps, t1 = (view.left + w) / pps;
+    const paint = getComputedStyle(document.documentElement);
+    const tick = paint.getPropertyValue("--ruler-tick").trim() || "rgba(255,255,255,.35)";
+    const text = paint.getPropertyValue("--ruler-text").trim() || "rgba(232,234,242,.8)";
     g.font = "10px " + getComputedStyle(document.body).getPropertyValue("--mono");
     for (let bar = Math.floor(t0 / spBar); bar * spBar <= t1; bar++) {
       const x = bar * spBar * pps - view.left;
       if (bar % every === 0) {
-        g.fillStyle = "rgba(255,255,255,.35)";
+        g.fillStyle = tick;
         g.fillRect(x, 14, 1, 20);
-        g.fillStyle = "rgba(232,234,242,.8)";
+        g.fillStyle = text;
         g.fillText(String(bar + 1), x + 4, 26);
       } else if (barPx > 6) {
-        g.fillStyle = "rgba(255,255,255,.15)";
+        g.fillStyle = tick;
         g.fillRect(x, 26, 1, 8);
       }
       if (barPx > 60 && every === 1) {
         for (let b = 1; b < project.timeSig[0]; b++) {
           const bx = x + b * spBeat * pps;
-          g.fillStyle = "rgba(255,255,255,.12)";
+          g.fillStyle = tick;
           g.fillRect(bx, 29, 1, 5);
         }
       }
     }
     void grid;
-  }, [view.left, view.width, pps, spBar, spBeat, project.timeSig, grid]);
+    void theme;
+  }, [view.left, view.width, pps, spBar, spBeat, project.timeSig, grid, theme]);
 
   const timeAt = (clientX: number, el: HTMLElement) => (clientX - el.getBoundingClientRect().left + view.left) / pps;
 
@@ -395,7 +401,7 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
           onChange={(e) => { const v = faderToDb(+e.target.value); setVol(v); act("track.set", { id: track.id, volumeDb: v }); }}
           onPointerUp={() => setVol(null)}
           onDoubleClick={() => act("track.set", { id: track.id, volumeDb: 0 })} />
-        {!tight && <span className="mono small dim" style={{ width: 34, textAlign: "right" }}>{formatDb(db)}</span>}
+        {!tight && <DbField className="mono small dim" style={{ width: 46, textAlign: "right" }} db={db} min={-100} max={15} onChange={(v) => { setVol(null); act("track.set", { id: track.id, volumeDb: v }); }} />}
       </div>
       <TrackMeter id={track.id} />
       </div>
@@ -801,7 +807,7 @@ export function Arrange() {
   const barPx = secondsPerBar(project) * pps;
   const beatPx = secondsPerBeat(project) * pps * (4 / project.timeSig[1]);
   const gridBg = {
-    backgroundImage: `linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px)${beatPx > 12 ? `, linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)` : ""}`,
+    backgroundImage: `linear-gradient(90deg, var(--grid-bar) 1px, transparent 1px)${beatPx > 12 ? `, linear-gradient(90deg, var(--grid-beat) 1px, transparent 1px)` : ""}`,
     backgroundSize: `${barPx}px 100%${beatPx > 12 ? `, ${beatPx}px 100%` : ""}`,
   };
 

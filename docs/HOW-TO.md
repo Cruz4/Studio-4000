@@ -2,7 +2,7 @@
 
 Studio 4000 is a vibe-coded DAW, and it is fully free to use. There is no fee and no account. This is the practical guide. The in-app tour (Help → How Studio 4000 works, or **How things work** on the welcome screen) is about where things are on screen. This file is about installing, sharing a copy, and building.
 
-The mark in the top bar, just before search, opens [AKAsheet](https://akasheet.com): a place for artists to share and sell music, discover other artists, connect, and use a smart notebook with AI tools and pathways.
+The mark in the top bar, just before search, opens [AKAsheet](https://akasheet.com/?ref=studio4000): a place for artists to share and sell music, discover other artists, connect, and use a smart notebook with AI tools and pathways.
 
 ## Install
 

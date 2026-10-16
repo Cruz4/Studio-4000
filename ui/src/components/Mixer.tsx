@@ -9,7 +9,7 @@ import { toggleTrackFx, trackFxOn } from "../commands";
 import { openMenu } from "./ContextMenu";
 import { accentFor, shortName } from "./fx/registry";
 import { beginTrackReorder } from "../trackReorder";
-import { Icon, Knob, startDrag } from "./ui";
+import { DbField, Icon, Knob, startDrag } from "./ui";
 
 /** Constant 5 dB steps, so every printed gap is the same height. The dock keeps every 15 dB. */
 const FULL_MARKS = [15, 10, 5, 0, -5, -10, -15, -20, -25, -30, -35, -40, -45, -50, -55, -60, -100];
@@ -41,6 +41,7 @@ function Fader({ db, onChange, onCommit }: { db: number; onChange: (db: number) 
     <div className="fader" ref={ref} title={`${formatDb(db)} dB. Double-click for 0 dB, Shift for fine control`}
       onDoubleClick={() => { onChange(0); onCommit?.(); }}
       onPointerDown={(e) => {
+        if (e.detail > 1) { onChange(0); onCommit?.(); return; }
         const h = ref.current!.clientHeight - 12;
         const start = pos;
         startDrag(e, (_dx, dy, ev) => onChange(faderToDb(clamp(start - dy / (ev.shiftKey ? h * 4 : h), 0, 1))), () => onCommit?.());
@@ -53,9 +54,9 @@ function Fader({ db, onChange, onCommit }: { db: number; onChange: (db: number) 
   );
 }
 
-function Meter({ id }: { id: string }) {
+function Meter({ id, onReset }: { id: string; onReset?: () => void }) {
   const ref = useMeterCanvas(id);
-  return <canvas ref={ref} className="meter-v" />;
+  return <canvas ref={ref} className="meter-v" title={onReset ? "Level. Double-click to set 0 dB" : "Level of this track"} onDoubleClick={onReset} />;
 }
 
 export function SynthSlot({ p, trackId, compact }: { p: Plugin; trackId: string; compact?: boolean }) {
@@ -228,7 +229,8 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
             { label: "Set to -12 dB", run: () => act("send.set", { id: s.id, gainDb: -12 }) },
             { label: "Remove send", icon: "trash", danger: true, run: () => act("send.remove", { id: s.id }) },
           ])}>
-          <Icon name="send" size={10} /><span className="ellipsis grow">{s.busName}</span><span className="mono faint" style={{ fontSize: 10 }}>{formatDb(s.gainDb, 0)}</span>
+          <Icon name="send" size={10} /><span className="ellipsis grow">{s.busName}</span>
+          <DbField className="mono faint" style={{ fontSize: 10 }} db={s.gainDb} min={-60} max={6} digits={0} onChange={(v) => act("send.set", { id: s.id, gainDb: v })} />
         </div>
       ))}
       {track.kind !== "return" && (
@@ -255,9 +257,9 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
       <div className="fader-area">
         <FaderScale marks={full ? FULL_MARKS : DOCK_MARKS} />
         <Fader db={db} onChange={(v) => { setVol(v); act("track.set", { id: track.id, volumeDb: v }); }} onCommit={() => setVol(null)} />
-        <Meter id={track.id} />
+        <Meter id={track.id} onReset={() => { setVol(null); act("track.set", { id: track.id, volumeDb: 0 }); }} />
       </div>
-      <div className="strip-db mono">{formatDb(db)} dB</div>
+      <div className="strip-db mono"><DbField db={db} min={-100} max={15} onChange={(v) => { setVol(null); act("track.set", { id: track.id, volumeDb: v }); }} /> dB</div>
       <ChoiceSelect value={track.output ?? "master"} choices={outputChoices(track, project, devices)} title="Output" prefix="→ "
         onChange={(v) => act("track.set", { id: track.id, output: v })} />
     </div>
@@ -287,9 +289,9 @@ function MasterStrip({ project, devices, full }: { project: Project; devices: De
       <div className="fader-area">
         <FaderScale marks={full ? FULL_MARKS : DOCK_MARKS} />
         <Fader db={db} onChange={(v) => { setVol(v); act("master.set", { volumeDb: v }); }} onCommit={() => setVol(null)} />
-        <Meter id="master" />
+        <Meter id="master" onReset={() => { setVol(null); act("master.set", { volumeDb: 0 }); }} />
       </div>
-      <div className="strip-db mono">{formatDb(db)} dB</div>
+      <div className="strip-db mono"><DbField db={db} min={-100} max={15} onChange={(v) => { setVol(null); act("master.set", { volumeDb: v }); }} /> dB</div>
       <button className="btn sm strip-foot" onClick={() => useStore.setState({ bottom: "smart" })} title="Analyse the mix and master it to a loudness target"><Icon name="sparkles" size={12} /> Smart Mix</button>
     </div>
   );

@@ -12,7 +12,7 @@ function HistoryGraph({ level, trace, lines = [], min = -60, traceColor = COLORS
 }) {
   const dragging = useRef(false);
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const Y = (db: number) => h - (clamp(db, min, 0) - min) / -min * h;
     ctx.font = "10px Inter, Segoe UI, sans-serif";
@@ -79,7 +79,7 @@ function TransferCurve({ m, levelDb }: { m: CompModel; levelDb?: number }) {
   const { ref } = useCanvas((ctx, w, h) => {
     const X = (db: number) => ((clamp(db, min, 0) - min) / -min) * w;
     const Y = (db: number) => h - ((clamp(db, min, 6) - min) / (6 - min)) * h;
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     ctx.font = "10px Inter, Segoe UI, sans-serif";
     for (let db = 0; db >= min; db -= 12) {
@@ -121,13 +121,13 @@ function TransferCurve({ m, levelDb }: { m: CompModel; levelDb?: number }) {
 
     if (levelDb !== undefined && levelDb > min) {
       const out = levelDb + compGainDb(levelDb, m.threshold, m.ratio, m.knee) + m.makeup;
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = COLORS.ink;
       ctx.shadowColor = COLORS.cyan;
       ctx.shadowBlur = 14;
       ctx.beginPath(); ctx.arc(X(levelDb), Y(out), 5, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
     }
-    ctx.fillStyle = "rgba(232,234,242,0.85)";
+    ctx.fillStyle = COLORS.inkSoft;
     ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
     ctx.fillText(`${m.ratio >= 19.5 ? "∞" : m.ratio.toFixed(1)} : 1`, 10, 18);
     ctx.font = "10px Inter, Segoe UI, sans-serif";
@@ -282,7 +282,7 @@ export function DeEsserEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const threshold = fx.v("threshold", -30);
 
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     drawFreqGrid(ctx, w, h, [], (f) => freqToX(f, w));
     const x = freqToX(freq, w);
@@ -348,7 +348,7 @@ export function TransientEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
   const cut = useHistory(t, (x) => (x.cutDb as number | undefined) ?? 0, 120, 0);
 
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const env = (x: number, a: number, s: number) => {
       // A drum-like hit: fast rise, a peak, then an exponential tail.
@@ -387,7 +387,7 @@ export function TransientEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
   }, [attack, sustain]);
 
   const activity = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const mid = h / 2;
     ctx.strokeStyle = COLORS.grid2;

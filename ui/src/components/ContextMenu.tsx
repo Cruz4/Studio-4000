@@ -68,7 +68,7 @@ export function ContextMenu() {
             <div key={i} className="row" style={{ padding: "6px 8px", gap: 5, flexWrap: "wrap" }}>
               {PALETTE.map((c) => (
                 <button key={c} title={c} onClick={() => { it.colours!.run(c); useMenu.setState({ items: null }); }}
-                  style={{ width: 16, height: 16, borderRadius: 5, border: c === it.colours!.value ? "2px solid #fff" : "none", background: c, cursor: "pointer" }} />
+                  style={{ width: 16, height: 16, borderRadius: 5, border: c === it.colours!.value ? "2px solid var(--text)" : "none", background: c, cursor: "pointer" }} />
               ))}
             </div>
           );

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const KEY = "studio4000-theme";
 
 export type ThemeName = "dark" | "light";
@@ -14,4 +16,15 @@ export function applyTheme(theme: ThemeName) {
 
 export function toggleTheme() {
   applyTheme(currentTheme() === "light" ? "dark" : "light");
+}
+
+/** Redraws canvases that read the theme colours when Light or Dark is clicked. */
+export function useThemeName() {
+  const [name, setName] = useState(currentTheme);
+  useEffect(() => {
+    const obs = new MutationObserver(() => setName(currentTheme()));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+  return name;
 }

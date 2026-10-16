@@ -15,7 +15,7 @@ export function DelayEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const lowCut = fx.v("lowCut", 150), highCut = fx.v("highCut", 7000);
 
   const taps = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const span = Math.max(2000, ms * 8);
     const X = (tms: number) => 20 + (tms / span) * (w - 30);
@@ -51,13 +51,13 @@ export function DelayEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
       bar(X(tms), level, side, n % 2 ? COLORS.cyan : COLORS.violet2);
       level *= fb;
     }
-    ctx.fillStyle = "rgba(232,234,242,0.85)";
+    ctx.fillStyle = COLORS.inkSoft;
     ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
     ctx.fillText(`${ms.toFixed(0)} ms${sync > 0 ? ` · ${NOTE_VALUES[sync].name} at ${bpm.toFixed(0)} BPM` : ""}`, 22, 16);
   }, [ms, fb, ping, mix, bpm, sync]);
 
   const filt = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const x0 = freqToX(lowCut, w), x1 = freqToX(highCut, w);
     const g = ctx.createLinearGradient(x0, 0, x1, 0);
@@ -99,7 +99,7 @@ export function DelayEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
 /** Lissajous goniometer of the output with a correlation meter. */
 function Goniometer({ t, height = 200 }: { t: { scopeL?: number[]; scopeR?: number[]; correlation?: number }; height?: number }) {
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const cxp = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 10;
     ctx.strokeStyle = COLORS.grid2;
@@ -139,7 +139,7 @@ export function WidthEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const t = useTelemetry(pluginId, { scope: true }, 24);
   const width = fx.v("width", 120);
   const field = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const cxp = w / 2, base = h - 12;
     const spread = clamp(width / 200, 0, 1) * (Math.PI / 2) * 0.95;
@@ -152,7 +152,7 @@ export function WidthEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
     ctx.arc(cxp, base, h - 20, -Math.PI / 2 - spread, -Math.PI / 2 + spread);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "rgba(232,234,242,0.85)";
+    ctx.fillStyle = COLORS.inkSoft;
     ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
     ctx.fillText(width < 1 ? "Mono" : width < 100 ? "Narrower" : width > 100 ? "Wider" : "Original", 10, 18);
   }, [width]);
@@ -178,7 +178,7 @@ export function DoublerEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const t = useTelemetry(pluginId, { scope: true }, 20);
   const detune = fx.v("detune", 12), delay = fx.v("delay", 18), width = fx.v("width", 100) / 100, mix = fx.v("mix", 50) / 100;
   const voices = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const cxp = w / 2;
     ctx.strokeStyle = COLORS.grid2;
@@ -197,7 +197,7 @@ export function DoublerEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
       ctx.font = "10px Inter, Segoe UI, sans-serif";
       ctx.fillText(label, x - 20, y + size + 14);
     };
-    voice(0, 0, 0, "#e8eaf2", "original", 9);
+    voice(0, 0, 0, COLORS.ink, "original", 9);
     voice(-width, detune / 2, delay, COLORS.cyan, `+${(detune / 2).toFixed(0)}¢ ${delay.toFixed(0)} ms`, 5 + mix * 6);
     voice(width, -detune / 2, delay * 1.37, COLORS.pink, `-${(detune / 2).toFixed(0)}¢ ${(delay * 1.37).toFixed(0)} ms`, 5 + mix * 6);
     ctx.fillStyle = COLORS.label;
@@ -227,7 +227,7 @@ export function TremoloEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const phase = (t.phase as number | undefined) ?? 0;
   const rate = (t.rateHz as number | undefined) ?? fx.v("rate", 4);
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const cycles = 2;
     ctx.strokeStyle = COLORS.grid;
@@ -254,12 +254,12 @@ export function TremoloEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
     }
     const x = (((phase % 1) + 1) % 1) * (w / cycles);
     const g = pan ? 0.5 + (lfo(shape, phase) - 0.5) * depth : 1 - depth * (1 - lfo(shape, phase));
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = COLORS.ink;
     ctx.shadowColor = COLORS.cyan;
     ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.arc(x, Y(g), 6, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(232,234,242,0.85)";
+    ctx.fillStyle = COLORS.inkSoft;
     ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
     ctx.fillText(`${rate.toFixed(2)} Hz${sync > 0 ? ` · ${NOTE_VALUES[sync].name}` : ""}`, w - 150, 16);
   }, [shape, depth, pan, phase, rate, sync]);
@@ -290,7 +290,7 @@ export function ReverbEditor({ fx }: { fx: Fx }) {
   const size = fx.v("room size", 0.5), damp = fx.v("damping", 0.5), wet = fx.v("wet level", 0.33), dry = fx.v("dry level", 0.4), width = fx.v("width", 1);
   const frozen = fx.v("mode", 0) >= 0.5;
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const decay = frozen ? 1e9 : 0.3 + size * 4.5;
     const span = 6;
@@ -319,9 +319,9 @@ export function ReverbEditor({ fx }: { fx: Fx }) {
       const b = hiEnv * (0.4 + r2 * 0.4) * (h / 2 - 10);
       ctx.fillRect(i, h / 2 - b, 1.5, b * 2);
     }
-    ctx.fillStyle = "#e8eaf2";
+    ctx.fillStyle = COLORS.ink;
     ctx.fillRect(0, h / 2 - dry * (h / 2 - 10), 3, dry * (h - 20));
-    ctx.fillStyle = "rgba(232,234,242,0.85)";
+    ctx.fillStyle = COLORS.inkSoft;
     ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
     ctx.fillText(frozen ? "Frozen: infinite sustain" : `Decay ≈ ${decay.toFixed(1)} s`, 10, 18);
     ctx.font = "10px Inter, Segoe UI, sans-serif";
@@ -332,7 +332,7 @@ export function ReverbEditor({ fx }: { fx: Fx }) {
   }, [size, damp, wet, dry, frozen]);
 
   const room = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const s = 0.25 + size * 0.7;
     const rw = w * s * (0.6 + width * 0.4), rh = h * s;
@@ -341,7 +341,7 @@ export function ReverbEditor({ fx }: { fx: Fx }) {
     ctx.strokeRect((w - rw) / 2, (h - rh) / 2, rw, rh);
     ctx.fillStyle = rgba(COLORS.violet, 0.12 + (1 - damp) * 0.15);
     ctx.fillRect((w - rw) / 2, (h - rh) / 2, rw, rh);
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = COLORS.ink;
     ctx.beginPath(); ctx.arc(w / 2, h / 2, 4, 0, Math.PI * 2); ctx.fill();
   }, [size, width, damp]);
 
@@ -393,7 +393,7 @@ export function ChorusEditor({ fx }: { fx: Fx }) {
           const ctx = el.getContext("2d");
           if (ctx) {
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.fillStyle = "#090b14";
+            ctx.fillStyle = COLORS.paper;
             ctx.fillRect(0, 0, w, h);
             const mid = h / 2;
             const amp = h * 0.34 * (0.2 + depth / 30);
@@ -416,7 +416,7 @@ export function ChorusEditor({ fx }: { fx: Fx }) {
             const pulse = 0.5 + 0.5 * Math.sin(phase.current * Math.PI * 2);
             ctx.fillStyle = rgba(COLORS.cyan, 0.15 + pulse * mix * 0.35);
             ctx.fillRect(12, h - 28, (w - 24) * (0.15 + mix * pulse), 8);
-            ctx.fillStyle = "rgba(232,234,242,0.85)";
+            ctx.fillStyle = COLORS.inkSoft;
             ctx.font = "bold 12px Inter, Segoe UI, sans-serif";
             ctx.fillText(`${speed.toFixed(2)} Hz  ·  ${depth.toFixed(1)} ms of movement`, 12, 18);
           }

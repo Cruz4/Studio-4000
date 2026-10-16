@@ -5,6 +5,7 @@ import { rpc } from "../../bridge";
 import { toast, useStore } from "../../store";
 import type { Param } from "../../types";
 import { cx } from "../../util";
+import { useThemeName } from "../../theme";
 import { clamp } from "./dsp";
 
 export interface Telemetry {
@@ -212,6 +213,7 @@ export function useSmoothed(values: number[] | undefined, fall = 1.5) {
 /** A canvas sized to its box at device resolution; draw runs whenever deps change. */
 export function useCanvas(draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void, deps: unknown[]) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const theme = useThemeName();
   const [size, setSize] = useState({ w: 0, h: 0 });
 
   useLayoutEffect(() => {
@@ -236,14 +238,30 @@ export function useCanvas(draw: (ctx: CanvasRenderingContext2D, w: number, h: nu
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
     draw(ctx, size.w, size.h);
-  }, [size, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [size, theme, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { ref, size };
 }
 
+const lightPaper = () => document.documentElement.dataset.theme === "light";
+
 export const COLORS = {
   violet: "#7c5cff", violet2: "#a08bff", cyan: "#00d1ff", green: "#21e6a5", amber: "#ffc857", red: "#ff4d6d",
-  pink: "#ff6bd5", orange: "#ff8a4c", grid: "rgba(255,255,255,0.06)", grid2: "rgba(255,255,255,0.12)", label: "rgba(154,161,181,0.8)",
+  pink: "#ff6bd5", orange: "#ff8a4c",
+  get grid() { return lightPaper() ? "rgba(22,25,34,0.12)" : "rgba(255,255,255,0.06)"; },
+  get grid2() { return lightPaper() ? "rgba(22,25,34,0.22)" : "rgba(255,255,255,0.12)"; },
+  get label() { return lightPaper() ? "rgba(58,66,84,0.9)" : "rgba(154,161,181,0.8)"; },
+  get paper() { return lightPaper() ? "#f4f7fb" : "#090b14"; },
+  get paperDeep() { return lightPaper() ? "#e6edf6" : "#07080e"; },
+  get ink() { return lightPaper() ? "#161922" : "#ffffff"; },
+  get inkSoft() { return lightPaper() ? "rgba(22,25,34,0.82)" : "rgba(232,234,242,0.85)"; },
+  get trace() { return lightPaper() ? "#3d2a99" : "#f0ecff"; },
+  get off() { return lightPaper() ? "#c5cedb" : "#1a1e2c"; },
+  get laneBlack() { return lightPaper() ? "#2c3140" : "#151827"; },
+  get laneWhite() { return lightPaper() ? "#e7edf6" : "#232838"; },
+  get noteOn() { return lightPaper() ? "#161922" : "#cfd3e6"; },
+  get noteOff() { return lightPaper() ? "#7b8498" : "#4b5168"; },
+  get laneOff() { return lightPaper() ? "rgba(22,25,34,0.06)" : "rgba(0,0,0,0.25)"; },
 };
 export const BAND_COLORS = [COLORS.red, COLORS.orange, COLORS.amber, COLORS.green, COLORS.cyan, "#4d8bff", COLORS.violet2, COLORS.pink];
 

@@ -30,17 +30,17 @@ export function TuneEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
     const labelW = 34;
     const Y = (n: number) => h - ((n - lo + 0.5) / (hi - lo + 1)) * h;
     const laneH = h / (hi - lo + 1);
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     for (let n = lo; n <= hi; n++) {
       const y = Y(n) - laneH / 2;
       const pc = ((n % 12) + 12) % 12;
       const isRoot = pc === key;
-      ctx.fillStyle = inScale(n) ? (isRoot ? rgba(COLORS.violet, 0.22) : rgba(COLORS.violet, 0.1)) : "rgba(0,0,0,0.25)";
+      ctx.fillStyle = inScale(n) ? (isRoot ? rgba(COLORS.violet, 0.22) : rgba(COLORS.violet, 0.1)) : COLORS.laneOff;
       ctx.fillRect(labelW, y, w - labelW, laneH - 1);
-      ctx.fillStyle = BLACK.has(pc) ? "#151827" : "#232838";
+      ctx.fillStyle = BLACK.has(pc) ? COLORS.laneBlack : COLORS.laneWhite;
       ctx.fillRect(0, y, labelW - 2, laneH - 1);
-      ctx.fillStyle = inScale(n) ? (isRoot ? COLORS.violet2 : "#cfd3e6") : "#4b5168";
+      ctx.fillStyle = inScale(n) ? (isRoot ? COLORS.violet2 : COLORS.noteOn) : COLORS.noteOff;
       ctx.font = `${isRoot ? "bold " : ""}10px Inter, Segoe UI, sans-serif`;
       ctx.fillText(noteName(n), 4, y + laneH / 2 + 3.5);
     }
@@ -83,7 +83,7 @@ export function TuneEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
     ctx.globalAlpha = 1;
     if (voiced) {
       const a = Math.PI * (1 + (clamp(cents, -50, 50) + 50) / 100);
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = COLORS.ink;
       ctx.lineWidth = 2.5;
       ctx.shadowColor = COLORS.cyan;
       ctx.shadowBlur = 10;

@@ -2,7 +2,7 @@
 export const COFFEE_URL = "https://buymeacoffee.com/b4bdev";
 
 /** AKAsheet, the social place linked from the top bar. */
-export const AKASHEET_URL = "https://akasheet.com";
+export const AKASHEET_URL = "https://akasheet.com/?ref=studio4000";
 
 export const AKASHEET_TIP = "AKAsheet.\nArtists share and sell their music here.\nThey can discover other artists and connect.\nA smart notebook with AI tools is there too.";
 

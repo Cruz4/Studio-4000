@@ -185,7 +185,7 @@ function PianoRoll({ clip, project }: { clip: Clip; project: Project }) {
   }, [sel, notes, grid]);
 
   const gridBg = {
-    backgroundImage: `linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px)`,
+    backgroundImage: `linear-gradient(90deg, var(--grid-bar) 1px, transparent 1px), linear-gradient(90deg, var(--grid-beat) 1px, transparent 1px), linear-gradient(90deg, var(--grid-beat) 1px, transparent 1px)`,
     backgroundSize: `${beatsPerBar * ppb}px 100%, ${ppb}px 100%, ${grid * ppb}px 100%`,
   };
 

@@ -13,7 +13,7 @@ export function SaturatorEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
   const makeup = dbToGain(fx.v("output", 0)) / Math.sqrt(drive);
 
   const curve = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = COLORS.grid2;
     ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
@@ -42,7 +42,7 @@ export function SaturatorEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
   }, [drive, type, mix, makeup]);
 
   const wave = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const plot = (fn: (x: number) => number, color: string, width: number) => {
       ctx.beginPath();
@@ -59,7 +59,7 @@ export function SaturatorEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
   }, [drive, type, mix, makeup]);
 
   const spec = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     drawFreqGrid(ctx, w, h, [], (f) => freqToX(f, w));
     if (out.points.length) {
@@ -99,7 +99,7 @@ export function CrusherEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
   const sr = t.sampleRate || 48000;
 
   const { ref } = useCanvas((ctx, w, h) => {
-    ctx.fillStyle = "#090b14";
+    ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
     const steps = Math.pow(2, bits - 1);
     const n = 240;

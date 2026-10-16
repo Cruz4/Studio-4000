@@ -1,3 +1,5 @@
+Light mode now covers effect windows, menus, and popups, and selected labels stay dark enough to read. Bar lines show on the light track page. A level can be typed, and double-clicking a mixer meter sets it to 0 dB. AKAsheet links include the Studio 4000 referral.
+
 Opening the app while online installs the newest published build, then brings the window back.
 
 Mixer levels use an even decibel scale: the same number of decibels is the same distance above and below 0, and on the way down. A Light button on the menu bar switches to a lighter theme. AKAsheet tips are pink.

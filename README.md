@@ -4,7 +4,7 @@ Hey. I put this together because making music should not start with a subscripti
 
 Studio 4000 is a vibe-coded DAW, and it is fully free to use. Record, arrange, mix, and play with someone else, on your own Windows computer. Fully free means the songs you release too: there is no fee, no account, and the music you make is yours. If you are here to create, welcome in. Wishing the best to every artist, producer, and band who opens it.
 
-When a song is ready to meet people, take it to [AKAsheet](https://akasheet.com). It is a new social place where artists can share and sell their music, discover other artists, and connect. It also has a smart notebook with AI tools and pathways. The same mark sits in the top bar, just before search.
+When a song is ready to meet people, take it to [AKAsheet](https://akasheet.com/?ref=studio4000). It is a new social place where artists can share and sell their music, discover other artists, and connect. It also has a smart notebook with AI tools and pathways. The same mark sits in the top bar, just before search.
 
 If Studio 4000 is useful, you can [buy me a coffee](https://buymeacoffee.com/b4bdev). That is optional. The app stays free either way.
 
