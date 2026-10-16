@@ -3,7 +3,7 @@ import { native } from "../bridge";
 import { useStore } from "../store";
 import { Modal } from "./ui";
 
-const RELEASE_API = "https://api.github.com/repos/Cruz4/Studio-4000--2-/releases/latest";
+const RELEASE_API = "https://api.github.com/repos/Cruz4/Studio-4000/releases/latest";
 
 /** Shown when the published notes can't be loaded. */
 const FALLBACK = "Studio 4000 checks for a newer build every time it opens, and from Help → Check for updates. What's new is this window. The AKAsheet mark sits in the top bar, just before search.";

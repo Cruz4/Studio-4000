@@ -8,8 +8,8 @@ namespace s3
 {
 namespace
 {
-constexpr const char* releaseApi = "https://api.github.com/repos/Cruz4/Studio-4000--2-/releases/latest";
-constexpr const char* downloadPrefix = "https://github.com/Cruz4/Studio-4000--2-/releases/download/";
+constexpr const char* releaseApi = "https://api.github.com/repos/Cruz4/Studio-4000/releases/latest";
+constexpr const char* downloadPrefix = "https://github.com/Cruz4/Studio-4000/releases/download/";
 
 std::atomic<bool> busy { false };
 
