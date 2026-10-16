@@ -517,7 +517,7 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .statusbar { display: flex; align-items: center; gap: 14px; height: 26px; padding: 0 12px; border-top: 1px solid var(--line); font-size: 11px; color: var(--faint); background: var(--bg1); }
 .seg .btn.akasheet { position: relative; padding: 3px; }
 .seg .btn.akasheet img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
-.seg .btn.akasheet .tip { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
+.seg .btn.akasheet .tip { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .96); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
 .seg .btn.akasheet:hover .tip, .seg .btn.akasheet:focus-visible .tip { display: block; }
 
 /* ---------- welcome ---------- */
@@ -551,10 +551,10 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 .akasheet-landing:hover { border-color: var(--line2); }
 .akasheet-text { position: relative; }
 .akasheet-text .tip { display: none; position: absolute; left: 0; bottom: calc(100% + 8px); width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
-:root[data-theme="light"] .seg .btn.akasheet .tip,
 :root[data-theme="light"] .akasheet-card .tip,
 :root[data-theme="light"] .akasheet-landing .tip,
 :root[data-theme="light"] .akasheet-text .tip { color: #6e1244; background: rgba(255, 79, 184, .38); }
+:root[data-theme="light"] .seg .btn.akasheet .tip { color: #6e1244; background: rgba(255, 79, 184, .96); }
 :root[data-theme="light"] .hero h1 { background: linear-gradient(120deg, #161922, var(--violet) 55%, #0a7494); -webkit-background-clip: text; background-clip: text; color: transparent; }
 :root[data-theme="light"] .wordmark,
 :root[data-theme="light"] .brand-mark { background: #161922; border-radius: 12px; }

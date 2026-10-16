@@ -1,4 +1,4 @@
-Light mode now covers effect windows, menus, and popups, and selected labels stay dark enough to read. Bar lines show on the light track page. A level can be typed, and double-clicking a mixer meter sets it to 0 dB. AKAsheet links include the Studio 4000 referral.
+The AKAsheet tip in the top bar is nearly solid pink. Light mode now covers effect windows, menus, and popups, and selected labels stay dark enough to read. Bar lines show on the light track page. A level can be typed, and double-clicking a mixer meter sets it to 0 dB. AKAsheet links include the Studio 4000 referral.
 
 Opening the app while online installs the newest published build, then brings the window back.
 
