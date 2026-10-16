@@ -279,8 +279,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .track-resize::before { content: ""; position: absolute; left: calc(var(--header-w) / 2 - 14px); top: 2px; width: 28px; height: 5px; border-radius: 3px; border-top: 1px solid rgba(255, 255, 255, .5); border-bottom: 1px solid rgba(255, 255, 255, .5); opacity: 0; transition: opacity .12s; z-index: 1; }
 .track-resize:hover::after, .track-resize.active::after { opacity: .9; }
 .track-resize:hover::before, .track-resize.active::before { opacity: 1; }
-.track-row.selected .track-head { background: linear-gradient(90deg, rgba(124, 92, 255, .28), rgba(124, 92, 255, .10)); }
-.track-row.reorder-held .track-head { background: linear-gradient(90deg, rgba(124, 92, 255, .5), rgba(124, 92, 255, .18)); box-shadow: inset 0 0 0 2px var(--violet2), inset 0 -1px 0 rgba(255, 255, 255, .30), inset 0 -2px 0 rgba(0, 0, 0, .75); }
+.track-row.selected .track-head { background: linear-gradient(90deg, rgba(124, 92, 255, .28), rgba(124, 92, 255, .10)), var(--bg2); }
+.track-row.reorder-held .track-head { background: linear-gradient(90deg, rgba(124, 92, 255, .5), rgba(124, 92, 255, .18)), var(--bg2); box-shadow: inset 0 0 0 2px var(--violet2), inset 0 -1px 0 rgba(255, 255, 255, .30), inset 0 -2px 0 rgba(0, 0, 0, .75); }
 .track-row.reorder-held .lane { background: rgba(124, 92, 255, .14); }
 .track-row.drop-before .track-head, .track-row.drop-before .lane { box-shadow: inset 0 4px 0 var(--cyan), inset 0 -1px 0 rgba(255, 255, 255, .30), inset 0 -2px 0 rgba(0, 0, 0, .75); }
 .track-row.drop-after .track-head, .track-row.drop-after .lane { box-shadow: inset 0 -4px 0 var(--cyan), inset 0 -1px 0 rgba(255, 255, 255, .30), inset 0 -2px 0 rgba(0, 0, 0, .75); }
