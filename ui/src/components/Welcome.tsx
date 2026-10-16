@@ -5,7 +5,7 @@ import { native, rpc } from "../bridge";
 import { AKASHEET_TIP, AKASHEET_URL, COFFEE_URL } from "../support";
 import { openProject } from "../commands";
 import { act, refreshInfo, useStore } from "../store";
-import { Icon, Spinner } from "./ui";
+import { Icon, Spinner, ThemeToggle } from "./ui";
 
 const TEMPLATES = [
   { id: "vocal", icon: "mic", title: "Vocal recording", text: "Lead and double vocal tracks with a reverb return, ready to arm." },
@@ -66,7 +66,7 @@ export function Welcome() {
     <div className="welcome">
       <div className="welcome-inner">
         <div className="hero col" style={{ gap: 0 }}>
-          <div className="brand" style={{ marginBottom: 26 }}><img className="wordmark" src={wordmark} alt="Studio 4000" /><span className="pill">{info?.version ?? ""}</span></div>
+          <div className="brand" style={{ marginBottom: 26 }}><img className="wordmark" src={wordmark} alt="Studio 4000" /><span className="pill">{info?.version ?? ""}</span><ThemeToggle /></div>
           <h1>Record the future.</h1>
           <p>A recording studio that sets itself up, mixes with you and lets the whole band join from anywhere. Choose a starting point, or open something you've been working on.</p>
 

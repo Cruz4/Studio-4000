@@ -1,4 +1,6 @@
-Opening the app shows the window first. If a published build is waiting, that build replaces this copy and the window comes back.
+Opening the app while online installs the newest published build, then brings the window back.
+
+Mixer levels use an even decibel scale: the same number of decibels is the same distance above and below 0, and on the way down. A Light button on the menu bar switches to a lighter theme. AKAsheet tips are pink.
 
 Faders now reach +15 dB, with more level marks around 0 and above it, on the full mixer and the mixer under the tracks.
 

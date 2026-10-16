@@ -66,7 +66,10 @@ bool launchHelper (const juce::File& script)
     // The command text has to outlive toWideCharPointer(). A temporary String here
     // was already freed, so the helper process started with a blank command and the
     // app quit without ever coming back.
-    const juce::String command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \""
+    //
+    // cmd's start detaches the helper from this process. A direct child is destroyed
+    // when the app exits, so the copy never ran and the window just disappeared.
+    const juce::String command = "cmd.exe /d /c start \"\" /b powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \""
                                  + script.getFullPathName() + "\"";
     std::wstring writable (command.toWideCharPointer());
 
@@ -197,15 +200,24 @@ UpdateState stagePublishedUpdate()
     const auto pid = (int) GetCurrentProcessId();
 
     const auto skip = updateRoot.getChildFile ("skip-" + remote);
+    const auto log = updateRoot.getChildFile ("apply.log");
     script.replaceWithText (
         "$ErrorActionPreference = 'Continue'\r\n"
+        "$log = '" + quote (log.getFullPathName()) + "'\r\n"
+        "function Note([string]$m) { Add-Content -Path $log -Value ((Get-Date -Format o) + ' ' + $m) }\r\n"
+        "Note 'helper start'\r\n"
         "Wait-Process -Id " + juce::String (pid) + " -ErrorAction SilentlyContinue\r\n"
-        "Start-Sleep -Milliseconds 800\r\n"
-        "& robocopy '" + quote (source.getFullPathName()) + "' '" + quote (home.getFullPathName()) + "' /E /R:3 /W:1 /NFL /NDL /NJH /NJS\r\n"
-        "$code = $LASTEXITCODE\r\n"
+        "$code = 16\r\n"
+        "foreach ($attempt in 1..20) {\r\n"
+        "  & robocopy '" + quote (source.getFullPathName()) + "' '" + quote (home.getFullPathName()) + "' /E /R:1 /W:1 /NFL /NDL /NJH /NJS\r\n"
+        "  $code = $LASTEXITCODE\r\n"
+        "  if ($code -lt 8) { break }\r\n"
+        "  Start-Sleep -Milliseconds 400\r\n"
+        "}\r\n"
+        "Note ('robocopy ' + $code)\r\n"
         "if ($code -ge 8) { New-Item -ItemType File -Force -Path '" + quote (skip.getFullPathName()) + "' | Out-Null }\r\n"
         "Start-Process -FilePath '" + quote (home.getChildFile ("Studio 4000.exe").getFullPathName()) + "'\r\n"
-        "if ($code -ge 8) { exit $code }\r\n");
+        "Note 'relaunched'\r\n");
 
     if (! launchHelper (script))
         return finish (UpdateState::failed);

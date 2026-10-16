@@ -5,10 +5,11 @@ import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection,
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
 import { act, live, loadDevices, onTick, toast, useStore, type ArrangeTool, type Grid } from "../store";
-import { toggleAutomation, trackMenu } from "../trackMenu";
+import { createTrackItems, toggleAutomation, trackMenu } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, secondsPerBar, secondsPerBeat, shade, snap } from "../util";
+import { askText } from "./Ask";
 import { openMenu, type MenuItem } from "./ContextMenu";
 import { FxToggle, InsertSlot, SynthSlot } from "./Mixer";
 import { beginTrackReorder } from "../trackReorder";
@@ -128,9 +129,9 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
       {project.markers.map((m) => (
         <div key={m.id} className="marker" style={{ left: m.time * pps - view.left }}
           onPointerDown={(e) => { e.stopPropagation(); act("transport.setPosition", { time: m.time }); }}
-          onDoubleClick={() => { const name = window.prompt("Marker name", m.name); if (name !== null) act("marker.set", { id: m.id, name }); }}
+          onDoubleClick={() => { void askText({ title: "Marker name", hint: "Shown on the timeline.", value: m.name, ok: "Rename" }).then((name) => { if (name !== null) act("marker.set", { id: m.id, name }); }); }}
           onContextMenu={(e) => openMenu(e, [
-            { label: "Rename…", icon: "file", run: () => { const name = window.prompt("Marker name", m.name); if (name !== null) act("marker.set", { id: m.id, name }); } },
+            { label: "Rename…", icon: "file", run: () => { void askText({ title: "Marker name", hint: "Shown on the timeline.", value: m.name, ok: "Rename" }).then((name) => { if (name !== null) act("marker.set", { id: m.id, name }); }); } },
             { label: "Move to playhead", icon: "arrowRight", run: () => act("marker.set", { id: m.id, time: live.tick.t }) },
             { label: "Delete marker", icon: "trash", danger: true, run: () => act("marker.remove", { id: m.id }) },
           ])}>
@@ -862,9 +863,6 @@ export function Arrange() {
                     onDoubleClick={(e) => { if (e.target === e.currentTarget && track.kind === "instrument") addMidiClip(track.id, timeAtClient(e.clientX)); }}
                     onContextMenu={(e) => {
                       const t = timeAtClient(e.clientX);
-                      const i = tracks.findIndex((x) => x.id === track.id);
-                      const below = { afterId: track.id };
-                      const above = i <= 0 ? { beforeId: track.id } : { afterId: tracks[i - 1].id };
                       openMenu(e, [
                         ...(track.kind === "instrument" ? [{ label: "New MIDI clip here", icon: "piano", run: () => addMidiClip(track.id, t) }] : []),
                         ...(track.kind === "audio" ? [{ label: "Import audio here…", icon: "folder", run: () => importAudio(track.id, snap(t, grid, project)) }] : []),
@@ -872,11 +870,7 @@ export function Arrange() {
                         { label: "Add marker here", icon: "info", run: () => act("marker.add", { time: snap(t, grid, project) }) },
                         { label: "Set playhead here", icon: "arrowRight", run: () => act("transport.setPosition", { time: snap(t, grid, project) }) },
                         { separator: true },
-                        { label: "New audio track below", icon: "mic", run: () => addTrack("audio", below) },
-                        { label: "New instrument track below", icon: "piano", run: () => addTrack("instrument", below) },
-                        { label: "New bus below", icon: "layers", run: () => addTrack("group", below) },
-                        { label: "New FX return below", icon: "send", run: () => addTrack("return", below) },
-                        { label: "New audio track above", icon: "mic", run: () => addTrack("audio", above) },
+                        ...createTrackItems(track.id),
                         { label: "Duplicate track", icon: "copy", run: () => act("track.duplicate", { id: track.id }) },
                         { label: "Delete track", icon: "trash", danger: true, run: () => act("track.remove", { id: track.id }) },
                       ]);

@@ -25,6 +25,28 @@
   color-scheme: dark;
 }
 
+:root[data-theme="light"] {
+  --bg: #e6ebf3;
+  --bg1: #f6f8fb;
+  --bg2: #ffffff;
+  --bg3: #eef2f7;
+  --bg4: #d5dce8;
+  --line: rgba(18, 24, 40, 0.12);
+  --line2: rgba(18, 24, 40, 0.22);
+  --text: #161922;
+  --dim: #3a4254;
+  --faint: #5c657a;
+  --violet: #5b3fd6;
+  --violet2: #3f2ca8;
+  --cyan: #0a7494;
+  --green: #0d8a5e;
+  --amber: #8a5600;
+  --red: #c42345;
+  --rec: #d4143a;
+  --glow: 0 0 0 1px rgba(91, 63, 214, 0.35), 0 8px 24px rgba(40, 50, 80, 0.12);
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
@@ -326,8 +348,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 
 /* ---------- mixer ---------- */
 /* Every strip has the same rows, so faders line up; only the rack and the fader flex. Below the minimum height the dock scrolls. */
-.mixer { display: flex; height: 100%; min-height: 242px; padding: 10px; gap: 8px; overflow-x: auto; overflow-y: hidden; }
-.strip { width: 112px; flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); position: relative; overflow: hidden; min-height: 0; cursor: grab; }
+.mixer { display: flex; height: 100%; min-height: 0; padding: 10px; gap: 8px; overflow-x: auto; overflow-y: hidden; align-items: stretch; }
+.strip { width: 112px; height: 100%; flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); position: relative; overflow: hidden; min-height: 0; cursor: grab; }
 .strip button, .strip input, .strip select, .strip .slot, .strip canvas { cursor: auto; }
 .strip.selected { background: rgba(124, 92, 255, .10); border-color: rgba(124, 92, 255, .75); box-shadow: inset 3px 0 0 var(--violet); }
 .strip.reorder-held { border-color: var(--violet2); background: rgba(124, 92, 255, .22); box-shadow: 0 12px 28px rgba(0, 0, 0, .45), inset 0 0 0 2px var(--violet2); z-index: 4; }
@@ -381,16 +403,31 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .fx-ghost { position: fixed; z-index: 90; pointer-events: none; display: flex; flex-direction: column; gap: 1px; max-width: 220px; padding: 6px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--violet2); box-shadow: 0 12px 28px rgba(0, 0, 0, .55); }
 .fx-ghost b { font-size: 12px; font-weight: 700; }
 .fx-ghost small { font-size: 11px; font-weight: 600; color: var(--cyan); }
-.fader-area { flex: none; height: 168px; display: flex; gap: 8px; justify-content: center; }
-/* A short dock gets a compact mixer: faders, pan and buttons only. */
-@container dock (max-height: 241px) {
-  .mixer { min-height: 140px; padding: 6px 10px; }
-  .strip { gap: 4px; padding: 6px 8px; }
-  .strip-rack, .strip select.input, .strip-foot { display: none; }
-  .fader-area { height: 112px; }
-}
+.fader-area { flex: 1 1 0; min-height: 0; height: auto; display: flex; gap: 8px; justify-content: center; }
+/* The dock mixer keeps the whole meter, plus the inserts, input and output, inside a short dock. */
+.dock-body { display: flex; flex-direction: column; }
+.dock-body > * { flex: 1; min-height: 0; }
+.dock .mixer { padding: 4px 8px; gap: 6px; }
+.dock .strip { width: 118px; gap: 2px; padding: 4px; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(18px, 1fr) auto minmax(52px, 1.6fr) auto auto; align-content: stretch; }
+.dock .strip.master { width: 132px; }
+.dock .strip-name, .dock .strip-rack, .dock .fader-area, .dock .strip-db, .dock .strip > .input, .dock .strip-foot { grid-column: 1 / -1; }
+.dock .strip .strip-name { height: 16px; font-size: 10.5px; line-height: 14px; padding: 0 4px; }
+.dock .strip-rack { min-height: 0; max-height: none; gap: 2px; padding-bottom: 0; overflow: auto; }
+.dock .slot { height: 18px; font-size: 10px; padding: 0 4px; }
+.dock .strip select.input { height: 20px; font-size: 10px; padding: 0 4px; }
+.dock .strip-pan { grid-column: 1; min-width: 0; }
+.dock .strip-controls { grid-column: 2; height: auto; justify-content: flex-end; }
+.dock .strip.master .strip-controls { grid-column: 1 / -1; }
+.dock .strip-db { height: 12px; line-height: 12px; font-size: 10px; }
+.dock .fader-area { min-height: 52px; height: 100%; gap: 4px; }
+.dock .fader-scale { width: 26px; }
+.dock .fader-scale span { font-size: 8px; }
+.dock .fader { width: 22px; }
+.dock .fader .cap { width: 22px; height: 12px; }
+.dock .meter-v { width: 8px; }
 .fader-scale { position: relative; width: 32px; height: 100%; flex: none; }
-.fader-scale span { position: absolute; right: 2px; transform: translateY(-50%); font: 9px var(--mono); color: var(--faint); line-height: 1; letter-spacing: -0.02em; }
+.fader-scale span { position: absolute; right: 2px; transform: translateY(-50%); font: 9px var(--mono); color: var(--faint); line-height: 1; letter-spacing: -0.02em; white-space: nowrap; }
+.theme-toggle { height: 22px; padding: 0 8px; font-size: 11px; }
 .fader-scale span.hot { color: var(--text); }
 .fader { position: relative; width: 26px; height: 100%; cursor: ns-resize; }
 .fader .track { position: absolute; left: 11px; width: 4px; top: 6px; bottom: 6px; border-radius: 4px; background: var(--bg4); }
@@ -450,6 +487,11 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .palette-list { max-height: 50vh; overflow: auto; padding: 6px; }
 .palette-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
 .palette-item.on { background: rgba(124, 92, 255, .2); }
+.palette-item:hover { background: rgba(255, 255, 255, .06); }
+:root[data-theme="light"] .palette-item:hover { background: rgba(18, 24, 40, .06); }
+.menu-row { position: relative; }
+.menu-row .menu-tip { display: none; position: absolute; left: calc(100% + 8px); top: -4px; width: 220px; padding: 8px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--line2); color: var(--text); font: 500 12px/1.45 var(--font); text-align: left; white-space: normal; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); z-index: 5; pointer-events: none; }
+.menu-row:hover .menu-tip { display: block; }
 .palette-item .grp { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; width: 70px; }
 .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
 .toast { display: flex; align-items: center; gap: 10px; min-width: 260px; max-width: 420px; padding: 10px 12px; border-radius: 11px; background: var(--bg3); border: 1px solid var(--line2); box-shadow: 0 12px 36px rgba(0, 0, 0, .5); animation: pop .16s ease-out; }
@@ -464,7 +506,7 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .statusbar { display: flex; align-items: center; gap: 14px; height: 26px; padding: 0 12px; border-top: 1px solid var(--line); font-size: 11px; color: var(--faint); background: var(--bg1); }
 .seg .btn.akasheet { position: relative; padding: 3px; }
 .seg .btn.akasheet img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
-.seg .btn.akasheet .tip { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 210px; padding: 8px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--line2); color: var(--text); font: 500 12px/1.45 var(--font); text-align: left; white-space: pre-line; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); z-index: 40; pointer-events: none; }
+.seg .btn.akasheet .tip { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
 .seg .btn.akasheet:hover .tip, .seg .btn.akasheet:focus-visible .tip { display: block; }
 
 /* ---------- welcome ---------- */
@@ -478,12 +520,14 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .template { padding: 14px; border-radius: 14px; background: var(--bg2); border: 1px solid var(--line); cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all .14s; }
 button.template { font: inherit; color: inherit; text-align: left; width: 100%; }
+button.template.akasheet-card { width: 108px; text-align: center; }
 .template:hover { border-color: rgba(124, 92, 255, .6); transform: translateY(-2px); box-shadow: var(--glow); }
 .template .ti { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(124, 92, 255, .18); color: var(--violet2); }
-.akasheet-card { position: relative; }
-.akasheet-card .ti { background: var(--bg1); padding: 4px; }
-.akasheet-card .ti img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 4px; }
-.akasheet-card .tip { display: none; position: absolute; left: 0; bottom: calc(100% + 8px); width: 210px; padding: 8px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--line2); color: var(--text); font: 500 12px/1.45 var(--font); text-align: left; white-space: pre-line; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); z-index: 40; pointer-events: none; }
+.akasheet-card { position: relative; justify-self: center; align-self: center; width: 108px; margin-inline: auto; padding: 8px 6px 8px; align-items: center; text-align: center; gap: 4px; }
+.akasheet-card .ti { width: 64px; height: 64px; background: var(--bg1); padding: 2px; }
+.akasheet-card .ti img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px; }
+.akasheet-card > span:not(.tip) { display: none; }
+.akasheet-card .tip { display: none; position: absolute; left: 50%; top: calc(100% + 6px); bottom: auto; width: 150px; transform: translateX(-50%); padding: 7px 8px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 11px/1.35 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
 .akasheet-card:hover .tip, .akasheet-card:focus-visible .tip { display: block; }
 .template b { font-size: 14px; }
 .template span { font-size: 12px; color: var(--dim); }
@@ -491,11 +535,23 @@ button.template { font: inherit; color: inherit; text-align: left; width: 100%; 
 .welcome-actions .hint { flex: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .akasheet-landing { position: fixed; right: 18px; bottom: 18px; z-index: 96; width: 46px; height: 30px; padding: 2px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg1); cursor: pointer; }
 .akasheet-landing img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
-.akasheet-landing .tip { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; width: 210px; padding: 8px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--line2); color: var(--text); font: 500 12px/1.45 var(--font); text-align: left; white-space: pre-line; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); z-index: 40; pointer-events: none; }
+.akasheet-landing .tip { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
 .akasheet-landing:hover .tip, .akasheet-landing:focus-visible .tip { display: block; }
 .akasheet-landing:hover { border-color: var(--line2); }
 .akasheet-text { position: relative; }
-.akasheet-text .tip { display: none; position: absolute; left: 0; bottom: calc(100% + 8px); width: 210px; padding: 8px 10px; border-radius: 8px; background: #171b26; border: 1px solid var(--line2); color: var(--text); font: 500 12px/1.45 var(--font); text-align: left; white-space: pre-line; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); z-index: 40; pointer-events: none; }
+.akasheet-text .tip { display: none; position: absolute; left: 0; bottom: calc(100% + 8px); width: 180px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 47, 168, .28); border: 1px solid rgba(255, 47, 168, .75); color: #ffe9f6; font: 500 12px/1.4 var(--font); text-align: left; white-space: pre-line; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(80, 0, 40, .28); z-index: 40; pointer-events: none; }
+:root[data-theme="light"] .seg .btn.akasheet .tip,
+:root[data-theme="light"] .akasheet-card .tip,
+:root[data-theme="light"] .akasheet-landing .tip,
+:root[data-theme="light"] .akasheet-text .tip { color: #6e1244; background: rgba(255, 79, 184, .38); }
+:root[data-theme="light"] .hero h1 { background: linear-gradient(120deg, #161922, var(--violet) 55%, #0a7494); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:root[data-theme="light"] .wordmark,
+:root[data-theme="light"] .brand-mark { background: #161922; border-radius: 12px; }
+:root[data-theme="light"] .strip.master { box-shadow: -12px 0 24px rgba(40, 50, 80, .12); }
+:root[data-theme="light"] .fader .cap { border: 1px solid #8b93a7; }
+:root[data-theme="light"] .fader .unity { background: rgba(18, 24, 40, .35); }
+:root[data-theme="light"] .side { background: rgba(246, 248, 251, .94); }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb { background-color: rgba(18, 24, 40, .22); }
 .akasheet-text:hover .tip, .akasheet-text:focus-visible .tip { display: block; }
 .recent-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; }
 .recent-item:hover { background: rgba(255, 255, 255, .05); }

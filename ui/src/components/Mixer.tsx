@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMeterCanvas } from "../meters";
 import { type Choice, inputChoices, outputChoices } from "../io";
-import { addTrack } from "../commands";
-import { trackMenu } from "../trackMenu";
+import { trackMenu, createTrackItems } from "../trackMenu";
 import { act, type Devices, loadDevices, openPlugin, selectPlugin, useStore } from "../store";
 import type { Plugin, Project, Track } from "../types";
 import { clamp, cx, dbToFader, faderToDb, formatDb, shade } from "../util";
@@ -12,8 +11,9 @@ import { accentFor, shortName } from "./fx/registry";
 import { beginTrackReorder } from "../trackReorder";
 import { Icon, Knob, startDrag } from "./ui";
 
-const FULL_MARKS = [15, 12, 9, 6, 3, 0, -3, -6, -12, -18, -24, -36, -48, -60, -100];
-const DOCK_MARKS = [15, 6, 0, -6, -12, -24, -48, -100];
+/** Constant 5 dB steps, so every printed gap is the same height. The dock keeps every 15 dB. */
+const FULL_MARKS = [15, 10, 5, 0, -5, -10, -15, -20, -25, -30, -35, -40, -45, -50, -55, -60, -100];
+const DOCK_MARKS = [15, 0, -15, -30, -45, -60, -100];
 
 function markLabel(db: number) {
   if (db <= -99) return "−∞";
@@ -240,7 +240,7 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
       )}
       </div>
       <div className="strip-pan">
-        <Knob value={(p + 1) / 2} bipolar size={full ? 32 : 26} title={`Pan ${panText(p)}. Double-click to centre`}
+        <Knob value={(p + 1) / 2} bipolar size={full ? 32 : 22} title={`Pan ${panText(p)}. Double-click to centre`}
           onChange={(v) => { const np = Math.round((v * 2 - 1) * 100) / 100; setPan(np); act("track.set", { id: track.id, pan: np }); }}
           onCommit={() => setPan(null)} onReset={() => act("track.set", { id: track.id, pan: 0 })} />
         <span className="pan-read mono">{panText(p)}</span>
@@ -305,12 +305,7 @@ export function Mixer({ full }: { full?: boolean }) {
   return (
     <div className={cx("mixer", full && "full")} onContextMenu={(e) => {
       if ((e.target as HTMLElement).closest(".strip")) return;
-      openMenu(e, [
-        { label: "New audio track", icon: "mic", run: () => addTrack("audio") },
-        { label: "New instrument track", icon: "piano", run: () => addTrack("instrument") },
-        { label: "New bus", icon: "layers", run: () => addTrack("group") },
-        { label: "New FX return", icon: "send", run: () => addTrack("return") },
-      ]);
+      openMenu(e, createTrackItems());
     }}>
       {project.tracks.map((t) => <Strip key={t.id} track={t} project={project} devices={devices} selected={selected === t.id} full={full} />)}
       <div className="grow" />

@@ -52,27 +52,28 @@ export function snap(t: number, grid: Grid, p: Project | null, bypass = false) {
   return Math.max(0, Math.round(t / g) * g);
 }
 
-/** Maps decibels to a 0..1 meter position with more resolution near the top. */
-export function meterPos(db: number) {
-  if (db <= -60) return 0;
-  if (db >= 6) return 1;
-  return Math.pow((db + 60) / 66, 1.6);
-}
-
-/** Top of the fader. Unity stays at three quarters of the travel, so the last quarter is the boost. */
+/** Top of the fader. Equal decibel steps travel the same distance above and below 0. */
 export const FADER_MAX_DB = 15;
+const FADER_FLOOR_DB = -60;
+const FADER_SPAN = FADER_MAX_DB - FADER_FLOOR_DB;
+/** The last sliver of travel is the fade from the floor down to silence. */
+const SILENCE = 0.04;
 
-/** Fader travel: 0..1 position to dB with unity at roughly three quarters. */
 export function faderToDb(pos: number) {
   if (pos <= 0) return -100;
-  const db = pos >= 0.75 ? ((pos - 0.75) / 0.25) * FADER_MAX_DB : -60 * Math.pow(1 - pos / 0.75, 2.2);
-  return clamp(db, -100, FADER_MAX_DB);
+  if (pos < SILENCE) return -100 + (pos / SILENCE) * (100 + FADER_FLOOR_DB);
+  return clamp(FADER_FLOOR_DB + ((pos - SILENCE) / (1 - SILENCE)) * FADER_SPAN, FADER_FLOOR_DB, FADER_MAX_DB);
 }
 
 export function dbToFader(db: number) {
   if (db <= -99) return 0;
-  if (db >= 0) return clamp(0.75 + (db / FADER_MAX_DB) * 0.25, 0, 1);
-  return clamp(0.75 * (1 - Math.pow(-db / 60, 1 / 2.2)), 0, 1);
+  if (db <= FADER_FLOOR_DB) return clamp((SILENCE * (db + 100)) / (100 + FADER_FLOOR_DB), 0, SILENCE);
+  return clamp(SILENCE + ((db - FADER_FLOOR_DB) / FADER_SPAN) * (1 - SILENCE), 0, 1);
+}
+
+/** The meter uses the same spacing as the fader, so a bar lines up with its number. */
+export function meterPos(db: number) {
+  return dbToFader(db);
 }
 
 export function fileName(path: string) {

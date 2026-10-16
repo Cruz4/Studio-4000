@@ -8,6 +8,8 @@ export interface MenuItem {
   keys?: string;
   danger?: boolean;
   disabled?: boolean;
+  /** Shown while the pointer is on the row. */
+  title?: string;
   run?: () => unknown;
   colours?: { value: string; run: (c: string) => void };
   separator?: boolean;
@@ -72,13 +74,12 @@ export function ContextMenu() {
           );
         }
         return (
-          <div key={i} className="palette-item" style={{ padding: "6px 8px", opacity: it.disabled ? 0.4 : 1, color: it.danger ? "var(--red)" : undefined }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+          <div key={i} className="palette-item menu-row" aria-label={it.title} style={{ padding: "6px 8px", opacity: it.disabled ? 0.4 : 1, color: it.danger ? "var(--red)" : undefined }}
             onClick={() => { if (it.disabled) return; useMenu.setState({ items: null }); it.run?.(); }}>
             <span style={{ width: 16, display: "inline-flex" }}>{it.icon && <Icon name={it.icon} size={14} />}</span>
             <span className="grow">{it.label}</span>
             {it.keys && <span className="kbd">{it.keys}</span>}
+            {it.title && <span className="menu-tip">{it.title}</span>}
           </div>
         );
       })}

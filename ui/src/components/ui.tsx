@@ -1,4 +1,5 @@
-import { Component, useEffect, useRef, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { currentTheme, toggleTheme } from "../theme";
 import { clamp, cx } from "../util";
 
 /** Keeps a crash in one panel from blanking the whole window. */
@@ -171,6 +172,17 @@ export function Knob({ value, onChange, onCommit, size = 34, bipolar, label, tit
       </svg>
       {label && <span className="small dim">{label}</span>}
     </div>
+  );
+}
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState(currentTheme);
+  const light = theme === "light";
+  return (
+    <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? "Switch to the dark theme" : "Switch to the light theme"}
+      onClick={() => { toggleTheme(); setTheme(currentTheme()); }}>
+      {light ? "Dark" : "Light"}
+    </button>
   );
 }
 

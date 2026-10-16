@@ -5,7 +5,7 @@ import { useStore } from "../store";
 import type { Project } from "../types";
 import { cx } from "../util";
 import { closeMenu, openMenu, useMenuOwner, type MenuItem } from "./ContextMenu";
-import { Icon } from "./ui";
+import { Icon, ThemeToggle } from "./ui";
 
 const MENUS: { label: string; items: string[] }[] = [
   { label: "File", items: ["new", "open", "save", "-", "import", "export", "archive", "reveal", "-", "audioSetup", "scan", "settings", "-", "quit"] },
@@ -56,6 +56,7 @@ export function MenuBar() {
         );
       })}
       <div className="grow" />
+      <ThemeToggle />
       {project && (
         <button className="menubar-item" title="Show or hide the browser panel (B)" onClick={() => useStore.setState((s) => ({ browserOpen: !s.browserOpen }))}>
           <Icon name="sidebar" size={13} />

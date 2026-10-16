@@ -37,11 +37,19 @@ describe("musical time", () => {
 });
 
 describe("levels", () => {
-  it("puts unity gain at three quarters of fader travel", () => {
-    expect(dbToFader(0)).toBeCloseTo(0.75);
-    expect(faderToDb(0.75)).toBeCloseTo(0);
+  it("gives +3 dB and -3 dB the same travel from 0", () => {
+    const up = dbToFader(3) - dbToFader(0);
+    const down = dbToFader(0) - dbToFader(-3);
+    expect(up).toBeCloseTo(down, 5);
+    expect(dbToFader(15) - dbToFader(0)).toBeCloseTo(dbToFader(0) - dbToFader(-15), 5);
+    const step = dbToFader(0) - dbToFader(-5);
+    expect(dbToFader(-5) - dbToFader(-10)).toBeCloseTo(step, 5);
+    expect(dbToFader(10) - dbToFader(5)).toBeCloseTo(step, 5);
+    expect(dbToFader(-24) - dbToFader(-36)).toBeCloseTo(dbToFader(-36) - dbToFader(-48), 5);
+    expect(dbToFader(-24) - dbToFader(-36)).toBeCloseTo(step * (12 / 5), 4);
     expect(faderToDb(1)).toBeCloseTo(15);
     expect(faderToDb(0)).toBe(-100);
+    expect(faderToDb(dbToFader(0))).toBeCloseTo(0);
   });
 
   it("round-trips fader positions", () => {

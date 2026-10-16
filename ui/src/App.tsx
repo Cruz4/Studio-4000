@@ -5,6 +5,7 @@ import { useCollab } from "./collab";
 import { useStore, type BottomTab, type BrowserTab } from "./store";
 import { cx } from "./util";
 import { About } from "./components/About";
+import { AskDialog } from "./components/Ask";
 import { Arrange } from "./components/Arrange";
 import { Assistant } from "./components/Assistant";
 import { Browser } from "./components/Browser";
@@ -204,6 +205,7 @@ export function App() {
       <ErrorBoundary floating name="Plug-in windows" onReset={() => useStore.setState({ openPlugins: [], selectedPlugin: null })}><PluginPanel /></ErrorBoundary>
       <ErrorBoundary floating name="Plug-in picker" onReset={() => useStore.setState({ picker: null })}><PluginPicker /></ErrorBoundary>
       <ContextMenu />
+      <AskDialog />
       <Palette />
       <Settings />
       <ExportDialog />
