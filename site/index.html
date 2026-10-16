@@ -1,0 +1,458 @@
+<!--
+  HANDOFF — give this folder to the agent that will host the page.
+
+  Ship the whole folder. index.html, icon.png, and screenshots/ stay together.
+  Image paths are relative, so the page works as a static route on any domain.
+
+  DOWNLOAD BUTTON
+  The button is a normal link. Its href is:
+    https://github.com/Cruz4/Studio-4000/releases/latest/download/<zip name>
+  GitHub resolves /releases/latest/ at the moment of the click, so the file is
+  whatever zip is on the release marked Latest. Do not preventDefault, and do
+  not swap in a releases/download/b-<sha>/ URL. That would pin an old build.
+
+  On load, the page asks
+    https://api.github.com/repos/Cruz4/Studio-4000/releases/latest
+  and, if the Windows zip was renamed (Studio4000-0.2.0-win64.zip and so on),
+  rewrites the href to /releases/latest/download/<that new name>.
+  If the request fails, the href stays:
+    https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip
+
+  Do not cache the zip on the other domain. The button must keep asking GitHub.
+
+  LINKS THAT STAY
+  https://github.com/Cruz4/Studio-4000
+  https://akasheet.com/?ref=studio4000
+  https://buymeacoffee.com/b4bdev
+  mailto:akasheet.support@gmail.com
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studio 4000 — a free DAW for Windows</title>
+  <meta name="description" content="Studio 4000 is a free Windows DAW. Record, arrange, mix, and play with someone else. No subscription, and the music you make is yours." />
+  <link rel="icon" href="icon.png" />
+  <style>
+    :root {
+      --bg: #07080c;
+      --bg1: #0c0e14;
+      --bg2: #11141c;
+      --bg3: #171b26;
+      --line: rgba(255, 255, 255, 0.08);
+      --line2: rgba(255, 255, 255, 0.14);
+      --text: #e8eaf2;
+      --dim: #9aa1b5;
+      --faint: #6a7186;
+      --violet: #7c5cff;
+      --violet2: #a08bff;
+      --cyan: #00d1ff;
+      --green: #21e6a5;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      --font: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      --mono: "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font);
+      background:
+        radial-gradient(1100px 620px at 8% -8%, rgba(124, 92, 255, 0.34), transparent 58%),
+        radial-gradient(820px 480px at 100% 0%, rgba(0, 209, 255, 0.10), transparent 52%),
+        var(--bg);
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .nav {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 18px;
+      height: 64px;
+      padding: 0 22px;
+      background: rgba(7, 8, 12, 0.78);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-right: auto; }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .brand b { font-size: 13px; letter-spacing: 0.16em; font-weight: 700; }
+    .nav a.jump { color: var(--dim); text-decoration: none; font-size: 14px; }
+    .nav a.jump:hover { color: var(--text); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 42px; padding: 0 16px;
+      border-radius: 10px; border: 1px solid transparent;
+      text-decoration: none; font-weight: 650; font-size: 14px;
+      cursor: pointer;
+    }
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(135deg, #7c5cff, #5b3cff);
+      box-shadow: 0 8px 24px rgba(124, 92, 255, 0.32);
+    }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { color: var(--text); background: transparent; border-color: var(--line2); }
+    .btn.ghost:hover { background: rgba(255, 255, 255, 0.04); }
+    .btn[aria-busy="true"] { opacity: 0.7; }
+    .hero { padding: 72px 0 28px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: end; }
+    .kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0 0 16px; padding: 5px 10px;
+      border: 1px solid var(--line2); border-radius: 999px;
+      color: var(--violet2); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .kicker i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: block; }
+    h1 { margin: 0; font-size: clamp(46px, 6vw, 76px); line-height: 0.96; letter-spacing: -0.035em; font-weight: 720; }
+    h1 span { color: var(--violet2); }
+    .lede { margin: 18px 0 0; max-width: 38rem; color: var(--dim); font-size: 18px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .fine { margin: 12px 0 0; color: var(--faint); font-size: 13px; }
+    .fine b { color: var(--dim); font-weight: 600; }
+    .hero-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 40%), var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow);
+    }
+    .hero-card p { margin: 0 0 12px; color: var(--faint); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .shot {
+      margin: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      background: #090b12;
+      box-shadow: var(--shadow);
+    }
+    .shot button {
+      display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in;
+    }
+    .shot img { width: 100%; height: auto; }
+    .shot figcaption { padding: 12px 14px 14px; color: var(--dim); font-size: 14px; }
+    .shot figcaption strong { color: var(--text); font-weight: 650; }
+    section { padding: 28px 0 10px; }
+    .section-h { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin: 18px 0 14px; }
+    h2 { margin: 0; font-size: 28px; letter-spacing: -0.03em; }
+    .section-h span { color: var(--faint); font-size: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
+    .feature {
+      display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 28px;
+      align-items: center;
+      margin: 34px 0;
+    }
+    .feature.reverse { grid-template-columns: 0.85fr 1.15fr; }
+    .feature.reverse .copy { order: 2; }
+    .eyebrow { margin: 0 0 6px; color: var(--violet2); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+    .copy h3 { margin: 0; font-size: 32px; letter-spacing: -0.03em; line-height: 1.1; }
+    .copy p { margin: 12px 0 0; color: var(--dim); font-size: 16px; }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 10px 0 28px; }
+    .fact {
+      padding: 16px 16px 14px;
+      background: rgba(17, 20, 28, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+    .fact b { display: block; margin-bottom: 4px; font-size: 15px; }
+    .fact span { color: var(--dim); font-size: 14px; }
+    .close {
+      margin: 20px 0 64px;
+      padding: 28px;
+      border-radius: 18px;
+      border: 1px solid var(--line2);
+      background:
+        radial-gradient(600px 180px at 0% 0%, rgba(124, 92, 255, 0.22), transparent 60%),
+        var(--bg2);
+      display: flex; justify-content: space-between; gap: 20px; align-items: center;
+    }
+    .close h2 { font-size: 34px; }
+    .close p { margin: 8px 0 0; color: var(--dim); }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 22px 0 36px;
+      color: var(--faint);
+      font-size: 13px;
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    footer a { color: var(--dim); }
+    .links { display: flex; gap: 14px; flex-wrap: wrap; }
+    #lightbox {
+      position: fixed; inset: 0; z-index: 40;
+      display: none; place-items: center;
+      padding: 28px;
+      background: rgba(5, 6, 10, 0.86);
+    }
+    #lightbox.open { display: grid; }
+    #lightbox img { max-width: min(1200px, 100%); max-height: 88vh; border-radius: 12px; box-shadow: var(--shadow); }
+    #lightbox button {
+      position: absolute; top: 16px; right: 16px;
+      width: 40px; height: 40px; border-radius: 10px;
+      border: 1px solid var(--line2); background: var(--bg3); color: var(--text);
+      font-size: 20px; cursor: pointer;
+    }
+    @media (max-width: 860px) {
+      .nav a.jump { display: none; }
+      .hero, .grid-2, .feature, .feature.reverse, .facts, .close { grid-template-columns: 1fr; display: grid; }
+      .feature.reverse .copy { order: 0; }
+      .hero { padding-top: 36px; }
+      .close { display: block; }
+      .close .actions { margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">
+      <img src="icon.png" alt="" />
+      <b>STUDIO 4000</b>
+    </a>
+    <a class="jump" href="#screens">Screens</a>
+    <a class="jump" href="#features">Features</a>
+    <a class="jump" href="https://github.com/Cruz4/Studio-4000">GitHub</a>
+    <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download</a>
+  </header>
+
+  <main id="top">
+    <div class="wrap hero">
+      <div>
+        <p class="kicker"><i></i> Free Windows DAW</p>
+        <h1>Record the <span>future.</span></h1>
+        <p class="lede">A recording studio on your own computer. Record, arrange, mix, and play with someone else. Fully free means the songs you release too: there is no fee, no account, and the music you make is yours.</p>
+        <div class="actions">
+          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download for Windows</a>
+          <a class="btn ghost" href="https://github.com/Cruz4/Studio-4000">Source on GitHub</a>
+        </div>
+        <p class="fine" id="release-note">Latest Windows build. Unzip the folder and run <b>Studio 4000.exe</b>.</p>
+      </div>
+      <aside class="hero-card">
+        <p>Same screens as the project</p>
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/welcome.png" aria-label="Open the welcome screenshot">
+            <img src="screenshots/welcome.png" alt="Studio 4000 welcome screen: Record the future, with vocal, band, beat, and podcast starts." />
+          </button>
+        </figure>
+      </aside>
+    </div>
+
+    <div class="wrap" id="screens">
+      <div class="section-h">
+        <h2>The studio</h2>
+        <span>Welcome, arrangement, and mixer</span>
+      </div>
+      <figure class="shot">
+        <button type="button" data-zoom="screenshots/arrange-preview.png" aria-label="Open the arrangement screenshot">
+          <img src="screenshots/arrange-preview.png" alt="Arrangement view of a session named Night Drive, with Beat, Lead Vocal, Keys, and Plate tracks." />
+        </button>
+        <figcaption><strong>Arrangement.</strong> Audio, instrument, bus, and FX-return tracks. Move, Time, Split, Slip, and Erase sit on the toolbar.</figcaption>
+      </figure>
+      <div class="grid-2" style="margin-top: 16px">
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/mixer.png" aria-label="Open the mixer screenshot">
+            <img src="screenshots/mixer.png" alt="Mixer with Beat, Lead Vocal, Keys, Plate, and Master. Faders read 0.0 dB." />
+          </button>
+          <figcaption><strong>Mixer.</strong> Faders stay the same height. Type a dB value, or double-click a fader to put it back at 0 dB.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/editor.png" aria-label="Open the editor screenshot">
+            <img src="screenshots/editor.png" alt="Clip editor showing the Beat bounce waveform, with gain, pan, fades, and pitch." />
+          </button>
+          <figcaption><strong>Editor.</strong> Open a clip and set gain, pan, fades, and pitch next to the arrangement.</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="wrap" id="features">
+      <article class="feature">
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/smart-mix.png" aria-label="Open the Smart Mix screenshot">
+            <img src="screenshots/smart-mix.png" alt="Smart Mix panel with loudness, balance, duck music, and a streaming target of minus 14 LUFS." />
+          </button>
+        </figure>
+        <div class="copy">
+          <p class="eyebrow">On this computer</p>
+          <h3>Smart Mix does the first pass.</h3>
+          <p>Gain, balance, vocal ducking, and a loudness target, as one undo step. It stays on your machine. You can still move every fader after.</p>
+        </div>
+      </article>
+
+      <article class="feature reverse">
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/collab.png" aria-label="Open the live session screenshot">
+            <img src="screenshots/collab.png" alt="Live session panel with room code FW4N E4, host Maya, guest Leo, and a chat about the chorus." />
+          </button>
+        </figure>
+        <div class="copy">
+          <p class="eyebrow">A room code</p>
+          <h3>Play it with someone else.</h3>
+          <p>One person hosts, the other joins with the code. Voice and screen share are there. Having the app does not put anyone in your session.</p>
+        </div>
+      </article>
+
+      <article class="feature">
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/assistant.png" aria-label="Open the assistant screenshot">
+            <img src="screenshots/assistant.png" alt="AI assistant panel asking for your own model key. The key stays on this computer." />
+          </button>
+        </figure>
+        <div class="copy">
+          <p class="eyebrow">Off until you turn it on</p>
+          <h3>Bring your own model.</h3>
+          <p>The assistant stays off until you add your own key. Studio 4000 does not charge for that key, and it does not keep it.</p>
+        </div>
+      </article>
+
+      <article class="feature reverse">
+        <figure class="shot">
+          <button type="button" data-zoom="screenshots/export.png" aria-label="Open the export screenshot">
+            <img src="screenshots/export.png" alt="Export window for a stereo mix or stems, WAV, 24-bit, with a streaming loudness target." />
+          </button>
+        </figure>
+        <div class="copy">
+          <p class="eyebrow">When the song is ready</p>
+          <h3>Export the mix, or the stems.</h3>
+          <p>A stereo file through the master, or one file per track. Pick the loudness and leave. Then take it to <a href="https://akasheet.com/?ref=studio4000">AKAsheet</a> if you want it in front of people.</p>
+        </div>
+      </article>
+
+      <div class="facts">
+        <div class="fact"><b>Effects</b><span>Built-in processors, a parametric EQ, Airwindows, and your own VST3 plug-ins. Drag the chain, open a few at once.</span></div>
+        <div class="fact"><b>Instruments</b><span>A piano roll and the computer keyboard. Loop recording, takes, and comping are on the audio side.</span></div>
+        <div class="fact"><b>It updates itself</b><span>Online, the app checks the public project when it opens and replaces itself when a newer build is published.</span></div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="close">
+        <div>
+          <h2>Take the latest build.</h2>
+          <p class="fine" id="release-note-2" style="margin:8px 0 0">The button always downloads the newest Windows zip from the public project. Unzip it and run Studio 4000.exe.</p>
+        </div>
+        <div class="actions" style="margin-top:0">
+          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download for Windows</a>
+          <a class="btn ghost" href="https://buymeacoffee.com/b4bdev">Buy me a coffee</a>
+        </div>
+      </div>
+      <footer>
+        <div>Studio 4000 is an independent project. It is not made by Steinberg, JUCE, Tracktion, or Airwindows. VST is a registered trademark of Steinberg Media Technologies GmbH. ASIO is a trademark of Steinberg.</div>
+        <div class="links">
+          <a href="https://github.com/Cruz4/Studio-4000">GitHub</a>
+          <a href="https://akasheet.com/?ref=studio4000">AKAsheet</a>
+          <a href="mailto:akasheet.support@gmail.com">akasheet.support@gmail.com</a>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <div id="lightbox" hidden>
+    <button type="button" id="lightbox-close" aria-label="Close">×</button>
+    <img id="lightbox-img" alt="" />
+  </div>
+
+  <script>
+    (function () {
+      var API = "https://api.github.com/repos/Cruz4/Studio-4000/releases/latest";
+
+      function pickZip(release) {
+        var assets = (release && release.assets) || [];
+        for (var i = 0; i < assets.length; i++) {
+          if (/win64\.zip$/i.test(assets[i].name)) return assets[i];
+        }
+        return null;
+      }
+
+      function latestZip() {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 8000);
+        return fetch(API, {
+          headers: { Accept: "application/vnd.github+json" },
+          signal: ctrl.signal
+        }).then(function (res) {
+          clearTimeout(timer);
+          if (!res.ok) throw new Error("status");
+          return res.json();
+        }).then(function (release) {
+          var asset = pickZip(release);
+          if (!asset || !asset.browser_download_url) throw new Error("asset");
+          return { release: release, asset: asset };
+        }).catch(function () {
+          clearTimeout(timer);
+          return null;
+        });
+      }
+
+      function mb(bytes) {
+        if (!bytes) return "";
+        return (bytes / 1048576).toFixed(1) + " MB";
+      }
+
+      function latestHref(fileName) {
+        return "https://github.com/Cruz4/Studio-4000/releases/latest/download/" + encodeURIComponent(fileName);
+      }
+
+      function pointAt(fileName) {
+        var href = latestHref(fileName);
+        Array.prototype.forEach.call(document.querySelectorAll("[data-download]"), function (link) {
+          link.setAttribute("href", href);
+        });
+      }
+
+      function note(el, name, size, markName) {
+        if (!el) return;
+        el.textContent = "";
+        if (markName) {
+          var strong = document.createElement("b");
+          strong.textContent = name;
+          el.appendChild(strong);
+          el.appendChild(document.createTextNode((size ? " · " + size : "") + ". Unzip the folder and run "));
+          var exe = document.createElement("b");
+          exe.textContent = "Studio 4000.exe";
+          el.appendChild(exe);
+          el.appendChild(document.createTextNode("."));
+          return;
+        }
+        el.textContent = name + (size ? " · " + size : "") + ". Unzip the folder and run Studio 4000.exe.";
+      }
+
+      function showRelease(found) {
+        if (!found) return;
+        pointAt(found.asset.name);
+        var size = mb(found.asset.size);
+        var name = found.release.name || "Latest build";
+        note(document.getElementById("release-note"), name, size, true);
+        note(document.getElementById("release-note-2"), name, size, false);
+      }
+
+      latestZip().then(showRelease);
+
+      document.addEventListener("pointerdown", function (e) {
+        var link = e.target.closest ? e.target.closest("[data-download]") : null;
+        if (!link) return;
+        latestZip().then(showRelease);
+      });
+
+      var box = document.getElementById("lightbox");
+      var pic = document.getElementById("lightbox-img");
+      function close() {
+        box.classList.remove("open");
+        box.hidden = true;
+        pic.removeAttribute("src");
+      }
+      Array.prototype.forEach.call(document.querySelectorAll("[data-zoom]"), function (button) {
+        button.addEventListener("click", function () {
+          var img = button.querySelector("img");
+          pic.src = button.getAttribute("data-zoom");
+          pic.alt = img ? img.alt : "";
+          box.hidden = false;
+          box.classList.add("open");
+        });
+      });
+      document.getElementById("lightbox-close").addEventListener("click", close);
+      box.addEventListener("click", function (e) { if (e.target === box) close(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+    })();
+  </script>
+</body>
+</html>
