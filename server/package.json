@@ -1,0 +1,17 @@
+{
+  "name": "studio4000-session-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Room relay for Studio 4000 live sessions: presence, project sync messages and WebRTC signalling",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

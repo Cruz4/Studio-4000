@@ -1,0 +1,62 @@
+diff --git a/modules/tracktion_engine/plugins/effects/tracktion_Chorus.cpp b/modules/tracktion_engine/plugins/effects/tracktion_Chorus.cpp
+index bb9403a..912d002 100644
+--- a/modules/tracktion_engine/plugins/effects/tracktion_Chorus.cpp
++++ b/modules/tracktion_engine/plugins/effects/tracktion_Chorus.cpp
+@@ -12,16 +12,43 @@ namespace tracktion::inline engine {
+ 
+ ChorusPlugin::ChorusPlugin (PluginCreationInfo info)  : Plugin (info)
+ {
++    // Studio 4000: chorus parameters
++    depthParam = addParam ("depthMs", TRANS("Depth"), { 0.0f, 30.0f },
++                           [] (float value)           { return juce::String (value, 1) + " ms"; },
++                           [] (const juce::String& s) { return s.getFloatValue(); });
++
++    speedParam = addParam ("speedHz", TRANS("Speed"), { 0.05f, 8.0f },
++                           [] (float value)           { return juce::String (value, 2) + " Hz"; },
++                           [] (const juce::String& s) { return s.getFloatValue(); });
++
++    widthParam = addParam ("width", TRANS("Width"), { 0.0f, 1.0f },
++                           [] (float value)           { return juce::String (juce::roundToInt (value * 100.0f)) + "%"; },
++                           [] (const juce::String& s) { return s.getFloatValue() / 100.0f; });
++
++    mixParam   = addParam ("mixProportion", TRANS("Mix"), { 0.0f, 1.0f },
++                           [] (float value)           { return juce::String (juce::roundToInt (value * 100.0f)) + "%"; },
++                           [] (const juce::String& s) { return s.getFloatValue() / 100.0f; });
++
+     auto um = getUndoManager();
+ 
+     depthMs.referTo (state, IDs::depthMs, um, 3.0f);
+     speedHz.referTo (state, IDs::speedHz, um, 1.0f);
+     width.referTo (state, IDs::width, um, 0.5f);
+     mixProportion.referTo (state, IDs::mixProportion, um, 0.5f);
++
++    depthParam->attachToCurrentValue (depthMs);
++    speedParam->attachToCurrentValue (speedHz);
++    widthParam->attachToCurrentValue (width);
++    mixParam->attachToCurrentValue (mixProportion);
+ }
+ 
+ ChorusPlugin::~ChorusPlugin()
+ {
++    depthParam->detachFromCurrentValue();
++    speedParam->detachFromCurrentValue();
++    widthParam->detachFromCurrentValue();
++    mixParam->detachFromCurrentValue();
++
+     notifyListenersOfDeletion();
+ }
+ 
+diff --git a/modules/tracktion_engine/plugins/effects/tracktion_Chorus.h b/modules/tracktion_engine/plugins/effects/tracktion_Chorus.h
+index e6e0db0..2166a5d 100644
+--- a/modules/tracktion_engine/plugins/effects/tracktion_Chorus.h
++++ b/modules/tracktion_engine/plugins/effects/tracktion_Chorus.h
+@@ -33,7 +33,9 @@ public:
+ 
+     void restorePluginStateFromValueTree (const juce::ValueTree&) override;
+ 
++    // Studio 4000: chorus parameters
+     juce::CachedValue<float> depthMs, width, mixProportion, speedHz;
++    AutomatableParameter::Ptr depthParam, speedParam, widthParam, mixParam;
+ 
+ private:
+     //==============================================================================

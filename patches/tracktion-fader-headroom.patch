@@ -1,0 +1,29 @@
+diff --git a/modules/tracktion_engine/plugins/internal/tracktion_VolumeAndPan.cpp b/modules/tracktion_engine/plugins/internal/tracktion_VolumeAndPan.cpp
+index 85a7fa9..85e3760 100644
+--- a/modules/tracktion_engine/plugins/internal/tracktion_VolumeAndPan.cpp
++++ b/modules/tracktion_engine/plugins/internal/tracktion_VolumeAndPan.cpp
+@@ -112,12 +112,13 @@ VolumeAndPanPlugin::VolumeAndPanPlugin (PluginCreationInfo info, bool isMasterVo
+ 
+     if (isMasterVolumeNode)
+     {
+-        addAutomatableParameter (volParam = new MasterVolParameter ("master volume", TRANS("Master volume"), *this, { 0.0f, 1.0f }));
++        // Studio 4000: fader headroom +15 dB. Position 1 is still +6 dB, so older sessions keep their level.
++        addAutomatableParameter (volParam = new MasterVolParameter ("master volume", TRANS("Master volume"), *this, { 0.0f, decibelsToVolumeFaderPosition (15.0f) }));
+         addAutomatableParameter (panParam = new MasterPanParameter ("master pan", TRANS("Master pan"), *this, { -1.0f, 1.0f }));
+     }
+     else
+     {
+-        addAutomatableParameter (volParam = new VolAutomatableParameter ("volume", TRANS("Volume"), *this, { 0.0f, 1.0f }));
++        addAutomatableParameter (volParam = new VolAutomatableParameter ("volume", TRANS("Volume"), *this, { 0.0f, decibelsToVolumeFaderPosition (15.0f) }));
+         addAutomatableParameter (panParam = new PanAutomatableParameter ("pan", TRANS("Pan"), *this, { -1.0f, 1.0f }));
+     }
+ 
+@@ -294,7 +295,7 @@ void VolumeAndPanPlugin::setVolumeDb (float vol)
+ 
+ void VolumeAndPanPlugin::setSliderPos (float newV)
+ {
+-    volParam->setParameter (juce::jlimit (0.0f, 1.0f, newV), juce::sendNotification);
++    volParam->setParameter (juce::jlimit (0.0f, decibelsToVolumeFaderPosition (15.0f), newV), juce::sendNotification);
+ }
+ 
+ void VolumeAndPanPlugin::setPan (float p)

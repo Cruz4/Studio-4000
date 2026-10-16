@@ -1,0 +1,29 @@
+diff --git a/modules/tracktion_engine/playback/devices/tracktion_InputDevice.cpp b/modules/tracktion_engine/playback/devices/tracktion_InputDevice.cpp
+index c0675a3..f672f3a 100644
+--- a/modules/tracktion_engine/playback/devices/tracktion_InputDevice.cpp
++++ b/modules/tracktion_engine/playback/devices/tracktion_InputDevice.cpp
+@@ -190,10 +190,23 @@ bool InputDeviceInstance::isLivePlayEnabled (const Track& t) const
+         if (dest->targetID != t.itemID)
+             continue;
+ 
++        // Studio 4000 patch: a track's own monitor setting ("s4monitor") wins over the device-wide mode, so one
++        // track monitoring a shared input doesn't route that input through every other track using it.
++        const auto perTrack = t.state.getProperty ("s4monitor").toString();
++
++        // "auto" hears the input only while this track is actually recording, not merely while it is
++        // armed or while the transport is playing. Otherwise an empty track's effects pick up the mic
++        // (or a loopback of whatever is playing on another track) as soon as you press play.
++        const bool recordingThis = isRecordingEnabled (t.itemID) && edit.getTransport().isRecording();
++
++        if (perTrack == "on")   return true;
++        if (perTrack == "off")  return false;
++        if (perTrack == "auto") return recordingThis;
++
+         switch (owner.getMonitorMode())
+         {
+             case InputDevice::MonitorMode::on:          return true;
+-            case InputDevice::MonitorMode::automatic:   return isRecordingEnabled (t.itemID);
++            case InputDevice::MonitorMode::automatic:   return recordingThis;
+             case InputDevice::MonitorMode::off:         return false;
+         };
+     }

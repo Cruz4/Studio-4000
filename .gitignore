@@ -1,0 +1,17 @@
+/build/
+/dist/
+/ui/node_modules/
+/ui/dist/
+/mcp/node_modules/
+/server/node_modules/
+/external/tracktion_engine/
+/external/asiosdk/
+/external/webview2/
+/external/vst2sdk/
+/vsts/
+*.user
+.vs/
+/build-log.txt
+/build-native.log
+/selftest-err.txt
+/selftest-out.txt

@@ -1,0 +1,54 @@
+name: Publish Windows build
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Tracktion Engine and WebView2
+        shell: pwsh
+        run: .\tools\fetch-deps.ps1
+
+      - name: Build
+        shell: pwsh
+        run: .\build.ps1
+
+      - name: Package
+        shell: pwsh
+        run: .\tools\package.ps1
+
+      - name: Publish the latest build
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $sha = (git rev-parse HEAD).Trim()
+          $zip = Get-ChildItem dist\Studio4000-*-win64.zip | Select-Object -First 1
+          if (-not $zip) { throw "No package was produced" }
+          $tag = "b-$sha"
+          if (gh release view $tag) {
+            Write-Output "Release $tag is already published."
+          } else {
+            # Titles run Studio 4000 v0.0.1, v0.0.2, v0.0.3… The tag stays b-<commit> so installed copies can tell a new build from an old one.
+            $best = [version]"0.0.0"
+            foreach ($line in @(gh release list --limit 100)) {
+              if ($line -match "Studio 4000 v(\d+\.\d+\.\d+)") {
+                $found = [version]$Matches[1]
+                if ($found -gt $best) { $best = $found }
+              }
+            }
+            $patch = $best.Build + 1
+            if ($patch -lt 1) { $patch = 1 }
+            $title = "Studio 4000 v$($best.Major).$($best.Minor).$patch"
+            gh release create $tag $zip.FullName --title $title --notes-file NEWS.md --latest
+            Write-Output "Published $title as $tag"
+          }

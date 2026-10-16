@@ -1,0 +1,32 @@
+Studio 4000 Free Use License
+Copyright (c) 2026 b4bdev
+
+Studio 4000 is free to use.
+
+1. Use
+You may run the Studio 4000 application for any purpose, personal or commercial, with no fee to the author and no royalty on the music, speech, or other recordings you make with it. Those recordings and session files are yours.
+
+2. Share the app
+You may copy and share the unmodified Studio 4000 application, including the portable folder and zip, as long as you keep this license, DISCLAIMER.md, PRIVACY.md, and NOTICE.md with it.
+
+3. The original source
+The original Studio 4000 source in this repository (everything except the third-party material named in NOTICE.md) may be used, studied, modified, and shared, including in commercial work, if you:
+   a. keep this copyright notice and license with the source, and
+   b. keep the third-party notices, and
+   c. mark files you changed.
+
+4. What this license does not grant
+This license does not grant any right in third-party software, names, or trademarks. In particular:
+   - JUCE is available under the AGPLv3, or under a commercial license from its publisher. https://juce.com
+   - Tracktion Engine is available under the GPLv3, or under a commercial license from its publisher. https://github.com/Tracktion/tracktion_engine
+   - Airwindows effects are MIT.
+   - SoundTouch is LGPL.
+   - The Steinberg ASIO SDK is under Steinberg's own license or, alternatively, the GPL-3.0. It is not included in this repository.
+   - VST is a registered trademark of Steinberg Media Technologies GmbH. ASIO is a trademark of Steinberg.
+
+If you build or ship a binary that includes JUCE or Tracktion Engine and you do not hold a commercial license for them, that combined work must also meet the terms of those licenses, including their source-offer rules. This free-use license does not change those terms and is not a substitute for them.
+
+5. No warranty
+The software is provided as is, without warranty of any kind. Read DISCLAIMER.md.
+
+A tip is optional: https://buymeacoffee.com/b4bdev

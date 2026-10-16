@@ -1,0 +1,7 @@
+{
+  "tracktion_engine": {
+    "url": "https://github.com/Tracktion/tracktion_engine.git",
+    "commit": "38d5a27"
+  },
+  "webview2": "1.0.3485.44"
+}
