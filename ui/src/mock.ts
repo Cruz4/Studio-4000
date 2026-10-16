@@ -174,6 +174,19 @@ export function createMock(emit: Emit) {
     "plugin.add": (p) => { const entry = (handlers["plugins.list"]({}) as { plugins: { id: string; name: string; synth: boolean }[] }).plugins.find((x) => x.id === p.plugin);
       const pl = { ...plugin(p.plugin, entry?.name ?? p.plugin), synth: !!entry?.synth }; const list = p.trackId === "master" ? project!.master.plugins : findTrack(p.trackId)!.plugins; list.push(pl); changed(); return pl; },
     "plugin.remove": (p) => { for (const tr of project!.tracks) tr.plugins = tr.plugins.filter((x) => x.id !== p.id); project!.master.plugins = project!.master.plugins.filter((x) => x.id !== p.id); changed(); return true; },
+    "plugin.move": (p) => {
+      const lists = [...project!.tracks.map((t) => t.plugins), project!.master.plugins];
+      for (const list of lists) {
+        const from = list.findIndex((x) => x.id === p.id);
+        if (from < 0) continue;
+        const to = Math.max(0, Math.min(list.length - 1, Number(p.index)));
+        const [item] = list.splice(from, 1);
+        list.splice(to, 0, item);
+        changed();
+        return true;
+      }
+      return false;
+    },
     "plugin.set": (p) => { for (const pl of [...project!.tracks.flatMap((t) => t.plugins), ...project!.master.plugins]) if (pl.id === p.id) pl.enabled = p.enabled; changed(); return true; },
     "plugin.params": (p) => structuredClone(findPlugin(p.id)?.params ?? []),
     "plugin.setParam": (p) => {

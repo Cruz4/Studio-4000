@@ -5,18 +5,19 @@
   Image paths are relative, so the page works as a static route on any domain.
 
   DOWNLOAD BUTTON
-  The button is a normal link. Its href is:
-    https://github.com/Cruz4/Studio-4000/releases/latest/download/<zip name>
-  GitHub resolves /releases/latest/ at the moment of the click, so the file is
-  whatever zip is on the release marked Latest. Do not preventDefault, and do
-  not swap in a releases/download/b-<sha>/ URL. That would pin an old build.
+  Do not put a version in the download URL. Studio4000-0.1.0-win64.zip and
+  Studio4000-0.1.1-win64.zip are specific files. The button must not keep
+  requesting one of those names.
 
-  On load, the page asks
+  On every click, ask:
     https://api.github.com/repos/Cruz4/Studio-4000/releases/latest
-  and, if the Windows zip was renamed (Studio4000-0.2.0-win64.zip and so on),
-  rewrites the href to /releases/latest/download/<that new name>.
-  If the request fails, the href stays:
-    https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip
+  Find the asset whose name ends in win64.zip, whatever the version in that
+  name is, and go to its browser_download_url. That is the zip on the release
+  GitHub marks Latest at that moment.
+
+  The href before JavaScript runs is only
+    https://github.com/Cruz4/Studio-4000/releases/latest
+  which is the latest release page, not a pinned zip.
 
   Do not cache the zip on the other domain. The button must keep asking GitHub.
 
@@ -212,7 +213,7 @@
     <a class="jump" href="#screens">Screens</a>
     <a class="jump" href="#features">Features</a>
     <a class="jump" href="https://github.com/Cruz4/Studio-4000">GitHub</a>
-    <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download</a>
+    <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest">Download</a>
   </header>
 
   <main id="top">
@@ -222,7 +223,7 @@
         <h1>Record the <span>future.</span></h1>
         <p class="lede">A recording studio on your own computer. Record, arrange, mix, and play with someone else. Fully free means the songs you release too: there is no fee, no account, and the music you make is yours.</p>
         <div class="actions">
-          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download for Windows</a>
+          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest">Download for Windows</a>
           <a class="btn ghost" href="https://github.com/Cruz4/Studio-4000">Source on GitHub</a>
         </div>
         <p class="fine" id="release-note">Latest Windows build. Unzip the folder and run <b>Studio 4000.exe</b>.</p>
@@ -331,7 +332,7 @@
           <p class="fine" id="release-note-2" style="margin:8px 0 0">The button always downloads the newest Windows zip from the public project. Unzip it and run Studio 4000.exe.</p>
         </div>
         <div class="actions" style="margin-top:0">
-          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest/download/Studio4000-0.1.0-win64.zip">Download for Windows</a>
+          <a class="btn primary" data-download href="https://github.com/Cruz4/Studio-4000/releases/latest">Download for Windows</a>
           <a class="btn ghost" href="https://buymeacoffee.com/b4bdev">Buy me a coffee</a>
         </div>
       </div>
@@ -388,17 +389,6 @@
         return (bytes / 1048576).toFixed(1) + " MB";
       }
 
-      function latestHref(fileName) {
-        return "https://github.com/Cruz4/Studio-4000/releases/latest/download/" + encodeURIComponent(fileName);
-      }
-
-      function pointAt(fileName) {
-        var href = latestHref(fileName);
-        Array.prototype.forEach.call(document.querySelectorAll("[data-download]"), function (link) {
-          link.setAttribute("href", href);
-        });
-      }
-
       function note(el, name, size, markName) {
         if (!el) return;
         el.textContent = "";
@@ -418,7 +408,6 @@
 
       function showRelease(found) {
         if (!found) return;
-        pointAt(found.asset.name);
         var size = mb(found.asset.size);
         var name = found.release.name || "Latest build";
         note(document.getElementById("release-note"), name, size, true);
@@ -427,10 +416,18 @@
 
       latestZip().then(showRelease);
 
-      document.addEventListener("pointerdown", function (e) {
-        var link = e.target.closest ? e.target.closest("[data-download]") : null;
-        if (!link) return;
-        latestZip().then(showRelease);
+      Array.prototype.forEach.call(document.querySelectorAll("[data-download]"), function (link) {
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          link.setAttribute("aria-busy", "true");
+          latestZip().then(function (found) {
+            link.removeAttribute("aria-busy");
+            showRelease(found);
+            var url = found && found.asset.browser_download_url;
+            if (!url) return;
+            window.location.assign(url);
+          });
+        });
       });
 
       var box = document.getElementById("lightbox");

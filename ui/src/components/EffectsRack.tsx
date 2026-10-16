@@ -1,5 +1,6 @@
-// The dock's Effects tab: the selected track's inserts in a horizontal row.
+// The dock's Effects tab: the selected track's inserts, stacked in chain order.
 import { useState } from "react";
+import { beginPluginReorder } from "../pluginReorder";
 import { act, toast, useStore } from "../store";
 import type { Plugin } from "../types";
 import { cx } from "../util";
@@ -15,59 +16,9 @@ function EffectCard({ plugin, index, expanded, onToggle }: {
   const accent = accentFor(plugin);
 
   const reorder = (e: React.PointerEvent) => {
-    if (e.button !== 0 || (e.target as HTMLElement).closest("button, input, select, textarea")) return;
     const host = (e.currentTarget as HTMLElement).closest<HTMLElement>(".fx-card");
-    const row = host?.parentElement;
-    if (!host || !row) return;
-    const x0 = e.clientX, y0 = e.clientY;
-    let moved = false;
-    let dest = index;
-    let ghost: HTMLDivElement | null = null;
-    const clear = () => row.querySelectorAll(".fx-held, .fx-drop-before, .fx-drop-after").forEach((el) => el.classList.remove("fx-held", "fx-drop-before", "fx-drop-after"));
-    const move = (ev: PointerEvent) => {
-      if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
-      if (!moved) {
-        moved = true;
-        document.body.classList.add("reordering");
-        ghost = document.createElement("div");
-        ghost.className = "fx-ghost";
-        ghost.innerHTML = "<b></b><small></small>";
-        document.body.appendChild(ghost);
-      }
-      clear();
-      host.classList.add("fx-held");
-      const cards = [...row.querySelectorAll<HTMLElement>("[data-plugin-index]")];
-      const hit = cards.find((c) => {
-        const b = c.getBoundingClientRect();
-        return ev.clientX >= b.left && ev.clientX < b.right;
-      });
-      let where = "Pick a spot";
-      if (hit?.dataset.pluginIndex != null) {
-        const b = hit.getBoundingClientRect();
-        const after = ev.clientX > b.left + b.width / 2;
-        dest = Number(hit.dataset.pluginIndex) + (after ? 1 : 0);
-        hit.classList.add(after ? "fx-drop-after" : "fx-drop-before");
-        const name = hit.querySelector(".fx-card-name")?.textContent?.trim() || "this effect";
-        where = dest === index ? "Stays here" : after ? `After ${name}` : `Before ${name}`;
-      }
-      if (ghost) {
-        ghost.style.left = `${ev.clientX + 14}px`;
-        ghost.style.top = `${ev.clientY + 16}px`;
-        ghost.querySelector("b")!.textContent = plugin.name;
-        ghost.querySelector("small")!.textContent = where;
-      }
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      clear();
-      ghost?.remove();
-      document.body.classList.remove("reordering");
-      if (!moved) onToggle();
-      else if (dest !== index) act("plugin.move", { id: plugin.id, index: dest });
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    if (!host) return;
+    beginPluginReorder(e, { id: plugin.id, name: plugin.name, index, axis: "y", item: host, onClick: onToggle });
   };
 
   return (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./types";
+import { pluginDropIndex } from "./pluginReorder";
 import { dbToFader, faderToDb, formatBars, formatDb, formatTime, gridSeconds, meterPos, noteName, parseDb, secondsPerBar, shade, snap } from "./util";
 
 const song = (bpm: number, timeSig: [number, number] = [4, 4]) => ({ bpm, timeSig }) as Project;
@@ -33,6 +34,17 @@ describe("musical time", () => {
   it("formats clock time", () => {
     expect(formatTime(65.5)).toBe("1:05.500");
     expect(formatTime(65.5, false)).toBe("1:05");
+  });
+});
+
+describe("effect order", () => {
+  it("lands on the effect you drag onto", () => {
+    expect(pluginDropIndex(0, 1, true)).toBe(1);
+    expect(pluginDropIndex(0, 2, true)).toBe(2);
+    expect(pluginDropIndex(2, 0, false)).toBe(0);
+    expect(pluginDropIndex(2, 1, false)).toBe(1);
+    expect(pluginDropIndex(0, 1, false)).toBe(0);
+    expect(pluginDropIndex(1, 1, true)).toBe(1);
   });
 });
 

@@ -303,11 +303,49 @@ void registerPluginApi (AppEngine& app)
         if (list == nullptr)
             throw RpcError ("Plug-in is not in a chain");
 
-        auto state = plugin->state;
-        auto parent = state.getParent();
+        // `index` is the plug-in's place among the non-strip plug-ins, counting itself.
+        const int want = integer (p, "index", -1);
+        const auto plugins = list->getPlugins();
+        const int fromAbs = list->indexOf (plugin.get());
+
+        if (fromAbs < 0)
+            throw RpcError ("Plug-in is not in a chain");
+
+        int visibleCount = 0;
+
+        for (auto* item : plugins)
+            if (! isChannelStripPlugin (*item))
+                ++visibleCount;
+
+        const int visibleTo = want < 0 ? visibleCount - 1 : juce::jlimit (0, juce::jmax (0, visibleCount - 1), want);
+        int insertAbs = list->size();
+        int seen = 0;
+
+        for (int i = 0; i < plugins.size(); ++i)
+        {
+            if (plugins[i].get() == plugin.get())
+                continue;
+
+            if (isChannelStripPlugin (*plugins[i]))
+            {
+                if (seen >= visibleTo)
+                {
+                    insertAbs = i;
+                    break;
+                }
+            }
+            else if (seen++ == visibleTo)
+            {
+                insertAbs = i;
+                break;
+            }
+        }
+
+        if (insertAbs > fromAbs)
+            --insertAbs;
+
         plugin->removeFromParent();
-        list->insertPlugin (plugin, absoluteIndexForInsert (*list, integer (p, "index", -1)), nullptr);
-        (void) parent;
+        list->insertPlugin (plugin, insertAbs, nullptr);
         return var (true);
     });
 

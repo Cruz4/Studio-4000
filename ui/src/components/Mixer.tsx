@@ -8,6 +8,7 @@ import { clamp, cx, dbToFader, faderToDb, formatDb, shade } from "../util";
 import { toggleTrackFx, trackFxOn } from "../commands";
 import { openMenu } from "./ContextMenu";
 import { accentFor, shortName } from "./fx/registry";
+import { beginPluginReorder } from "../pluginReorder";
 import { beginTrackReorder } from "../trackReorder";
 import { DbField, Icon, Knob, startDrag } from "./ui";
 
@@ -94,61 +95,8 @@ export function InsertSlot({ p, index, compact }: { p: Plugin; index: number; co
       data-plugin={p.id} data-plugin-index={index}
       title={`${p.name}${p.vendor ? ` · ${p.vendor}` : ""}. Click to select, double-click to open, drag to reorder. A line shows where it will land.`}
       onPointerDown={(e) => {
-        if (e.button !== 0 || (e.target as HTMLElement).closest("button")) return;
-        const host = e.currentTarget;
-        const x0 = e.clientX, y0 = e.clientY;
-        const horizontal = !!host.parentElement?.classList.contains("track-fx-list");
-        let moved = false;
-        let dest = index;
-        let ghost: HTMLDivElement | null = null;
-        const clearMarks = () => {
-          host.parentElement?.querySelectorAll(".fx-held, .fx-drop-before, .fx-drop-after").forEach((el) => {
-            el.classList.remove("fx-held", "fx-drop-before", "fx-drop-after");
-          });
-        };
-        const move = (ev: PointerEvent) => {
-          if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
-          if (!moved) {
-            moved = true;
-            document.body.classList.add("reordering");
-            ghost = document.createElement("div");
-            ghost.className = "fx-ghost";
-            ghost.innerHTML = `<b></b><small></small>`;
-            document.body.appendChild(ghost);
-          }
-          clearMarks();
-          host.classList.add("fx-held");
-          const slots = [...(host.parentElement?.querySelectorAll<HTMLElement>("[data-plugin-index]") ?? [])];
-          const hit = slots.find((s) => {
-            const b = s.getBoundingClientRect();
-            return horizontal ? ev.clientX >= b.left && ev.clientX < b.right : ev.clientY >= b.top && ev.clientY < b.bottom;
-          });
-          let where = "Pick a slot";
-          if (hit?.dataset.pluginIndex != null) {
-            const b = hit.getBoundingClientRect();
-            const after = horizontal ? ev.clientX > b.left + b.width / 2 : ev.clientY > b.top + b.height / 2;
-            dest = Number(hit.dataset.pluginIndex) + (after ? 1 : 0);
-            hit.classList.add(after ? "fx-drop-after" : "fx-drop-before");
-            const name = hit.querySelector(".ellipsis")?.textContent?.trim() || "this effect";
-            where = dest === index ? "Stays here" : after ? `After ${name}` : `Before ${name}`;
-          }
-          if (ghost) {
-            ghost.style.left = `${ev.clientX + 14}px`;
-            ghost.style.top = `${ev.clientY + 16}px`;
-            ghost.querySelector("b")!.textContent = p.name;
-            ghost.querySelector("small")!.textContent = where;
-          }
-        };
-        const up = () => {
-          window.removeEventListener("pointermove", move);
-          window.removeEventListener("pointerup", up);
-          clearMarks();
-          ghost?.remove();
-          document.body.classList.remove("reordering");
-          if (moved && dest !== index) act("plugin.move", { id: p.id, index: dest });
-        };
-        window.addEventListener("pointermove", move);
-        window.addEventListener("pointerup", up);
+        const horizontal = !!e.currentTarget.parentElement?.classList.contains("track-fx-list");
+        beginPluginReorder(e, { id: p.id, name: p.name, index, axis: horizontal ? "x" : "y", item: e.currentTarget });
       }}
       onClick={(e) => { e.stopPropagation(); selectPlugin(p.id); }}
       onDoubleClick={(e) => { e.stopPropagation(); openPlugin(p.id, e.currentTarget); }}
