@@ -550,6 +550,24 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-theme="light"] .strip.master { box-shadow: -12px 0 24px rgba(40, 50, 80, .12); }
 :root[data-theme="light"] .fader .cap { border: 1px solid #8b93a7; }
 :root[data-theme="light"] .fader .unity { background: rgba(18, 24, 40, .35); }
+:root[data-theme="light"] .topbar {
+  background: linear-gradient(180deg, rgba(246, 248, 251, .98), rgba(230, 235, 243, .98));
+  box-shadow: 0 1px 0 rgba(18, 24, 40, .05) inset;
+}
+:root[data-theme="light"] .lcd {
+  background: linear-gradient(180deg, #ffffff, #e8edf5);
+  box-shadow: 0 1px 0 #fff, 0 0 0 1px rgba(18, 24, 40, .06) inset;
+}
+:root[data-theme="light"] .clock .main { color: var(--text); text-shadow: none; }
+:root[data-theme="light"] .project-name,
+:root[data-theme="light"] .project-name b { color: var(--text); }
+:root[data-theme="light"] .tbtn:hover,
+:root[data-theme="light"] .menubar-item:hover,
+:root[data-theme="light"] .menubar-item.on { background: rgba(18, 24, 40, .06); }
+:root[data-theme="light"] .browser,
+:root[data-theme="light"] .browser-rail,
+:root[data-theme="light"] .dock,
+:root[data-theme="light"] .keys-strip { background: rgba(246, 248, 251, .96); }
 :root[data-theme="light"] .side { background: rgba(246, 248, 251, .94); }
 :root[data-theme="light"] ::-webkit-scrollbar-thumb { background-color: rgba(18, 24, 40, .22); }
 .akasheet-text:hover .tip, .akasheet-text:focus-visible .tip { display: block; }
