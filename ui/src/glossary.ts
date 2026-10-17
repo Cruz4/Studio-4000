@@ -139,7 +139,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Clip gain",
     group: "Clips",
     where: "The horizontal line across an audio clip",
-    how: "The line is 0 dB in the middle, louder toward the top and quieter toward the bottom. Click it to add a point and drag the point. Double-click or right-click a point to remove it. This is the clip's own level over time, on top of the clip gain in the editor.",
+    how: "The number at the bottom left is the whole clip's volume. Drag it up to make the clip louder, or down to make it quieter. The waveform grows and shrinks as you drag. Shift makes the drag finer, and double-click sets it back to 0 dB. The line across the clip is the level over time, on top of that volume: click it to add a point and drag the point. Double-click or right-click a point to remove it.",
     also: ["volume envelope", "clip volume", "automation on clip"],
   },
   {
@@ -181,7 +181,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Add a track",
     group: "Tracks",
     where: "Right-click a track name or an empty lane, or the Add track row at the bottom",
-    how: "Choose an audio track (Ctrl+T), an instrument (Ctrl+Shift+T), a bus, or an FX return. A bus can be empty. Point a vocal, or any other track, at it with the output under the track name. The FX return is separate and starts with a reverb. Right-click to duplicate or delete the track you clicked.",
+    how: "Choose a stereo or mono audio track, an instrument (Ctrl+Shift+T), a stereo or mono bus, or an FX return. Ctrl+T adds a stereo audio track. A bus can be empty. Point a vocal, or any other track, at it with the output under the track name. The STEREO or MONO label on the track switches it later. A mono track plays one channel, and a mono bus sums everything sent to it into one channel. The FX return is separate and starts with a reverb. Right-click to duplicate or delete the track you clicked.",
     also: ["new track", "instrument track", "bus", "fx return", "group"],
   },
   {
@@ -202,7 +202,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Effects panel",
     group: "Effects",
     where: "The FX button in the top bar. Effects is the first tab along the bottom",
-    how: "Shows the effects on the selected track. Switch to Clip effects to edit the chain on the selected audio clip instead. Drag an effect in from the browser, or press Add effect. The dashed box at the end of the row is the drop target.",
+    how: "Shows the effects on the selected track. Switch to Clip effects to edit the chain on the selected audio clip instead. The Dry / Wet bar beside the selected tab blends that chain: Dry is the sound before the effects, Wet is the full chain. Track effects and clip effects each keep their own mix, and only the selected one is shown. Double-click the bar for fully wet. Drag an effect in from the browser, or press Add effect. The dashed box at the end of the row is the drop target.",
     also: ["fx", "plugin", "plug-in", "inserts"],
   },
   {
@@ -279,7 +279,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Save, open, and export",
     group: "Files and settings",
     where: "The File menu, and the export button on the right of the top bar",
-    how: "Ctrl+N starts a session, Ctrl+O opens one, Ctrl+S saves. File → Save as, or Ctrl+Shift+S, opens a window where you name the session and choose the folder. Projects are .s4000 files. Ctrl+E exports the mix or stems. Archive project zips the session with its audio. Show project folder opens the folder on disk.",
+    how: "Ctrl+N starts a session, Ctrl+O opens one, Ctrl+S saves. File → Save as, or Ctrl+Shift+S, opens a window where you name the session and choose the folder. Projects are .s4000 files. Ctrl+E exports the mix or stems, then asks you to name the file and choose the folder. Formats include WAV, MP3, and MP3 and WAV together. Archive project zips the session with its audio. Show project folder opens the folder on disk.",
     also: ["save", "open", "export", "stems", "bounce", "archive"],
   },
   {

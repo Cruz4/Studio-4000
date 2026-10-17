@@ -7,13 +7,33 @@ import type { Track } from "./types";
 
 const CHAIN_TIP = "Saves this track's effects as a chain you can drop onto another track.";
 
+/** Stereo or mono, for an audio track or a bus. */
+export function formatChoices(kind: "audio" | "group", place: { afterId?: string; beforeId?: string } = {}): MenuItem[] {
+  const noun = kind === "group" ? "Bus" : "Audio Track";
+  const icon = kind === "group" ? "layers" : "mic";
+  return [
+    { label: `Stereo ${noun}`, icon, run: () => addTrack(kind, place, 2) },
+    { label: `Mono ${noun}`, icon, run: () => addTrack(kind, place, 1) },
+  ];
+}
+
+/** Opens the stereo / mono choice for a track or bus that already exists. */
+export function openFormatMenu(e: { clientX: number; clientY: number; preventDefault: () => void; stopPropagation: () => void }, track: Track) {
+  e.preventDefault();
+  e.stopPropagation();
+  openMenu(e, [
+    { label: "Stereo", icon: "layers", run: () => act("track.set", { id: track.id, channels: 2 }) },
+    { label: "Mono", icon: "layers", run: () => act("track.set", { id: track.id, channels: 1 }) },
+  ]);
+}
+
 /** New tracks land directly under the one this menu was opened on. */
 export function createTrackItems(afterId?: string): MenuItem[] {
   const place = afterId ? { afterId } : {};
   return [
-    { label: "Create New Audio Track", icon: "mic", run: () => addTrack("audio", place) },
+    ...formatChoices("audio", place),
     { label: "Create New Instrument Track", icon: "piano", run: () => addTrack("instrument", place) },
-    { label: "Create New Bus", icon: "layers", run: () => addTrack("group", place) },
+    ...formatChoices("group", place),
     { label: "Create New FX Return", icon: "send", run: () => addTrack("return", place) },
   ];
 }
@@ -28,6 +48,9 @@ export function trackMenu(track: Track, chains: { name: string }[] = []): MenuIt
   return [
     { label: "Rename", icon: "file", run: () => (document.querySelector(`[data-name="${track.id}"]`) as HTMLInputElement | null)?.focus() },
     { colours: { value: track.colour, run: (c) => act("track.set", { id: track.id, colour: c }) } },
+    ...(track.kind === "audio" || track.kind === "group" ? [
+      { label: track.channels === 1 ? "Switch to stereo" : "Switch to mono", icon: "layers" as const, run: () => act("track.set", { id: track.id, channels: track.channels === 1 ? 2 : 1 }) },
+    ] : []),
     { separator: true },
     ...createTrackItems(track.id),
     { separator: true },

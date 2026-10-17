@@ -1,4 +1,5 @@
 #include "Api.h"
+#include "../ChainMix.h"
 #include "../LimiterPlugin.h"
 #include "../LoudnessMeterPlugin.h"
 #include "../StudioFx.h"
@@ -75,21 +76,111 @@ namespace
         return list;
     }
 
+    bool isStripAnchor (const te::Plugin* p)
+    {
+        return dynamic_cast<const te::VolumeAndPanPlugin*> (p) != nullptr
+            || dynamic_cast<const te::LevelMeterPlugin*> (p) != nullptr
+            || dynamic_cast<const LoudnessMeterPlugin*> (p) != nullptr;
+    }
+
+    bool isChainPrefix (te::Plugin& p)
+    {
+        return p.isSynth()
+            || dynamic_cast<const te::AuxReturnPlugin*> (&p) != nullptr
+            || (bool) p.state["s4format"];
+    }
+
     int anchorIndex (te::PluginList& list)
     {
         auto plugins = list.getPlugins();
+        int volume = plugins.size();
 
         for (int i = 0; i < plugins.size(); ++i)
         {
             auto* p = plugins[i].get();
 
-            if (dynamic_cast<te::VolumeAndPanPlugin*> (p) != nullptr
-                 || dynamic_cast<te::LevelMeterPlugin*> (p) != nullptr
-                 || dynamic_cast<LoudnessMeterPlugin*> (p) != nullptr)
+            if (p != nullptr && p->state["s4chain"].toString() == "wet")
                 return i;
+
+            if (volume == plugins.size() && isStripAnchor (p))
+                volume = i;
         }
 
-        return plugins.size();
+        return volume;
+    }
+
+    void movePluginTo (te::PluginList& list, te::Plugin& plugin, int index)
+    {
+        if (list.indexOf (&plugin) == index)
+            return;
+
+        te::Plugin::Ptr keep (&plugin);
+        plugin.removeFromParent();
+        list.insertPlugin (keep, index, nullptr);
+    }
+
+    // Index in the list once `moving` has been taken out. Dry stops before the first effect. Wet stops before the fader.
+    int slotFor (const te::PluginList& list, const te::Plugin& moving, bool drySlot)
+    {
+        int index = 0;
+
+        for (auto* p : list)
+        {
+            if (p == nullptr || p == &moving)
+                continue;
+
+            if (isStripAnchor (p))
+                return index;
+
+            const bool chain = p->state["s4chain"].toString().isNotEmpty();
+
+            if (drySlot && ! chain && ! isChainPrefix (*p))
+                return index;
+
+            ++index;
+        }
+
+        return index;
+    }
+
+    // The dry tap sits in front of the effects. The mix sits just before the fader.
+    void ensureChainMix (AppEngine& app, te::PluginList& list)
+    {
+        auto& edit = app.edit();
+        te::Plugin* dry = nullptr;
+        te::Plugin* wet = nullptr;
+
+        for (auto* p : list)
+        {
+            if (p == nullptr)
+                continue;
+
+            const auto role = p->state["s4chain"].toString();
+
+            if (role == "dry") dry = p;
+            if (role == "wet") wet = p;
+        }
+
+        auto create = [&] (const char* type, const char* role)
+        {
+            auto plugin = edit.getPluginCache().createNewPlugin (type, {});
+
+            if (plugin == nullptr)
+                throw RpcError ("Could not create the wet/dry mix");
+
+            plugin->state.setProperty ("s4chain", role, &edit.getUndoManager());
+            list.insertPlugin (plugin, list.size(), nullptr);
+            return plugin.get();
+        };
+
+        if (dry == nullptr)
+            dry = create (ChainDryPlugin::xmlTypeName, "dry");
+
+        if (wet == nullptr)
+            wet = create (ChainWetPlugin::xmlTypeName, "wet");
+
+        movePluginTo (list, *dry, slotFor (list, *dry, true));
+        movePluginTo (list, *wet, slotFor (list, *wet, false));
     }
 
     int absoluteIndexForInsert (te::PluginList& list, int index)
@@ -591,6 +682,22 @@ void registerPluginApi (AppEngine& app)
         }
 
         return var (added);
+    });
+
+    rpc.add ("chain.setMix", K::write, "Sets how much of a track or clip effect chain is heard against the dry sound",
+             "{trackId|clipId, mix}", [&app] (const var& p)
+    {
+        auto& list = pluginTarget (app, p);
+        ensureChainMix (app, list);
+        const float mix = juce::jlimit (0.0f, 100.0f, (float) num (p, "mix", 100.0));
+
+        for (auto* plugin : list)
+            if (plugin != nullptr && plugin->state["s4chain"].toString() == "wet")
+                for (auto* param : plugin->getAutomatableParameters())
+                    if (param->paramID == "mix")
+                        param->setParameter (mix, juce::sendNotification);
+
+        return var (juce::roundToInt (mix));
     });
 }
 }

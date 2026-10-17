@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMeterCanvas } from "../meters";
 import { type Choice, inputChoices, outputChoices } from "../io";
-import { openTrackMenu, createTrackItems } from "../trackMenu";
+import { openTrackMenu, createTrackItems, openFormatMenu } from "../trackMenu";
 import { act, type Devices, loadDevices, openPlugin, selectPlugin, selectTrack, useStore } from "../store";
 import type { Plugin, Project, Track } from "../types";
 import { clamp, cx, dbToFader, faderToDb, formatDb, shade } from "../util";
@@ -158,6 +158,9 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
       <div className="strip-name" style={{ background: shade(track.colour, 0.3), borderBottom: `2px solid ${track.colour}` }} title={`${track.name}. Drag to reorder. A line shows where it will land.`}>
         <span className="grip" />
         <span className="ellipsis">{track.name}</span>
+        {(track.kind === "audio" || track.kind === "group") && (
+          <button className="kind" title="Choose stereo or mono" onClick={(e) => openFormatMenu(e, track)}>{track.channels === 1 ? "Mono" : "Stereo"}</button>
+        )}
       </div>
       <div className="strip-rack">
       {recordable && (
@@ -220,7 +223,7 @@ function MasterStrip({ project, devices, full }: { project: Project; devices: De
   const db = vol ?? project.master.volumeDb ?? 0;
   const outs = devices?.outputs ?? [];
   return (
-    <div className="strip master">
+    <div className="strip master" data-track="master">
       <div className="strip-name" style={{ background: "linear-gradient(90deg, rgba(124,92,255,.4), rgba(0,209,255,.3))" }}>Master</div>
       <div className="strip-rack">
         {project.master.plugins.map((p, i) => <InsertSlot key={p.id} p={p} index={i} />)}

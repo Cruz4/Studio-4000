@@ -58,6 +58,91 @@ namespace
         // The bus reaches the speakers through the first track inside it.
         at.getOutput().setOutputToDefaultDevice (false);
     }
+
+    int fileChannels (te::Engine& engine, te::AudioClipBase& ac)
+    {
+        if (auto* wave = dynamic_cast<te::WaveAudioClip*> (&ac))
+        {
+            te::AudioFile af (engine, wave->getOriginalFile());
+
+            if (af.isValid())
+                return juce::jmax (1, af.getNumChannels());
+        }
+
+        return 2;
+    }
+
+    void applyClipChannels (AppEngine& app, te::AudioTrack& at, int channels)
+    {
+        for (auto* clip : at.getClips())
+            if (auto* ac = dynamic_cast<te::AudioClipBase*> (clip))
+            {
+                const bool mono = channels <= 1 || fileChannels (app.getEngine(), *ac) < 2;
+                ac->setActiveChannelConfiguration (mono ? te::ChannelConfiguration::mono()
+                                                        : te::ChannelConfiguration::stereo());
+            }
+    }
+
+    te::Plugin* formatPlugin (te::PluginList& list)
+    {
+        for (int i = 0; i < list.size(); ++i)
+            if (auto* p = list[i]; p != nullptr && (bool) p->state["s4format"])
+                return p;
+
+        return nullptr;
+    }
+
+    // A mono bus sums to the middle before the fader, so pan still works. The summer stays out of the insert list.
+    void applyBusChannels (AppEngine& app, te::FolderTrack& folder, int channels)
+    {
+        auto* existing = formatPlugin (folder.pluginList);
+
+        if (channels > 1)
+        {
+            if (existing != nullptr)
+                existing->deleteFromParent();
+
+            return;
+        }
+
+        if (existing == nullptr)
+        {
+            auto created = insertPlugin (app, folder.pluginList, "s4000utility", 0);
+            existing = created.get();
+
+            if (existing != nullptr)
+                existing->state.setProperty ("s4format", true, &app.edit().getUndoManager());
+        }
+
+        if (existing == nullptr)
+            return;
+
+        for (auto* param : existing->getAutomatableParameters())
+            if (param->paramID == "mono")
+                param->setParameter (1.0f, juce::dontSendNotification);
+    }
+
+    void matchInputWidth (AppEngine& app, te::AudioTrack& t, int channels)
+    {
+        auto& edit = app.edit();
+        te::WaveInputDevice* current = nullptr;
+
+        for (auto* in : edit.getAllInputDevices())
+            if (in->getTargets().contains (t.itemID))
+                if (auto* wave = dynamic_cast<te::WaveInputDevice*> (&in->getInputDevice()))
+                    current = wave;
+
+        if (current == nullptr || current->isStereoPair() == (channels > 1))
+            return;
+
+        clearTrackInputs (edit, t);
+        assignDefaultInput (app, t, false, channels);
+    }
+
+    int requestedChannels (const var& p)
+    {
+        return has (p, "channels") && (int) num (p, "channels") <= 1 ? 1 : 2;
+    }
 }
 
 juce::Colour nextTrackColour (te::Edit& edit)
@@ -67,12 +152,14 @@ juce::Colour nextTrackColour (te::Edit& edit)
     return juce::Colour (palette[(size_t) count % std::size (palette)]);
 }
 
-void assignDefaultInput (AppEngine& app, te::AudioTrack& t, bool midi)
+void assignDefaultInput (AppEngine& app, te::AudioTrack& t, bool midi, int channels)
 {
     auto& edit = app.edit();
     edit.getTransport().ensureContextAllocated();
 
     te::InputDeviceInstance* chosen = nullptr;
+    te::InputDeviceInstance* fallback = nullptr;
+    const bool wantPair = channels > 1;
 
     for (auto* in : edit.getAllInputDevices())
     {
@@ -80,26 +167,41 @@ void assignDefaultInput (AppEngine& app, te::AudioTrack& t, bool midi)
         const bool isMidiDevice = type == te::InputDevice::physicalMidiDevice || type == te::InputDevice::virtualMidiDevice;
         const bool isWave = type == te::InputDevice::waveDevice;
 
-        if ((midi && isMidiDevice) || (! midi && isWave))
+        if (midi && isMidiDevice)
         {
             chosen = in;
 
-            if (! midi && dynamic_cast<te::WaveInputDevice*> (&in->getInputDevice()) != nullptr)
-                break;
-
             // "All MIDI Ins" takes every keyboard plus notes typed in the interface.
-            if (auto* v = dynamic_cast<te::VirtualMidiInputDevice*> (&in->getInputDevice()); midi && v != nullptr && v->useAllInputs)
+            if (auto* v = dynamic_cast<te::VirtualMidiInputDevice*> (&in->getInputDevice()); v != nullptr && v->useAllInputs)
                 break;
         }
+        else if (! midi && isWave)
+        {
+            auto* wave = dynamic_cast<te::WaveInputDevice*> (&in->getInputDevice());
+            const bool pair = wave != nullptr && wave->isStereoPair();
+
+            if (fallback == nullptr)
+                fallback = in;
+
+            if (pair == wantPair)
+            {
+                chosen = in;
+                break;
+            }
+        }
     }
+
+    if (chosen == nullptr)
+        chosen = fallback;
 
     if (chosen != nullptr)
         [[maybe_unused]] auto r = chosen->setTarget (t.itemID, false, &edit.getUndoManager(), 0);
 }
 
-te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& name, te::Track* insertAfter, te::FolderTrack* parent, te::Track* insertBefore)
+te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& name, te::Track* insertAfter, te::FolderTrack* parent, te::Track* insertBefore, int channels)
 {
     auto& edit = app.edit();
+    const int width = channels <= 1 ? 1 : 2;
 
     te::TrackInsertPoint ip = insertBefore != nullptr ? te::TrackInsertPoint (*insertBefore, true)
                             : insertAfter != nullptr  ? te::TrackInsertPoint (insertAfter->getParentFolderTrack(), insertAfter)
@@ -110,6 +212,15 @@ te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& na
     if (kind == TrackKind::group)
     {
         track = edit.insertNewFolderTrack (ip, nullptr, true);
+
+        if (track != nullptr)
+        {
+            track->state.setProperty ("s4channels", width, &edit.getUndoManager());
+
+            if (width == 1)
+                if (auto* folder = dynamic_cast<te::FolderTrack*> (track.get()))
+                    applyBusChannels (app, *folder, 1);
+        }
     }
     else
     {
@@ -119,13 +230,12 @@ te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& na
         if (at != nullptr)
         {
             at->state.setProperty (TrackKind::property, kind, &edit.getUndoManager());
+            at->state.setProperty ("s4channels", kind == TrackKind::instrument ? 2 : width, &edit.getUndoManager());
 
             if (kind == TrackKind::instrument)
                 assignDefaultInput (app, *at, true);
             else if (kind == TrackKind::audio)
-            {
-                assignDefaultInput (app, *at, false);
-            }
+                assignDefaultInput (app, *at, false, width);
 
             at->state.setProperty ("s4monitor", "auto", &edit.getUndoManager());
         }
@@ -180,13 +290,14 @@ void registerTrackApi (AppEngine& app)
 {
     auto& rpc = app.rpc;
 
-    rpc.add ("track.add", K::write, "Adds tracks", "{kind?: audio|instrument|group, name?, afterId?, beforeId?, parentId?, count?}",
+    rpc.add ("track.add", K::write, "Adds tracks", "{kind?: audio|instrument|group, name?, afterId?, beforeId?, parentId?, count?, channels?: 1|2}",
              [&app] (const var& p)
     {
         auto kind = str (p, "kind", TrackKind::audio);
         auto* after = app.findTrack (str (p, "afterId"));
         auto* before = app.findTrack (str (p, "beforeId"));
         auto* parent = dynamic_cast<te::FolderTrack*> (app.findTrack (str (p, "parentId")));
+        const int channels = requestedChannels (p);
         juce::Array<var> ids;
 
         for (int i = 0; i < juce::jlimit (1, 64, integer (p, "count", 1)); ++i)
@@ -196,7 +307,7 @@ void registerTrackApi (AppEngine& app)
             if (integer (p, "count", 1) > 1)
                 name = (name.isNotEmpty() ? name : String ("Track")) + " " + String (i + 1);
 
-            auto t = createTrack (app, kind, name, after, parent, before);
+            auto t = createTrack (app, kind, name, after, parent, before, channels);
             after = t.get();
             ids.add (t->itemID.toString());
         }
@@ -239,10 +350,24 @@ void registerTrackApi (AppEngine& app)
     });
 
     rpc.add ("track.set", K::write, "Changes track properties",
-             "{id, name?, colour?, mute?, solo?, volumeDb?, pan?, output?: master|none|busId|device:<output name>, automationMode?, role?}",
+             "{id, name?, colour?, mute?, solo?, volumeDb?, pan?, channels?: 1|2, output?: master|none|busId|device:<output name>, automationMode?, role?}",
              [&app] (const var& p)
     {
         auto& t = app.track (reqStr (p, "id"));
+
+        if (has (p, "channels") && getTrackKind (t) != TrackKind::instrument)
+        {
+            const int width = requestedChannels (p);
+            t.state.setProperty ("s4channels", width, &app.edit().getUndoManager());
+
+            if (auto* at = dynamic_cast<te::AudioTrack*> (&t))
+            {
+                applyClipChannels (app, *at, width);
+                matchInputWidth (app, *at, width);
+            }
+            else if (auto* ft = dynamic_cast<te::FolderTrack*> (&t))
+                applyBusChannels (app, *ft, width);
+        }
 
         if (has (p, "name"))    t.setName (str (p, "name"));
         if (has (p, "colour"))  t.setColour (colourFromString (str (p, "colour"), t.getColour()));
@@ -333,7 +458,7 @@ void registerTrackApi (AppEngine& app)
 
         if (! found && arm)
         {
-            assignDefaultInput (app, t, getTrackKind (t) == TrackKind::instrument);
+            assignDefaultInput (app, t, getTrackKind (t) == TrackKind::instrument, (int) t.state.getProperty ("s4channels", 2));
 
             for (auto* in : edit.getAllInputDevices())
             {
@@ -467,7 +592,8 @@ void registerTrackApi (AppEngine& app)
         auto* ids = p["trackIds"].getArray();
         te::Track* first = (ids != nullptr && ! ids->isEmpty()) ? app.findTrack ((*ids)[0].toString()) : nullptr;
         auto group = createTrack (app, TrackKind::group, str (p, "name", "Group"),
-                                  first != nullptr ? first->getSiblingTrack (-1, false) : nullptr);
+                                  first != nullptr ? first->getSiblingTrack (-1, false) : nullptr, nullptr, nullptr,
+                                  requestedChannels (p));
         auto* folder = dynamic_cast<te::FolderTrack*> (group.get());
 
         if (ids != nullptr && folder != nullptr)

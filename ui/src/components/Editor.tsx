@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { splitClipAt } from "../commands";
+import { audioEditorBindings, midiEditorBindings, type EditorMode } from "../gamepad/editorPad";
+import { useGamepadSurface } from "../gamepad/surfaces";
 import { noteOff, noteOn } from "../keys";
 import { act, onTick, useStore } from "../store";
 import type { Clip, Project, Track } from "../types";
@@ -40,6 +42,12 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const [w, setW] = useState(600);
   const [zoom, setZoom] = useState(1);
   const [scroll, setScroll] = useState(0);
+  useGamepadSurface({
+    id: "editor-audio",
+    region: "editor",
+    active: () => true,
+    bindings: () => audioEditorBindings(clip),
+  });
   useEffect(() => { setZoom(1); setScroll(0); }, [clip.id]);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(() => scroller.current && setW(scroller.current.clientWidth));
@@ -161,6 +169,9 @@ function PianoRoll({ clip, project }: { clip: Clip; project: Project }) {
   const [ppb, setPpb] = useState(56);
   const [grid, setGrid] = useState(0.25);
   const [noteLen, setNoteLen] = useState(1);
+  const mode = useRef<EditorMode>("draw");
+  const cursorPitch = useRef(60);
+  const acc = useRef({ beat: 0, pitch: 0, len: 0, vel: 0 });
   const scroller = useRef<HTMLDivElement>(null);
   const keys = useRef<HTMLDivElement>(null);
   const dirty = useRef(false);
@@ -181,6 +192,16 @@ function PianoRoll({ clip, project }: { clip: Clip; project: Project }) {
     setNotes(next);
     act("midi.setNotes", { clipId: clip.id, notes: next.map((n) => [n.pitch, n.beat, n.len, n.vel]) });
   };
+
+  useGamepadSurface({
+    id: "editor-midi",
+    region: "editor",
+    active: () => true,
+    bindings: () => midiEditorBindings({
+      clip, project, notes, sel, grid, noteLen, mode, cursorPitch, acc: acc.current,
+      commit, setNotes, setSel, setNoteLen, scroller,
+    }),
+  });
 
   const snapB = (b: number, bypass: boolean) => (bypass ? Math.max(0, b) : Math.max(0, Math.round(b / grid) * grid));
   const totalBeats = Math.max(clipBeats + 8, 32);

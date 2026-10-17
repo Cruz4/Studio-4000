@@ -1,0 +1,254 @@
+/* Phone layout for the public page only. html[data-shell="app"] is the Windows app, and none of these rules apply there. */
+
+@media (max-width: 860px), (max-height: 520px) and (orientation: landscape) {
+  html[data-shell="web"] {
+    height: 100%;
+  }
+  html[data-shell="web"] body,
+  html[data-shell="web"] #root {
+    height: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  html[data-shell="web"] .app {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  html[data-shell="web"] .menubar {
+    height: auto;
+    min-height: 36px;
+    overflow: visible;
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  html[data-shell="web"] .menubar .grow { display: none; }
+  html[data-shell="web"] .menubar-item,
+  html[data-shell="web"] .menubar-brand {
+    flex: none;
+    height: 32px;
+  }
+
+  html[data-shell="web"] .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    max-height: none;
+    align-content: start;
+    gap: 4px;
+    padding: 4px 6px;
+    overflow: hidden;
+  }
+  html[data-shell="web"] .console { grid-row: 1; }
+  html[data-shell="web"] .topbar-side { grid-row: 2; }
+  html[data-shell="web"] .topbar-side.right { grid-row: 3; }
+  html[data-shell="web"] .topbar-side,
+  html[data-shell="web"] .topbar-side.right,
+  html[data-shell="web"] .console {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  html[data-shell="web"] .topbar-side > *,
+  html[data-shell="web"] .console > * { flex: none; }
+  html[data-shell="web"] .project-name { display: flex; flex: none; width: auto; min-width: 0; max-width: 160px; }
+  html[data-shell="web"] .project-name span { display: block; }
+  html[data-shell="web"] .topbar .pill { display: inline-flex; }
+  html[data-shell="web"] .lufs { display: flex; flex-wrap: nowrap; height: 44px; }
+  html[data-shell="web"] .master-meter { display: block; width: 72px; }
+  html[data-shell="web"] .clock { width: auto; min-width: 108px; flex: none; }
+  html[data-shell="web"] .transport,
+  html[data-shell="web"] .seg,
+  html[data-shell="web"] .view-switch { flex: none; max-width: none; overflow: visible; }
+  html[data-shell="web"] .tbtn { width: 40px; height: 40px; flex: none; }
+
+  html[data-shell="web"] .workspace { position: relative; }
+  html[data-shell="web"] .browser {
+    position: absolute;
+    z-index: 50;
+    inset: 0 auto 0 0;
+    width: min(100%, 420px);
+    max-width: 100%;
+    background: var(--bg1);
+    box-shadow: 16px 0 40px rgba(0, 0, 0, .55);
+  }
+  html[data-shell="web"] .browser-head .tabs {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  html[data-shell="web"] .browser-head .tab { flex: none; }
+  html[data-shell="web"] .side {
+    position: absolute;
+    z-index: 55;
+    inset: 0;
+    width: auto;
+    max-width: none;
+    background: var(--bg1);
+  }
+  html[data-shell="web"] .welcome-side {
+    left: 0;
+    width: 100%;
+  }
+  html[data-shell="web"] .welcome-side .side {
+    position: relative;
+    width: 100%;
+    inset: auto;
+  }
+
+  html[data-shell="web"] .dock {
+    height: min(34dvh, 280px) !important;
+    min-height: 150px;
+  }
+  html[data-shell="web"] .dock-head { overflow-x: auto; }
+  html[data-shell="web"] .dock-head .tabs { flex: none; min-width: max-content; }
+  html[data-shell="web"] .dock-head .tab { flex: none; }
+
+  html[data-shell="web"] .arrange-tools {
+    height: 44px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  html[data-shell="web"] .arrange-tools > * { flex: none; }
+  html[data-shell="web"] .arrange-body { -webkit-overflow-scrolling: touch; }
+
+  html[data-shell="web"] .statusbar {
+    height: auto;
+    min-height: 28px;
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 2px;
+    padding: 4px 8px;
+  }
+  html[data-shell="web"] .keys-strip {
+    height: 96px;
+    overflow-x: auto;
+  }
+  html[data-shell="web"] .smart { grid-template-columns: 1fr; overflow: auto; }
+  html[data-shell="web"] .fx-rack-bar { flex-wrap: wrap; }
+  html[data-shell="web"] .mixer { -webkit-overflow-scrolling: touch; }
+
+  html[data-shell="web"] .welcome {
+    place-items: start center;
+    padding: max(12px, env(safe-area-inset-top)) 0 max(20px, env(safe-area-inset-bottom));
+  }
+  html[data-shell="web"] .welcome-inner {
+    width: min(1040px, calc(100vw - 16px));
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  html[data-shell="web"] .welcome .brand { flex-wrap: wrap; margin-bottom: 12px; }
+  html[data-shell="web"] .wordmark { height: 56px; max-width: calc(100vw - 32px); object-fit: contain; }
+  html[data-shell="web"] .hero h1 { font-size: 34px; }
+  html[data-shell="web"] .hero p { font-size: 15px; }
+  html[data-shell="web"] .welcome .row { flex-wrap: wrap; align-items: center; }
+  html[data-shell="web"] .templates { grid-template-columns: 1fr; }
+  html[data-shell="web"] .template,
+  html[data-shell="web"] button.template.akasheet-card,
+  html[data-shell="web"] .akasheet-card {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+  }
+  html[data-shell="web"] .akasheet-card > span:not(.tip) { display: block; }
+  html[data-shell="web"] .welcome-actions .btn { min-height: 40px; }
+  html[data-shell="web"] .akasheet-landing {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  html[data-shell="web"] .modal {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+  html[data-shell="web"] .modal-body .row,
+  html[data-shell="web"] .modal-foot,
+  html[data-shell="web"] .whats-foot { flex-wrap: wrap; }
+  html[data-shell="web"] .modal-body .field { flex: 1 1 100%; min-width: 0; }
+  html[data-shell="web"] .modal-body .tabs,
+  html[data-shell="web"] .modal-body .tabs .tab { max-width: 100%; }
+  html[data-shell="web"] .modal-body .tabs { overflow-x: auto; }
+  html[data-shell="web"] .modal-body .tab { flex: none; }
+  html[data-shell="web"] .palette {
+    width: calc(100vw - 12px);
+    margin-top: 4vh;
+  }
+  html[data-shell="web"] .toasts { left: 8px; right: 8px; align-items: stretch; }
+  html[data-shell="web"] .toast { min-width: 0; max-width: none; }
+  html[data-shell="web"] .history {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    width: auto;
+    max-height: min(70dvh, 520px);
+  }
+  html[data-shell="web"] .fx-window {
+    left: 8px !important;
+    top: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+  }
+  html[data-shell="web"] .fx-window-head { flex-wrap: wrap; }
+  html[data-shell="web"] .pad-menu {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+    overflow: auto;
+  }
+  html[data-shell="web"] .menu-row .menu-tip { display: none; }
+  html[data-shell="web"] .approval { width: calc(100vw - 16px); }
+  html[data-shell="web"] .banner { flex-wrap: wrap; }
+  html[data-shell="web"] input,
+  html[data-shell="web"] select,
+  html[data-shell="web"] textarea { font-size: 16px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  html[data-shell="web"] .menubar {
+    flex-wrap: nowrap;
+    height: 32px;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  html[data-shell="web"] .topbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    height: 48px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  html[data-shell="web"] .console,
+  html[data-shell="web"] .topbar-side,
+  html[data-shell="web"] .topbar-side.right {
+    flex: none;
+    width: max-content;
+    max-width: none;
+    overflow: visible;
+  }
+  html[data-shell="web"] .arrange-tools { height: 36px; }
+  html[data-shell="web"] .dock {
+    height: 112px !important;
+    min-height: 0;
+  }
+  html[data-shell="web"] .statusbar {
+    flex-wrap: nowrap;
+    height: 22px;
+    min-height: 0;
+    overflow-x: auto;
+  }
+  html[data-shell="web"] .keys-strip { height: 72px; }
+}

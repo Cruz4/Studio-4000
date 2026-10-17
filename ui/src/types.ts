@@ -65,6 +65,8 @@ export interface Clip {
   notes?: Note[];
   /** Audio clips can own their own insert chain. MIDI clips play the track instrument. */
   plugins?: Plugin[];
+  /** 0 is the dry clip, 100 is the full clip effect chain. */
+  fxMix?: number;
   /** Gain breakpoints in seconds from the clip's left edge, and dB. The line holds the end values. */
   gainPoints?: [number, number][];
 }
@@ -84,6 +86,8 @@ export interface Track {
   id: string;
   name: string;
   kind: TrackKind;
+  /** 1 plays one channel. 2 plays a stereo pair. Audio tracks and buses remember this. */
+  channels?: 1 | 2;
   colour: string;
   mute: boolean;
   solo: boolean;
@@ -91,6 +95,8 @@ export interface Track {
   automationMode: "read" | "touch" | "latch" | "write";
   automation: AutomationLane[];
   plugins: Plugin[];
+  /** 0 is the dry track, 100 is the full effect chain. */
+  fxMix?: number;
   sends: Send[];
   returnBus?: number;
   volumeDb?: number;

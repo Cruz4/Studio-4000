@@ -2,20 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import type { Clip } from "../types";
 import { cachedPeaks, clipGainDbAt, loadPeaks, type Peaks } from "../util";
 
-/** Per-channel min/max when the file is stereo. Older mixed pairs still draw as one shape. */
-function peakLayout(peaks: Peaks) {
+/** Per-channel min/max when the file is stereo. Older mixed pairs still draw as one shape. A mono track draws the left channel only. */
+function peakLayout(peaks: Peaks, mono = false) {
   const declared = Math.max(1, Math.min(2, peaks.channels || 1));
   const expect = Math.max(1, Math.round(peaks.length * peaks.binsPerSecond));
   const stereoBins = Math.floor(peaks.data.length / 4);
   const monoBins = Math.floor(peaks.data.length / 2);
   if (declared > 1 && Math.abs(stereoBins - expect) <= Math.abs(monoBins - expect))
-    return { channels: 2, stride: 4, bins: stereoBins };
+    return { channels: mono ? 1 : 2, stride: 4, bins: stereoBins };
   return { channels: 1, stride: 2, bins: monoBins };
 }
 
 /** Draws the part of an audio clip that is visible in the scroll viewport. */
-export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft }: {
-  clip: Clip; pxPerSec: number; colour: string; viewLeft: number; viewWidth: number; clipLeft: number;
+export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft, mono = false }: {
+  clip: Clip; pxPerSec: number; colour: string; viewLeft: number; viewWidth: number; clipLeft: number; mono?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const speed = clip.speed || 1;
@@ -57,7 +57,7 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
 
     const gain = Math.pow(10, (clip.gainDb ?? 0) / 20);
     const envelope = clip.gainPoints;
-    const layout = peakLayout(peaks);
+    const layout = peakLayout(peaks, mono);
     const { channels, stride, bins } = layout;
     const gap = channels > 1 ? 2 : 0;
     const bandH = (h - gap * (channels - 1)) / channels;
@@ -67,7 +67,7 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
     for (let ch = 0; ch < channels; ch++) {
       const top = ch * (bandH + gap);
       const mid = top + bandH / 2;
-      const scale = (bandH / 2 - 1) / 127 * Math.min(gain, 4);
+      const scale = (bandH / 2 - 1) / 127 * Math.min(Math.max(gain, 0), 16);
       g.fillStyle = colour;
       g.beginPath();
       for (let x = 0; x < drawW; x++) {
@@ -100,7 +100,7 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
         g.fillText(ch === 0 ? "L" : "R", 4, top + 10);
       }
     }
-  }, [peaks, drawW, visStart, pxPerSec, clip.offset, clip.speed, clip.gainDb, clip.gainPoints, clip.reversed, clip.fadeIn, clip.fadeOut, clip.sourceLength, width, colour]);
+  }, [peaks, drawW, visStart, pxPerSec, clip.offset, clip.speed, clip.gainDb, clip.gainPoints, clip.reversed, clip.fadeIn, clip.fadeOut, clip.sourceLength, width, colour, mono]);
 
   if (!clip.file) return null;
   return <canvas ref={ref} style={{ left: visStart, width: drawW }} />;

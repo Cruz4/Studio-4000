@@ -26,6 +26,7 @@ import { Settings } from "./components/Settings";
 import { SmartPanel } from "./components/SmartPanel";
 import { TopBar } from "./components/TopBar";
 import { Welcome } from "./components/Welcome";
+import { ControllerHud, PadPill } from "./components/ControllerHud";
 import { ErrorBoundary, Icon, startDrag } from "./components/ui";
 
 const DOCK_TABS: { id: BottomTab; label: string; icon: string; keys: string }[] = [
@@ -162,6 +163,7 @@ function StatusBar() {
       <div className="grow" style={{ minWidth: 0, display: "flex", justifyContent: "center" }}><ContextTip /></div>
       {collab && <span className="row" style={{ gap: 5, cursor: "pointer", color: "var(--cyan)" }} onClick={() => useStore.setState({ side: "collab" })}><Icon name="users" size={11} /> {collab}</span>}
       {agentClients > 0 && <span className="row" style={{ gap: 5, cursor: "pointer" }} onClick={() => useStore.setState({ settingsOpen: "agent" })}><Icon name="link" size={11} /> Agent active</span>}
+      <PadPill />
       <span className="row" style={{ gap: 5, cursor: "pointer" }} onClick={() => useStore.setState({ paletteOpen: true })}><span className="kbd">Ctrl K</span> commands</span>
     </div>
   );
@@ -175,6 +177,12 @@ export function App() {
   useEffect(() => {
     if (isNative) native.window("title", project ? `${project.name}${project.modified ? " •" : ""} — Studio 4000` : "Studio 4000");
   }, [project?.name, project?.modified]);
+
+  useEffect(() => {
+    if (isNative) return;
+    if (window.matchMedia("(max-width: 860px), (max-height: 520px) and (orientation: landscape)").matches)
+      useStore.setState({ browserOpen: false });
+  }, []);
 
   return (
     <>
@@ -202,7 +210,7 @@ export function App() {
       ) : (
         <>
           <ErrorBoundary name="Start screen"><Welcome /></ErrorBoundary>
-          <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, zIndex: 95, display: "flex" }}><Side /></div>
+          <div className="welcome-side" style={{ position: "fixed", right: 0, top: 0, bottom: 0, zIndex: 95, display: "flex" }}><Side /></div>
         </>
       )}
       <ErrorBoundary floating name="Plug-in windows" onReset={() => useStore.setState({ openPlugins: [], selectedPlugin: null })}><PluginPanel /></ErrorBoundary>
@@ -216,6 +224,7 @@ export function App() {
       <Guide />
       <About />
       <Shortcuts />
+      <ControllerHud />
       <AgentApproval />
       <Toasts />
     </>

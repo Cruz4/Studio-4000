@@ -56,6 +56,15 @@ export const WHATS_NEW: WhatsNewGroup[] = [
       "Search How Studio 4000 works.",
     ],
   },
+  {
+    title: "Phone",
+    color: "#4dd4ff",
+    items: [
+      "The site fits a phone. Nothing is clipped off the edge.",
+      "Menus, transport, tracks, mixer, and effects stay in reach.",
+      "Sound and recording still need the Windows app.",
+    ],
+  },
 ];
 
 const SEEN_KEY = "studio4000-seen-notes";

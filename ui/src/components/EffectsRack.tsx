@@ -14,6 +14,23 @@ import { ErrorBoundary, Icon } from "./ui";
 
 let copiedFx: string[] = [];
 
+function WetDry({ value, disabled, title, onChange, onDone }: {
+  value: number; disabled?: boolean; title: string; onChange: (v: number) => void; onDone: () => void;
+}) {
+  return (
+    <label className={cx("fx-mix", disabled && "disabled")} title={title}>
+      <span>Dry</span>
+      <input className="slider" type="range" min={0} max={100} step={1} value={Math.round(value)} disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value))}
+        onPointerUp={onDone}
+        onPointerCancel={onDone}
+        onDoubleClick={(e) => { e.preventDefault(); onChange(100); onDone(); }} />
+      <span>Wet</span>
+      <span className="fx-mix-read">{Math.round(value)}</span>
+    </label>
+  );
+}
+
 function EffectBody({ plugin, open }: { plugin: Plugin; open: boolean }) {
   const fx = useFx(plugin.id, plugin.params);
   const entry = EDITORS[plugin.type];
@@ -119,6 +136,7 @@ export function EffectsRack() {
   const [picked, setPicked] = useState<string[]>([]);
   const [hot, setHot] = useState(false);
   const [chains, setChains] = useState<{ name: string }[]>([]);
+  const [mixDrag, setMixDrag] = useState<number | null>(null);
   const refreshChains = () => { void rpc<{ name: string }[]>("chain.list").then(setChains).catch(() => setChains([])); };
   useEffect(refreshChains, [project?.name]);
   useEffect(() => {
@@ -147,6 +165,7 @@ export function EffectsRack() {
       return next;
     });
   }, [liveKey]);
+  useEffect(() => { setMixDrag(null); }, [scope, track?.id, audio?.clip.id]);
 
   if (!project || !track) return <div className="empty">Select a track to see its effects.</div>;
 
@@ -276,7 +295,18 @@ export function EffectsRack() {
     <div className="fx-rack" ref={rackRef} tabIndex={0} onKeyDown={onRackKeys}>
       <div className="fx-rack-bar">
         <button className={cx("btn sm", scope === "track" && "on")} onClick={() => { setScope("track"); pickedRef.current = []; setPicked([]); }}>Track effects</button>
+        {scope === "track" && (
+          <WetDry value={mixDrag ?? track.fxMix ?? 100} title="Track effects wet/dry. Dry is the sound before these effects. Wet is the full chain. Double-click for fully wet."
+            onChange={(v) => { setMixDrag(v); act("chain.setMix", { id: track.id, trackId: track.id, mix: v }); }}
+            onDone={() => setMixDrag(null)} />
+        )}
         <button className={cx("btn sm", scope === "clip" && "on")} onClick={() => { setScope("clip"); pickedRef.current = []; setPicked([]); }}>Clip effects</button>
+        {scope === "clip" && (
+          <WetDry value={mixDrag ?? audio?.clip.fxMix ?? 100} disabled={!audio}
+            title={audio ? "Clip effects wet/dry. Dry is this clip before its effects. Wet is the full clip chain. Double-click for fully wet." : "Select an audio clip to set its wet/dry."}
+            onChange={(v) => { if (!audio) return; setMixDrag(v); act("chain.setMix", { id: audio.clip.id, clipId: audio.clip.id, mix: v }); }}
+            onDone={() => setMixDrag(null)} />
+        )}
         <span className="fx-rack-swatch" style={{ background: (scope === "clip" ? audio?.clip.colour : track.colour) ?? track.colour }} />
         <b className="ellipsis">{scope === "clip" ? (audio ? `${audio.clip.name}` : "No audio clip") : track.name}</b>
         <span className="small faint">{note ? "" : inserts.length ? `${inserts.length}` : "Empty"}</span>

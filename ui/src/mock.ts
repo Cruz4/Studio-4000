@@ -21,8 +21,8 @@ function plugin(type: string, name: string): Plugin {
 
 function track(name: string, kind: Track["kind"], colour: string, clips: Clip[] = []): Track {
   return {
-    id: nid(), name, kind, colour, mute: false, solo: false, parent: null, automationMode: "read", automation: [],
-    plugins: [], sends: [], volumeDb: 0, pan: 0, volumePluginId: nid(), output: "master", input: kind === "instrument" ? "MIDI Keyboard" : "Input 1 + 2",
+    id: nid(), name, kind, colour, channels: 2, mute: false, solo: false, parent: null, automationMode: "read", automation: [],
+    plugins: [], fxMix: 100, sends: [], volumeDb: 0, pan: 0, volumePluginId: nid(), output: "master", input: kind === "instrument" ? "MIDI Keyboard" : "Input 1 + 2",
     armed: false, monitor: "auto", live: false, clips,
   };
 }
@@ -31,7 +31,7 @@ const isLive = (t: Track) => !!t.input && (t.monitor === "on" || (t.monitor !== 
 
 function audioClip(name: string, start: number, len: number, colour: string): Clip {
   return { id: nid(), name, kind: "audio", start, end: start + len, offset: 0, colour, muted: false, speed: 1, looping: false,
-    file: `mock://${name}`, sourceLength: len + 4, channels: 2, gainDb: 0, pan: 0, fadeIn: 0, fadeOut: 0, pitch: 0, plugins: [] };
+    file: `mock://${name}`, sourceLength: len + 4, channels: 2, gainDb: 0, pan: 0, fadeIn: 0, fadeOut: 0, pitch: 0, plugins: [], fxMix: 100 };
 }
 
 const savedChains = new Map<string, Plugin[]>();
@@ -161,7 +161,7 @@ export function createMock(emit: Emit) {
     "transport.jumpMarker": () => true,
     "project.setTempo": (p) => { project!.bpm = p.bpm; changed(); return true; },
     "project.setTimeSig": (p) => { project!.timeSig = [p.numerator, p.denominator]; changed(); return true; },
-    "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : "Audio"), p.kind || "audio", "#4dd4ff"); project!.tracks.push(tr); changed(); return [tr.id]; },
+    "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : p.kind === "group" ? "Bus" : "Audio"), p.kind || "audio", "#4dd4ff"); if (p.kind === "audio" || p.kind === "group" || !p.kind) tr.channels = p.channels === 1 ? 1 : 2; project!.tracks.push(tr); changed(); return [tr.id]; },
     "track.remove": (p) => { project!.tracks = project!.tracks.filter((x) => x.id !== p.id); changed(); return true; },
     "track.set": (p) => {
       const tr = findTrack(p.id)!;
@@ -317,6 +317,19 @@ export function createMock(emit: Emit) {
       if (!list || !p.name) return null;
       savedChains.set(String(p.name), structuredClone(list));
       return String(p.name);
+    },
+    "chain.setMix": (p) => {
+      const raw = Number(p.mix);
+      const mix = Math.max(0, Math.min(100, Number.isFinite(raw) ? raw : 100));
+      if (p.clipId) {
+        const clip = project?.tracks.flatMap((tr) => tr.clips).find((c) => c.id === p.clipId);
+        if (clip) clip.fxMix = mix;
+      } else {
+        const tr = findTrack(String(p.trackId || p.id || ""));
+        if (tr) tr.fxMix = mix;
+      }
+      changed();
+      return mix;
     },
     "chain.load": (p) => {
       const saved = savedChains.get(String(p.name));

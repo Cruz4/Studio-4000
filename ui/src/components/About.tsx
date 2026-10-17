@@ -26,7 +26,7 @@ export function About() {
       )}
     >
       <div className="whats-grid">
-        {[["Sessions", "Help"], ["Effects"], ["Arrange", "Look"]].map((titles) => (
+        {[["Sessions", "Help"], ["Effects"], ["Arrange", "Look", "Phone"]].map((titles) => (
           <div key={titles.join()} className="whats-col">
             {titles.map((title) => {
               const group = WHATS_NEW.find((g) => g.title === title)!;

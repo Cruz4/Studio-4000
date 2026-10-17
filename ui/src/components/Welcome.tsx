@@ -4,7 +4,10 @@ import wordmark from "../assets/wordmark.png";
 import { native, rpc } from "../bridge";
 import { AKASHEET_TIP, AKASHEET_URL, COFFEE_URL } from "../support";
 import { openProject } from "../commands";
+import { useGamepadSurface } from "../gamepad/surfaces";
+import { usePad } from "../gamepad/pad";
 import { act, refreshInfo, useStore } from "../store";
+import { clamp, cx } from "../util";
 import { Icon, Spinner, ThemeToggle } from "./ui";
 
 const TEMPLATES = [
@@ -36,6 +39,39 @@ export function Welcome() {
   const [bpm, setBpm] = useState(120);
   const [busy, setBusy] = useState<string | null>(null);
   const [device, setDevice] = useState<{ type: string; output: string; rate?: number; buffer?: number; latency?: number } | null>(null);
+  const [padIndex, setPadIndex] = useState(0);
+  const padOn = usePad((s) => s.connected && s.enabled);
+
+  useGamepadSurface({
+    id: "welcome",
+    region: "welcome",
+    active: () => !useStore.getState().project,
+    bindings: () => ({
+      title: "Start",
+      bare: {
+        a: { label: TEMPLATES[padIndex]?.title ?? "Create", run: () => { const id = TEMPLATES[padIndex]?.id; if (id) create(id); } },
+        b: { label: "Guide", run: () => useStore.setState({ guideOpen: true }) },
+        x: { label: "Open", run: () => openProject() },
+        y: { label: "Audio setup", run: () => useStore.setState({ settingsOpen: "audio" }) },
+      },
+      onDpad: (dir) => {
+        const step = dir === "right" || dir === "down" ? 1 : -1;
+        setPadIndex((i) => (i + step + TEMPLATES.length) % TEMPLATES.length);
+        return true;
+      },
+      onFrame: ({ axes, dt }) => {
+        if (!axes.ly) return;
+        setBpm((value) => {
+          const next = clamp(Math.round(value - axes.ly * dt * 40), 20, 400);
+          return next === value ? value : next;
+        });
+      },
+      onGlobal: (id) => {
+        if (id === "palette") { useStore.setState({ guideOpen: true }); return true; }
+        return false;
+      },
+    }),
+  });
 
   useEffect(() => {
     rpc("devices.get").then((d) => setDevice({ type: d.type, output: d.output, rate: d.current?.sampleRate, buffer: d.current?.bufferSize, latency: d.current ? (d.current.inputLatencyMs ?? 0) + (d.current.outputLatencyMs ?? 0) : undefined })).catch(() => {});
@@ -79,8 +115,8 @@ export function Welcome() {
           </div>
 
           <div className="templates">
-            {TEMPLATES.map((t) => (
-              <div key={t.id} className="template" onClick={() => !busy && create(t.id)}>
+            {TEMPLATES.map((t, i) => (
+              <div key={t.id} className={cx("template", padOn && i === padIndex && "pad-focus")} onClick={() => !busy && create(t.id)}>
                 <div className="ti">{busy === t.id ? <Spinner /> : <Icon name={t.icon} size={17} />}</div>
                 <b>{t.title}</b>
                 <span>{t.text}</span>

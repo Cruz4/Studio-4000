@@ -1,3 +1,7 @@
+The public page fits a phone. Menus, transport, tracks, mixer, effects, and the start screen stay on the page, and every control can be reached. Sound and recording still need the Windows app.
+
+Drag the bottom-left of a clip to change its volume, and the waveform grows or shrinks with it. A new audio track or bus can be stereo or mono. Track effects and clip effects each have their own dry/wet bar. Export asks for a name and a folder, and can write MP3, or MP3 and WAV together.
+
 Joining a live session stays connected. The host's code tries this network first, then the internet address, and Join again replaces a connection that dropped.
 
 Studio 4000 includes its own auto filter, auto pan, channel strips, DJ EQ, dual filter, expander, resonant filter, flanger, mono delay, overdrive, ring modulator, signal generator, tilt EQ, utility, FM synth, and analog poly synth.

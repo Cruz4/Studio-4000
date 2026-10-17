@@ -60,7 +60,7 @@ export function ContextMenu() {
 
   if (!items) return null;
   return (
-    <div ref={ref} style={{ position: "fixed", left: pos.x, top: pos.y, zIndex: 300, minWidth: 200, padding: 5, background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
+    <div ref={ref} style={{ position: "fixed", left: pos.x, top: pos.y, zIndex: 300, minWidth: 200, padding: 5, background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }} className="pad-menu">
       {items.map((it, i) => {
         if (it.separator) return <div key={i} style={{ height: 1, background: "var(--line)", margin: "4px 2px" }} />;
         if (it.colours) {

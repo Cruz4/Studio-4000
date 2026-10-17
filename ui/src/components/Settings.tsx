@@ -3,8 +3,10 @@ import wordmark from "../assets/wordmark.png";
 import { PROVIDERS, getKey, loadConfig, saveConfig, type AiConfig, type Provider } from "../ai";
 import { localRpc, native } from "../bridge";
 import { COFFEE_URL, supportMailto } from "../support";
+import { usePad } from "../gamepad/pad";
 import { act, loadCatalogue, toast, useStore } from "../store";
 import { Icon, Modal, Spinner, Tabs } from "./ui";
+import { cx } from "../util";
 
 type TabId = "audio" | "plugins" | "ai" | "agent" | "collab" | "general";
 
@@ -292,9 +294,18 @@ function CollabTab() {
 
 function GeneralTab() {
   const info = useStore((s) => s.info);
+  const pad = usePad((s) => s.enabled);
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="row"><img className="wordmark sm" src={wordmark} alt="Studio 4000" /><span className="pill">{info?.version}</span></div>
+      <div className="row">
+        <span className="grow">Game controller</span>
+        <button className={cx("btn", pad && "on")} title="USB pads follow the page. Hold LB for a tool wheel."
+          onClick={() => { const next = !pad; usePad.setState({ enabled: next }); call("settings.set", { key: "gamepad", value: next ? "1" : "0" }); }}>
+          {pad ? "On" : "Off"}
+        </button>
+      </div>
+      <span className="small faint">A connected pad changes with the page. Hold LB and aim the left stick to pick a tool. View and Menu together open the full map.</span>
       <div className="col small">
         <div className="row"><span className="faint" style={{ width: 110 }}>Projects</span><span className="mono grow ellipsis">{info?.projectsDir}</span></div>
         <div className="row"><span className="faint" style={{ width: 110 }}>App data</span><span className="mono grow ellipsis">{info?.dataDir}</span></div>

@@ -47,7 +47,7 @@ Voice and screen share are in the same panel. An optional password can lock the 
 
 ## Tracks, clips, and the mixer
 
-Click a track name to select it. The highlight runs across the name and the clips. Right-click a name, an empty lane, or a mixer strip to add an audio track, an instrument, a bus, or an FX return, or to duplicate and delete.
+Click a track name to select it. The highlight runs across the name and the clips. Right-click a name, an empty lane, or a mixer strip to add a stereo or mono audio track, an instrument, a stereo or mono bus, or an FX return, or to duplicate and delete. The STEREO or MONO label on an audio track or a bus switches it. A mono track plays one channel. A mono bus sums what you send to it into one channel.
 
 Drag a track name, or the empty part of a mixer strip, to reorder. The track lifts, a label follows the pointer, and a line shows the slot before you let go. If the track header is short, scroll inside that info box to reach the input, effects, and volume.
 
@@ -66,6 +66,8 @@ Instrument tracks play from a MIDI keyboard, and from the computer keyboard whil
 ## Effects
 
 Click an effect to select it. Double-click to open it. You can leave several open. Clicking the page does not close them. Delete removes the selected effect when no clip is selected.
+
+Track effects and Clip effects each have a Dry / Wet bar, shown next to the tab that is selected. Dry is the sound before that chain. Wet is the full chain. Double-click the bar for fully wet.
 
 On the EQ, the white line is the curve you are shaping. The filled colour is the sound, and it appears when something is actually playing. When you stop, the last shape stays faded.
 

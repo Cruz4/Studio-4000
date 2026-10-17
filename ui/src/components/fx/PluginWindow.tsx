@@ -66,7 +66,7 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
   }, []);
 
   return (
-    <div className="fx-window" ref={ref} style={{ left: pos.x, top: pos.y, width: Math.min(width, window.innerWidth - 24), maxHeight: maxH, zIndex: 80 + stack, ["--accent" as string]: accent }}
+    <div className="fx-window" data-plugin={plugin.id} ref={ref} style={{ left: pos.x, top: pos.y, width: Math.min(width, window.innerWidth - 24), maxHeight: maxH, zIndex: 80 + stack, ["--accent" as string]: accent }}
       onPointerDown={() => useStore.setState((s) => ({ selectedPlugin: plugin.id, openPlugins: s.openPlugins.includes(plugin.id) ? [...s.openPlugins.filter((x) => x !== plugin.id), plugin.id] : s.openPlugins }))}>
       <div key={ping} className="fx-flash" />
       <div className="fx-window-head"

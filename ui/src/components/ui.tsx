@@ -80,7 +80,7 @@ const paths: Record<string, string> = {
   chevronLeft: "M15 6l-6 6 6 6",
   menu: "M4 6h16M4 12h16M4 18h16",
   tune: "M4 18c3 0 3-12 6-12s3 12 6 12 3-6 4-6",
-  download: "M12 3v12M7 10l5 5 5-5M5 19h14",
+  gamepad: "M6 12h4M8 10v4M15 12h.01M18 11h.01M7 16c2.5 1.5 7.5 1.5 10 0 2.2-1.2 3-3.2 3-5.2A3.8 3.8 0 0 0 16.2 7H7.8A3.8 3.8 0 0 0 4 10.8C4 12.8 4.8 14.8 7 16z",
 };
 
 export function Icon({ name, size = 16, className, fill }: { name: string; size?: number; className?: string; fill?: boolean }) {

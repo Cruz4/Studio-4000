@@ -21,13 +21,14 @@ void registerDeviceApi (AppEngine&);
 //==============================================================================
 /** Shared helpers used across API groups and templates. */
 te::Track::Ptr createTrack (AppEngine&, const String& kind, const String& name,
-                            te::Track* insertAfter = nullptr, te::FolderTrack* parent = nullptr, te::Track* insertBefore = nullptr);
+                            te::Track* insertAfter = nullptr, te::FolderTrack* parent = nullptr, te::Track* insertBefore = nullptr,
+                            int channels = 2);
 
 /** Inserts a built-in plug-in by type name, or an external plug-in by identifier string or name. */
 te::Plugin::Ptr insertPlugin (AppEngine&, te::PluginList&, const String& typeOrId, int index = -1);
 
 /** Assigns the first free physical input of the right kind to a track. */
-void assignDefaultInput (AppEngine&, te::AudioTrack&, bool midi);
+void assignDefaultInput (AppEngine&, te::AudioTrack&, bool midi, int channels = 2);
 
 te::PluginList& pluginListFor (AppEngine&, const String& trackIdOrMaster);
 
@@ -39,4 +40,7 @@ juce::Colour nextTrackColour (te::Edit&);
 
 /** Built-in effects offered in the browser, with friendly names. */
 var builtInPluginCatalogue();
+
+/** Writes a 320 kbps MP3 (192 kbps for mono) next to a rendered WAV. Empty string means it worked. */
+juce::String transcodeWavToMp3 (te::Engine&, const juce::File& wav, const juce::File& mp3);
 }

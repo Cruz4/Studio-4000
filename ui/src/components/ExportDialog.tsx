@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { native } from "../bridge";
 import { act, useStore } from "../store";
 import { cx, formatTime } from "../util";
 import { Icon, Modal, Spinner } from "./ui";
@@ -19,7 +20,7 @@ export function ExportDialog() {
   const selectedClips = useStore((s) => s.selectedClips);
   const render = useStore((s) => s.render);
   const [what, setWhat] = useState<"mix" | "stems">("mix");
-  const [format, setFormat] = useState<"wav" | "flac" | "ogg">("wav");
+  const [format, setFormat] = useState<"wav" | "mp3" | "mp3wav" | "flac" | "ogg">("wav");
   const [bitDepth, setBitDepth] = useState(24);
   const [sampleRate, setSampleRate] = useState(0);
   const [target, setTarget] = useState<(typeof TARGETS)[number]["id"]>("stream");
@@ -51,11 +52,27 @@ export function ExportDialog() {
   const rendering = render?.state === "rendering";
 
   const go = async () => {
-    const params: Record<string, unknown> = { what, format, name, start: span[0], end: span[1], tail };
-    if (format !== "ogg") params.bitDepth = bitDepth;
+    const ext = format === "mp3" ? "mp3" : format === "flac" ? "flac" : format === "ogg" ? "ogg" : "wav";
+    const safe = (name.trim() || project.name || "Mix").replace(/[<>:"/\\|?*]/g, "").trim() || "Mix";
+    const params: Record<string, unknown> = { what, format, name: safe, start: span[0], end: span[1], tail };
+    if (format !== "ogg" && format !== "mp3") params.bitDepth = bitDepth;
     if (sampleRate) params.sampleRate = sampleRate;
     if (t.lufs !== null && what === "mix") { params.normalizeLufs = t.lufs; params.truePeakDb = ceiling; }
-    if (what === "stems") params.trackIds = [...tracks];
+    if (what === "stems") {
+      const picked = await native.pickFile({ mode: "folder", title: "Choose where to save the stems", dir: project.dir });
+      if (!picked?.[0]) return;
+      params.dir = picked[0];
+      params.trackIds = [...tracks];
+    } else {
+      const picked = await native.pickFile({
+        mode: "save",
+        title: format === "mp3wav" ? "Export MP3 and WAV" : "Export mix",
+        filters: `*.${ext}`,
+        file: `${project.dir}\\${safe}.${ext}`,
+      });
+      if (!picked?.[0]) return;
+      params.file = picked[0];
+    }
     await act("export.render", params);
   };
 
@@ -71,7 +88,7 @@ export function ExportDialog() {
         </>
       ) : (
         <>
-          <span className="small faint grow">Files go to the project's Bounces folder.</span>
+          <span className="small faint grow">{what === "stems" ? "Next you'll choose the folder." : "Next you'll name the file and choose the folder."}</span>
           <button className="btn" onClick={close}>Close</button>
           <button className="btn primary" onClick={go} disabled={what === "stems" && !tracks.size}><Icon name="export" size={13} /> Export {what === "stems" ? `${tracks.size} stem${tracks.size === 1 ? "" : "s"}` : "mix"}</button>
         </>
@@ -91,13 +108,17 @@ export function ExportDialog() {
         <label className="field grow"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></label>
         <label className="field"><span>Format</span>
           <select className="input" value={format} onChange={(e) => setFormat(e.target.value as typeof format)}>
-            <option value="wav">WAV</option><option value="flac">FLAC (lossless, smaller)</option><option value="ogg">OGG Vorbis</option>
+            <option value="wav">WAV</option>
+            <option value="mp3">MP3</option>
+            <option value="mp3wav">MP3 and WAV</option>
+            <option value="flac">FLAC (lossless, smaller)</option>
+            <option value="ogg">OGG Vorbis</option>
           </select>
         </label>
-        {format !== "ogg" && (
+        {format !== "ogg" && format !== "mp3" && (
           <label className="field"><span>Bit depth</span>
             <select className="input" value={bitDepth} onChange={(e) => setBitDepth(Number(e.target.value))}>
-              <option value={16}>16-bit (dithered)</option><option value={24}>24-bit</option>{format === "wav" && <option value={32}>32-bit float</option>}
+              <option value={16}>16-bit (dithered)</option><option value={24}>24-bit</option>{(format === "wav" || format === "mp3wav") && <option value={32}>32-bit float</option>}
             </select>
           </label>
         )}
@@ -107,6 +128,9 @@ export function ExportDialog() {
           </select>
         </label>
       </div>
+      {(format === "mp3" || format === "mp3wav") && (
+        <span className="small faint">MP3 is 320 kbps stereo, or 192 kbps mono.{format === "mp3wav" ? " Both files use the name you choose, in the same folder." : ""}</span>
+      )}
 
       <div className="col">
         <span className="section-title">Range</span>

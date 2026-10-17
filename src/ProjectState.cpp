@@ -20,7 +20,20 @@ bool isChannelStripPlugin (const te::Plugin& p)
         || dynamic_cast<const te::LevelMeterPlugin*> (&p) != nullptr
         || dynamic_cast<const te::AuxSendPlugin*> (&p) != nullptr
         || dynamic_cast<const te::AuxReturnPlugin*> (&p) != nullptr
-        || dynamic_cast<const LoudnessMeterPlugin*> (&p) != nullptr;
+        || dynamic_cast<const LoudnessMeterPlugin*> (&p) != nullptr
+        || (bool) p.state["s4format"]
+        || p.state["s4chain"].toString().isNotEmpty();
+}
+
+int chainMixPercent (const te::PluginList& list)
+{
+    for (auto* p : list)
+        if (p != nullptr && p->state["s4chain"].toString() == "wet")
+            for (auto* param : p->getAutomatableParameters())
+                if (param->paramID == "mix")
+                    return juce::roundToInt (param->getCurrentValue());
+
+    return 100;
 }
 
 var describeParameter (te::AutomatableParameter& p)
@@ -238,13 +251,15 @@ var describeClip (te::Clip& c)
         te::AudioFile af (edit.engine, file);
 
         juce::Array<var> clipPlugins;
+        auto* list = ac->getPluginList();
 
-        if (auto* list = ac->getPluginList())
+        if (list != nullptr)
             for (auto* p : *list)
                 if (p != nullptr && ! isChannelStripPlugin (*p))
                     clipPlugins.add (describePlugin (*p));
 
         o.set ("plugins", clipPlugins)
+         .set ("fxMix", list != nullptr ? chainMixPercent (*list) : 100)
          .set ("kind", "audio")
          .set ("file", file.getFullPathName())
          .set ("sourceLength", af.getLength())
@@ -348,12 +363,14 @@ var describeTrack (AppEngine& app, te::Track& t)
     o.set ("id", t.itemID.toString())
      .set ("name", t.getName())
      .set ("kind", getTrackKind (t))
+     .set ("channels", (int) t.state.getProperty ("s4channels", 2) <= 1 ? 1 : 2)
      .set ("colour", colourToString (t.getColour()))
      .set ("mute", t.isMuted (false))
      .set ("solo", t.isSolo (false))
      .set ("parent", t.getParentFolderTrack() != nullptr ? var (t.getParentFolderTrack()->itemID.toString()) : var())
      .set ("automationMode", automationModeName (t.automationMode.get()))
-     .set ("automation", describeAutomation (t));
+     .set ("automation", describeAutomation (t))
+     .set ("fxMix", chainMixPercent (t.pluginList));
 
     juce::Array<var> inserts, sends;
 

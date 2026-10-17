@@ -1,11 +1,11 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { rpc } from "../bridge";
 import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
 import { act, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
-import { createTrackItems, openTrackMenu, toggleAutomation } from "../trackMenu";
+import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleAutomation } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
@@ -197,6 +197,58 @@ function shownClip(clip: Clip, preview: DragPreview | null, settled: SettledClip
   return { start, end, fadeIn, fadeOut, offset };
 }
 
+const GAIN_MIN = -60;
+const GAIN_MAX = 24;
+
+/** Live clip-gain drag. The waveform reads this so it grows and shrinks before the engine answers. */
+let gainDrag: { base: Map<string, number>; delta: number } | null = null;
+const gainPending = new Map<string, number>();
+const gainListeners = new Set<() => void>();
+
+function emitGain() {
+  gainListeners.forEach((fn) => fn());
+}
+
+function subscribeGain(fn: () => void) {
+  gainListeners.add(fn);
+  return () => { gainListeners.delete(fn); };
+}
+
+function roundGain(db: number) {
+  return clamp(Math.round(db * 10) / 10, GAIN_MIN, GAIN_MAX);
+}
+
+const gainSnap = new Map<string, { stored: number; delta: number | null; pending: number | null; value: number }>();
+
+function gainSnapshot(id: string, stored: number) {
+  const delta = gainDrag?.base.has(id) ? gainDrag.delta : null;
+  const pending = gainPending.get(id) ?? null;
+  const prev = gainSnap.get(id);
+  if (prev && prev.stored === stored && prev.delta === delta && prev.pending === pending) return prev.value;
+  let value = stored;
+  if (delta != null && gainDrag) value = roundGain(gainDrag.base.get(id)! + delta);
+  else if (pending != null && Math.abs(pending - stored) >= 0.05) value = pending;
+  gainSnap.set(id, { stored, delta, pending, value });
+  return value;
+}
+
+function useClipGain(id: string, stored: number) {
+  return useSyncExternalStore(subscribeGain, () => gainSnapshot(id, stored), () => stored);
+}
+
+function publishClipGain(force: boolean, lastSent: { t: number }) {
+  if (!gainDrag) return;
+  const now = performance.now();
+  if (!force && (gainDrag.base.size !== 1 || now - lastSent.t < 40)) return;
+  lastSent.t = now;
+  const calls = [...gainDrag.base.entries()].map(([id, db]) => ({
+    method: "clip.set",
+    params: { id, gainDb: roundGain(db + gainDrag!.delta) },
+  }));
+  if (calls.length === 1) void act("clip.set", calls[0].params);
+  else void act("batch.run", { label: "Clip gain", calls });
+}
+
 const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, settled, view, onDown, trackIndex, timeAt, onTime }: {
   clip: Clip; track: Track; pps: number; selected: boolean; preview: DragPreview | null; settled: SettledClip[] | null; view: { left: number; width: number };
   onDown: (e: React.PointerEvent, clip: Clip, mode: DragPreview["mode"]) => void; trackIndex: number;
@@ -206,6 +258,7 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   const tool = useStore((s) => s.tool);
   const heights = useTrackHeights();
   const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
+  const gainDb = useClipGain(clip.id, clip.gainDb ?? 0);
   const shown = shownClip(clip, preview, settled);
   const { start, end, fadeIn, fadeOut, offset } = shown;
   const affected = preview != null && preview.ids.includes(clip.id);
@@ -225,7 +278,7 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   const offsetDelta = offset - clip.offset;
   const gainSource = liveGain ?? clip.gainPoints;
   const drawClip = {
-    ...clip, start, end, offset, fadeIn, fadeOut,
+    ...clip, start, end, offset, fadeIn, fadeOut, gainDb,
     gainPoints: gainSource?.map(([t, db]) => [t - offsetDelta, db] as [number, number]),
   };
   const notes = clip.notes ?? [];
@@ -288,10 +341,53 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
         </span>
       )}
       {clip.kind === "audio" && (
-        <Waveform clip={drawClip} pxPerSec={pps} colour="rgba(255,255,255,.82)" viewLeft={view.left} viewWidth={view.width} clipLeft={left} />
+        <Waveform clip={drawClip} pxPerSec={pps} colour="rgba(255,255,255,.82)" viewLeft={view.left} viewWidth={view.width} clipLeft={left} mono={track.channels === 1} />
       )}
       {clip.kind === "audio" && (
         <ClipGain id={clip.id} points={clip.gainPoints} duration={end - start} offsetDelta={offsetDelta} onDraft={setLiveGain} />
+      )}
+      {clip.kind === "audio" && (
+        <div className={cx("clip-gain", gainDrag?.base.has(clip.id) && "active")}
+          title="Drag up or down to change this clip's volume. Shift drags finer. Double-click returns to 0 dB."
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            const st = useStore.getState();
+            const chosen = st.selectedClips.includes(clip.id) ? st.selectedClips : [clip.id];
+            if (!st.selectedClips.includes(clip.id)) {
+              selectTrack(track.id);
+              useStore.setState({ selectedClips: [clip.id], selectedPlugin: null });
+            }
+            const base = new Map<string, number>();
+            for (const lane of st.project?.tracks ?? [])
+              for (const item of lane.clips)
+                if (item.kind === "audio" && chosen.includes(item.id)) base.set(item.id, item.gainDb ?? 0);
+            if (!base.has(clip.id)) base.set(clip.id, clip.gainDb ?? 0);
+            gainDrag = { base, delta: 0 };
+            emitGain();
+            const lastSent = { t: 0 };
+            startDrag(e, (_dx, dy, ev) => {
+              if (!gainDrag) return;
+              gainDrag = { base, delta: -(ev.shiftKey ? dy * 0.02 : dy * 0.1) };
+              emitGain();
+              publishClipGain(false, lastSent);
+            }, () => {
+              if (!gainDrag) return;
+              for (const [id, db] of base) gainPending.set(id, roundGain(db + gainDrag!.delta));
+              publishClipGain(true, lastSent);
+              gainDrag = null;
+              emitGain();
+            });
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            gainPending.set(clip.id, 0);
+            emitGain();
+            void act("clip.set", { id: clip.id, gainDb: 0 });
+          }}>
+          {formatDb(gainDb)}
+        </div>
       )}
       {clip.kind === "midi" && (
         <svg style={{ position: "absolute", left: 0, top: 17, width, height: "calc(100% - 17px)" }} preserveAspectRatio="none" viewBox={`0 0 ${Math.max(1, width)} ${Math.max(1, hi - lo)}`}>
@@ -429,7 +525,14 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
           onBlur={() => name.trim() && name !== track.name && act("track.set", { id: track.id, name: name.trim() })}
           onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") { setName(track.name); (e.target as HTMLInputElement).blur(); } }} />
         <PeerDots trackId={track.id} />
-        {!tight && <span className="kind">{track.kind === "return" ? "FX" : track.kind === "instrument" ? "INST" : track.kind === "group" ? "GROUP" : ""}</span>}
+        {(track.kind === "audio" || track.kind === "group") && (
+          <button className="kind" title="Choose stereo or mono" onClick={(e) => openFormatMenu(e, track)}>
+            {track.channels === 1 ? (tight ? "M" : "MONO") : (tight ? "ST" : "STEREO")}
+          </button>
+        )}
+        {!tight && track.kind === "return" && <span className="kind">FX</span>}
+        {!tight && track.kind === "instrument" && <span className="kind">INST</span>}
+        {!tight && track.kind === "group" && <span className="kind">BUS</span>}
         <div className="grow" />
         {menuButton}
         {tight && controls}
@@ -1015,9 +1118,9 @@ export function Arrange() {
   return (
     <div className={cx("arrange", `tool-${arrangeTool}`)} style={{ ["--header-w" as string]: `${headerW}px` }} onDragLeave={(e) => { if (e.currentTarget === e.target) { setFileDrag(false); setDropLane(null); } }}>
       <div className="arrange-tools">
-        <button className="btn sm" onClick={() => addTrack("audio")} title="New audio track (Ctrl+T)"><Icon name="mic" size={13} /> Audio</button>
+        <button className="btn sm" onClick={(e) => openMenu(e, formatChoices("audio"))} title="New stereo or mono audio track. Ctrl+T adds a stereo track."><Icon name="mic" size={13} /> Audio</button>
         <button className="btn sm" onClick={() => addTrack("instrument")} title="New instrument track (Ctrl+Shift+T)"><Icon name="piano" size={13} /> Instrument</button>
-        <button className="btn sm" onClick={() => addTrack("group")} title="New bus (group / submix)"><Icon name="layers" size={13} /> Bus</button>
+        <button className="btn sm" onClick={(e) => openMenu(e, formatChoices("group"))} title="New stereo or mono bus"><Icon name="layers" size={13} /> Bus</button>
         <button className="btn sm" onClick={() => addTrack("return")} title="New FX return with reverb"><Icon name="send" size={13} /> FX Return</button>
         <button className="btn sm ghost" onClick={() => importAudio()} title="Import audio (Ctrl+I)"><Icon name="folder" size={13} /> Import</button>
         <div className="sep" />
@@ -1117,7 +1220,7 @@ export function Arrange() {
           <div className={cx("track-row", dropLane === "new" && "drop")} style={{ height: 120, borderBottom: "none" }}
             onDragOver={(e) => dragOver(e, "new")} onDrop={(e) => onDrop(e)}>
             <div className="add-track" style={{ flexDirection: "column", alignItems: "stretch" }}>
-              <button className="btn sm" onClick={() => addTrack("audio")}><Icon name="plus" size={13} /> Add track</button>
+              <button className="btn sm" onClick={(e) => openMenu(e, [...formatChoices("audio"), ...formatChoices("group")])}><Icon name="plus" size={13} /> Add track</button>
               <span className="small faint" style={{ padding: "4px 2px" }}>Drop audio, effects or instruments anywhere</span>
             </div>
           </div>
@@ -1138,7 +1241,7 @@ export function Arrange() {
             <Icon name="wave" size={36} />
             <b style={{ color: "var(--text)" }}>Your session is empty</b>
             <span>Add a track, or drop audio files here to start.</span>
-            <div className="row" style={{ pointerEvents: "auto" }}><button className="btn primary" onClick={() => addTrack("audio")}>Add audio track</button><button className="btn" onClick={() => addTrack("instrument")}>Add instrument</button></div>
+            <div className="row" style={{ pointerEvents: "auto" }}><button className="btn primary" onClick={(e) => openMenu(e, formatChoices("audio"))}>Add audio track</button><button className="btn" onClick={() => addTrack("instrument")}>Add instrument</button></div>
           </div>
         )}
       </div>

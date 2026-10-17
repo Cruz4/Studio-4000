@@ -37,6 +37,7 @@ target_sources(Studio4000 PRIVATE
     src/AgentServer.cpp
     src/SessionRelay.cpp
     src/LoudnessMeterPlugin.cpp
+    src/ChainMix.cpp
     src/LimiterPlugin.cpp
     src/SmartMix.cpp
     src/StudioFx.cpp
@@ -116,6 +117,10 @@ target_link_libraries(Studio4000 PRIVATE
     juce::juce_gui_extra
     juce::juce_dsp
     juce::juce_recommended_config_flags)
+
+if (WIN32)
+    target_link_libraries(Studio4000 PRIVATE mfplat mfreadwrite mfuuid)
+endif()
 
 set(STUDIO_UI_DIST ${CMAKE_CURRENT_SOURCE_DIR}/ui/dist)
 # Runs on every build (not only when the exe relinks) and replaces the folders, so UI-only changes ship and old bundles don't pile up.

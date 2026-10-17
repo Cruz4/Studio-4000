@@ -20,6 +20,7 @@ String getTrackKind (const te::Track&);
 
 /** True for the volume/pan and meter plug-ins every track carries, which the UI shows as faders. */
 bool isChannelStripPlugin (const te::Plugin&);
+int chainMixPercent (const te::PluginList&);
 
 var describePlugin (te::Plugin&, int maxParams = 128);
 var describeParameter (te::AutomatableParameter&);

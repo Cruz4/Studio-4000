@@ -1,6 +1,7 @@
 import { native, rpc } from "./bridge";
 import { COFFEE_URL, supportMailto } from "./support";
 import { panic, shiftOctave, toggleTyping } from "./keys";
+import { usePad } from "./gamepad/pad";
 import { act, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
 import type { Clip, Track } from "./types";
 import { AUDIO_FILTER, gridSeconds, secondsPerBar, secondsPerBeat } from "./util";
@@ -81,10 +82,11 @@ export async function openProject() {
   }
 }
 
-export async function addTrack(kind: Track["kind"] = "audio", place: { afterId?: string; beforeId?: string } = {}) {
+export async function addTrack(kind: Track["kind"] = "audio", place: { afterId?: string; beforeId?: string } = {}, channels?: 1 | 2) {
   const at = { afterId: place.afterId ?? (place.beforeId ? undefined : S().selectedTrack ?? undefined), beforeId: place.beforeId };
   if (kind === "return") return act("bus.create", { name: "FX Return", effect: "reverb", ...at });
-  const ids = await act("track.add", { kind, ...at });
+  const width = kind === "audio" || kind === "group" ? (channels === 1 ? 1 : 2) : undefined;
+  const ids = await act("track.add", { kind, ...(width ? { channels: width } : {}), ...at });
   if (ids?.[0]) selectTrack(ids[0]);
 }
 
@@ -354,10 +356,12 @@ export const commands: Command[] = [
   { id: "quantize", group: "Edit", title: "Quantize selected MIDI to 1/16", keys: "Q", when: hasProject,
     run: () => act("batch.run", { label: "Quantize", calls: selectedClips().filter((c) => c.kind === "midi").map((c) => ({ method: "midi.quantize", params: { clipId: c.id, grid: 0.25 } })) }) },
 
-  { id: "addAudio", group: "Track", title: "New audio track", keys: "Ctrl+T", run: () => addTrack("audio"), when: hasProject },
+  { id: "addAudio", group: "Track", title: "New stereo audio track", keys: "Ctrl+T", run: () => addTrack("audio", {}, 2), when: hasProject },
+  { id: "addAudioMono", group: "Track", title: "New mono audio track", run: () => addTrack("audio", {}, 1), when: hasProject },
   { id: "addInst", group: "Track", title: "New instrument track", keys: "Ctrl+Shift+T", run: () => addTrack("instrument"), when: hasProject },
   { id: "addBus", group: "Track", title: "New FX return (reverb)", run: () => addTrack("return"), when: hasProject },
-  { id: "addGroup", group: "Track", title: "New group / submix", run: () => addTrack("group"), when: hasProject },
+  { id: "addGroup", group: "Track", title: "New stereo bus", run: () => addTrack("group", {}, 2), when: hasProject },
+  { id: "addGroupMono", group: "Track", title: "New mono bus", run: () => addTrack("group", {}, 1), when: hasProject },
   { id: "arm", group: "Track", title: "Arm selected track", keys: "Shift+R", when: hasProject,
     run: () => { const t = selectedTrack(); if (t) act("track.arm", { id: t.id, armed: !t.armed }); } },
   { id: "muteTrack", group: "Track", title: "Mute selected track", when: hasProject,
@@ -396,6 +400,7 @@ export const commands: Command[] = [
   { id: "zoomFit", group: "View", title: "Zoom so every clip is visible", keys: "Shift+Z", when: hasProject, run: () => zoomToClips() },
   { id: "fullscreen", group: "View", title: "Full screen", keys: "F11", run: () => native.window("fullscreen") },
   { id: "shortcuts", group: "Help", title: "Keyboard shortcuts", keys: "?", run: () => useStore.setState({ shortcutsOpen: true }) },
+  { id: "controller", group: "Help", title: "Game controller", run: () => usePad.setState({ mapOpen: true }) },
   { id: "guide", group: "Help", title: "How Studio 4000 works", run: () => useStore.setState({ guideOpen: true }) },
   { id: "checkUpdate", group: "Help", title: "Check for updates", run: () => checkForUpdates() },
   { id: "whatsNew", group: "Help", title: "What's new", run: () => useStore.setState({ aboutOpen: true }) },

@@ -1,5 +1,6 @@
 #include "AppEngine.h"
 #include "LoudnessMeterPlugin.h"
+#include "ChainMix.h"
 #include "LimiterPlugin.h"
 #include "LiveMidi.h"
 #include "StudioFx.h"
@@ -34,8 +35,12 @@ namespace
             if (params.hasProperty ("mute"))     return params["mute"] ? "Mute" : "Unmute";
             if (params.hasProperty ("solo"))     return params["solo"] ? "Solo" : "Unsolo";
             if (params.hasProperty ("output"))   return "Track output";
+            if (params.hasProperty ("channels")) return "Track format";
             return "Track change";
         }
+
+        if (method == "chain.setMix")
+            return "Wet/dry";
 
         if (method == "clip.set")
         {
@@ -253,6 +258,8 @@ AppEngine::AppEngine (bool isolated)
     engine = std::make_unique<te::Engine> (opts.applicationName, std::move (ui), std::make_unique<StudioEngineBehaviour> (*this));
     auto& pm = engine->getPluginManager();
     pm.createBuiltInType<LoudnessMeterPlugin>();
+    pm.createBuiltInType<ChainDryPlugin>();
+    pm.createBuiltInType<ChainWetPlugin>();
     pm.createBuiltInType<LimiterPlugin>();
     pm.registerBuiltInType (std::make_unique<LegacyPluginType<LoudnessMeterPlugin>> ("s3030loudness"));
     pm.registerBuiltInType (std::make_unique<LegacyPluginType<LimiterPlugin>> ("s3030limiter"));

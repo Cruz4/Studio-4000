@@ -1,4 +1,5 @@
 #include "SelfTest.h"
+#include "api/Api.h"
 #include "LoudnessMeterPlugin.h"
 #include "StudioFx.h"
 #include "SuiteFx.h"
@@ -352,6 +353,52 @@ bool SelfTest::runStep()
             for (auto& t : *snap["tracks"].getArray())
                 ids[t["name"].toString()] = t["id"].toString();
 
+            check ("a template audio track is stereo", (int) snap["tracks"][0]["channels"] == 2);
+
+            auto monoIds = call ("track.add", Obj().set ("kind", "audio").set ("name", "Mono Voice").set ("channels", 1));
+            auto busIds = call ("track.add", Obj().set ("kind", "group").set ("name", "Mono Bus").set ("channels", 1));
+            const String monoId = monoIds[0].toString();
+            const String busId = busIds[0].toString();
+            auto again = app.rpc.invoke ("project.get", {}, "selftest");
+            int monoCh = -1, busCh = -1;
+
+            for (auto& t : *again["tracks"].getArray())
+            {
+                if (t["name"].toString() == "Mono Voice") monoCh = (int) t["channels"];
+                if (t["name"].toString() == "Mono Bus")   busCh = (int) t["channels"];
+            }
+
+            check ("a new audio track can be mono", monoCh == 1, String (monoCh));
+            check ("a new bus can be mono", busCh == 1, String (busCh));
+
+            auto tone = writeTestTone (workDir.getChildFile ("mono-voice.wav"), true, 1.0);
+            call ("clip.importAudio", Obj().set ("trackId", monoId).set ("file", tone.getFullPathName()).set ("start", 0.0));
+            auto* monoClip = dynamic_cast<te::AudioClipBase*> (app.audioTrack (monoId).getClips().getFirst());
+            check ("a stereo file on a mono track plays one channel", monoClip != nullptr && monoClip->getActiveChannelConfiguration().isMono());
+
+            call ("track.set", Obj().set ("id", monoId).set ("channels", 2));
+            check ("switching the track to stereo restores both channels", monoClip != nullptr && ! monoClip->getActiveChannelConfiguration().isMono());
+            call ("track.set", Obj().set ("id", monoId).set ("channels", 1));
+            check ("switching the track back to mono plays one channel", monoClip != nullptr && monoClip->getActiveChannelConfiguration().isMono());
+
+            int summers = 0;
+
+            if (auto* bus = dynamic_cast<te::FolderTrack*> (app.findTrack (busId)))
+                for (int i = 0; i < bus->pluginList.size(); ++i)
+                    if (bus->pluginList[i] != nullptr && (bool) bus->pluginList[i]->state["s4format"])
+                        ++summers;
+
+            check ("a mono bus sums to one channel", summers == 1, String (summers));
+            call ("track.set", Obj().set ("id", busId).set ("channels", 2));
+            summers = 0;
+
+            if (auto* bus = dynamic_cast<te::FolderTrack*> (app.findTrack (busId)))
+                for (int i = 0; i < bus->pluginList.size(); ++i)
+                    if (bus->pluginList[i] != nullptr && (bool) bus->pluginList[i]->state["s4format"])
+                        ++summers;
+
+            check ("a stereo bus leaves both channels", summers == 0, String (summers));
+
             return true;
         }
 
@@ -367,6 +414,54 @@ bool SelfTest::runStep()
 
             auto peaks = call ("media.peaks", Obj().set ("file", app.getProjectDir().getChildFile ("Imported/voice.wav").getFullPathName()));
             check ("waveform peaks computed", peaks["data"].toString().length() > 1000);
+
+            call ("chain.setMix", Obj().set ("trackId", ids["Lead Vocal"]).set ("mix", 35));
+            call ("chain.setMix", Obj().set ("clipId", ids["voiceClip"]).set ("mix", 15));
+            auto mixed = app.rpc.invoke ("project.get", {}, "selftest");
+            double trackMix = -1, clipMix = -1;
+            bool leaked = false;
+
+            for (auto& t : *mixed["tracks"].getArray())
+            {
+                if (t["name"].toString() != "Lead Vocal")
+                    continue;
+
+                trackMix = (double) t["fxMix"];
+
+                if (auto* plugs = t["plugins"].getArray())
+                    for (auto& pl : *plugs)
+                        if (pl["type"].toString().contains ("chain"))
+                            leaked = true;
+
+                if (auto* clips = t["clips"].getArray())
+                    for (auto& c : *clips)
+                        if (c["id"].toString() == ids["voiceClip"])
+                            clipMix = (double) c["fxMix"];
+            }
+
+            check ("a track effect chain has its own wet/dry", std::abs (trackMix - 35.0) < 0.5, String (trackMix, 1));
+            check ("a clip effect chain has its own wet/dry", std::abs (clipMix - 15.0) < 0.5, String (clipMix, 1));
+            check ("the wet/dry control stays out of the effect list", ! leaked);
+
+            int dryAt = -1, wetAt = -1, volAt = -1;
+            auto& vocal = app.audioTrack (ids["Lead Vocal"]);
+
+            for (int i = 0; i < vocal.pluginList.size(); ++i)
+            {
+                auto* p = vocal.pluginList[i];
+
+                if (p == nullptr)
+                    continue;
+
+                if (p->state["s4chain"].toString() == "dry") dryAt = i;
+                if (p->state["s4chain"].toString() == "wet") wetAt = i;
+                if (dynamic_cast<te::VolumeAndPanPlugin*> (p) != nullptr) volAt = i;
+            }
+
+            check ("track wet/dry wraps the effects", dryAt >= 0 && wetAt > dryAt && (volAt < 0 || wetAt < volAt),
+                   String (dryAt) + " " + String (wetAt) + " " + String (volAt));
+            call ("chain.setMix", Obj().set ("trackId", ids["Lead Vocal"]).set ("mix", 100));
+            call ("chain.setMix", Obj().set ("clipId", ids["voiceClip"]).set ("mix", 100));
             return true;
         }
 
@@ -841,6 +936,19 @@ bool SelfTest::runStep()
                     ++stems;
 
             check ("stems exported as FLAC", stems >= 4, String (stems) + " stems");
+
+            juce::File wavMix;
+
+            for (int i = renderedFiles.size(); --i >= 0;)
+                if (renderedFiles[i].toString().endsWithIgnoreCase (".wav"))
+                {
+                    wavMix = renderedFiles[i].toString();
+                    break;
+                }
+
+            const auto mp3Mix = wavMix.withFileExtension ("mp3");
+            const auto mp3Error = wavMix.existsAsFile() ? transcodeWavToMp3 (app.getEngine(), wavMix, mp3Mix) : String ("no wav");
+            check ("a mixdown can be written as MP3", mp3Error.isEmpty() && mp3Mix.existsAsFile() && mp3Mix.getSize() > 1000, mp3Error);
 
             auto context = call ("ai.context");
             check ("assistant context available", context.toString().contains ("Lead Vocal"));

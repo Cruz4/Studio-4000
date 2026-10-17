@@ -42,6 +42,30 @@ const toNorm = (p: Param, value: number) => {
   return clamp((value - p.min) / (p.max - p.min), 0, 1);
 };
 
+/** Lets the game controller turn, reset, or toggle a control without knowing the parameter. */
+function usePadTarget<T extends HTMLElement>(kind: string, handlers: { adjust?: (delta: number) => void; reset?: () => void; activate?: () => void }) {
+  const saved = useRef(handlers);
+  saved.current = handlers;
+  const cleanup = useRef<(() => void) | null>(null);
+  const ref = useCallback((el: T | null) => {
+    cleanup.current?.();
+    cleanup.current = null;
+    if (!el) return;
+    const adjust = (e: Event) => saved.current.adjust?.((e as CustomEvent<number>).detail);
+    const reset = () => saved.current.reset?.();
+    const activate = () => saved.current.activate?.();
+    el.addEventListener("pad-adjust", adjust);
+    el.addEventListener("pad-reset", reset);
+    el.addEventListener("pad-activate", activate);
+    cleanup.current = () => {
+      el.removeEventListener("pad-adjust", adjust);
+      el.removeEventListener("pad-reset", reset);
+      el.removeEventListener("pad-activate", activate);
+    };
+  }, []);
+  return { ref, kind };
+}
+
 /** Live parameter state for one plug-in. Writes are coalesced to one in-flight call per kind so drags stay smooth. */
 export function useFx(id: string, seed: Param[] = []): Fx {
   const [params, setParams] = useState<Param[]>(Array.isArray(seed) ? seed : []);
@@ -287,6 +311,10 @@ export function Knob({ fx, pid, label, size = 46, color = COLORS.violet2, bipola
   const p = fx.get(pid);
   const drag = useRef<{ y: number; norm: number } | null>(null);
   const [editing, setEditing] = useState(false);
+  const pad = usePadTarget<HTMLDivElement>("knob", {
+    adjust: (delta) => { const cur = fx.get(pid); if (cur && !disabled) fx.setNorm(pid, (Number.isFinite(cur.norm) ? cur.norm : 0) + delta); },
+    reset: () => { if (!disabled) fx.reset(pid); },
+  });
   if (!p) return null;
   const norm = Number.isFinite(p.norm) ? clamp(p.norm, 0, 1) : 0;
   const isBipolar = bipolar ?? (p.min < 0 && p.max > 0);
@@ -304,7 +332,7 @@ export function Knob({ fx, pid, label, size = 46, color = COLORS.violet2, bipola
   const text = format ? format(p) : p.text;
 
   return (
-    <div className={cx("fx-knob", disabled && "disabled")} title={`${p.name}: ${p.text}\nDrag, scroll, or double-click to reset`}>
+    <div ref={pad.ref} data-pad={pad.kind} className={cx("fx-knob", disabled && "disabled")} title={`${p.name}: ${p.text}\nDrag, scroll, or double-click to reset`}>
       <svg width={size} height={size}
         onPointerDown={(e) => { if (disabled) return; (e.target as Element).setPointerCapture(e.pointerId); drag.current = { y: e.clientY, norm }; }}
         onPointerMove={(e) => {
@@ -339,11 +367,14 @@ export function Knob({ fx, pid, label, size = 46, color = COLORS.violet2, bipola
 /** Segmented buttons for a stepped parameter. */
 export function Seg({ fx, pid, label, labels, small }: { fx: Fx; pid: string; label?: string; labels?: string[]; small?: boolean }) {
   const p = fx.get(pid);
+  const options = p?.options?.length ? p.options : [];
+  const current = p ? fx.c(pid) : 0;
+  const pad = usePadTarget<HTMLDivElement>("step", {
+    activate: () => { if (!p || !options.length) return; fx.set(pid, options[(current + 1) % options.length].value); },
+  });
   if (!p) return null;
-  const options = p.options?.length ? p.options : [];
-  const current = fx.c(pid);
   return (
-    <div className="fx-seg-wrap">
+    <div ref={pad.ref} data-pad={pad.kind} className="fx-seg-wrap">
       {label && <span className="fx-label">{label}</span>}
       <div className={cx("fx-seg", small && "small")}>
         {options.map((o, i) => (
@@ -357,10 +388,11 @@ export function Seg({ fx, pid, label, labels, small }: { fx: Fx; pid: string; la
 /** An on/off switch for a two-step parameter. */
 export function Toggle({ fx, pid, label }: { fx: Fx; pid: string; label?: string }) {
   const p = fx.get(pid);
+  const on = p ? fx.c(pid) === 1 : false;
+  const pad = usePadTarget<HTMLButtonElement>("switch", { activate: () => { if (p) fx.set(pid, on ? p.min : p.max); } });
   if (!p) return null;
-  const on = fx.c(pid) === 1;
   return (
-    <button className={cx("fx-toggle", on && "on")} onClick={() => fx.set(pid, on ? p.min : p.max)}>
+    <button ref={pad.ref} data-pad={pad.kind} className={cx("fx-toggle", on && "on")} onClick={() => fx.set(pid, on ? p.min : p.max)}>
       <span className="led" /> {label ?? p.name}
     </button>
   );
@@ -369,9 +401,12 @@ export function Toggle({ fx, pid, label }: { fx: Fx; pid: string; label?: string
 /** A dropdown for a stepped parameter with many options. */
 export function Pick({ fx, pid, label }: { fx: Fx; pid: string; label?: string }) {
   const p = fx.get(pid);
+  const pad = usePadTarget<HTMLLabelElement>("step", {
+    activate: () => { if (p?.options?.length) fx.set(pid, p.options[(fx.c(pid) + 1) % p.options.length].value); },
+  });
   if (!p?.options?.length) return null;
   return (
-    <label className="fx-pick">
+    <label ref={pad.ref} data-pad={pad.kind} className="fx-pick">
       {label !== "" && <span className="fx-label">{label ?? p.name}</span>}
       <select className="input sm" value={fx.c(pid)} onChange={(e) => fx.set(pid, p.options![+e.target.value].value)}>
         {p.options.map((o, i) => <option key={i} value={i}>{o.label}</option>)}
