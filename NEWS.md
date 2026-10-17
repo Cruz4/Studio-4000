@@ -1,3 +1,5 @@
+A blank bus can take a vocal or any other track. Point the track's output at the bus and it plays through that bus, with or without an effect on it.
+
 Zooming in on the tracks keeps the timeline filled instead of leaving a blank page on the right. Double-clicking an effect opens a window tall enough to show the whole editor.
 
 What's new opens the first time a session starts, and again from Help. The label at the bottom is this build. Hosting is a button: Studio 4000 opens the connection and gives one code, and the other person pastes it to join from another network. End closes the session for everyone, and Leave returns to the join screen. Effects minimize to a few knobs, keep each knob's color in every view, and show a green power light when they are on. Several effects can be copied, pasted, deleted, or reordered together, and a chain can be saved and loaded on a track or an audio clip. Audio clips have a gain line. The ruler shows clock time. MIDI notes stay inside a clip while it is dragged. New clips do not get a tiny automatic fade. The light theme is a darker silver with near-black section lines, and the track level bar keeps the dark shape.

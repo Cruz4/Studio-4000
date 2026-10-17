@@ -151,7 +151,16 @@ export function createMock(emit: Emit) {
     "project.setTimeSig": (p) => { project!.timeSig = [p.numerator, p.denominator]; changed(); return true; },
     "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : "Audio"), p.kind || "audio", "#4dd4ff"); project!.tracks.push(tr); changed(); return [tr.id]; },
     "track.remove": (p) => { project!.tracks = project!.tracks.filter((x) => x.id !== p.id); changed(); return true; },
-    "track.set": (p) => { const tr = findTrack(p.id)!; Object.assign(tr, { ...p, id: tr.id }); changed(); return true; },
+    "track.set": (p) => {
+      const tr = findTrack(p.id)!;
+      if (typeof p.output === "string") {
+        const bus = project!.tracks.find((x) => x.id === p.output && x.kind === "group");
+        tr.parent = bus ? bus.id : project!.tracks.some((x) => x.id === tr.parent && x.kind === "group") ? null : tr.parent;
+      }
+      Object.assign(tr, { ...p, id: tr.id });
+      changed();
+      return true;
+    },
     "track.arm": (p) => { const t = findTrack(p.id)!; t.armed = p.armed; t.live = isLive(t); changed(); return true; },
     "track.setMonitor": (p) => { const t = findTrack(p.id)!; t.monitor = p.mode; t.live = isLive(t); changed(); return true; },
     "track.setInput": (p) => { findTrack(p.id)!.input = p.input; changed(); return true; },

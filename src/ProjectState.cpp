@@ -381,10 +381,13 @@ var describeTrack (AppEngine& app, te::Track& t)
              .set ("volumePluginId", vp->itemID.toString());
 
         auto& out = at->getOutput();
-        String output = out.getDestinationTrack() != nullptr ? out.getDestinationTrack()->itemID.toString()
-                      : out.outputsToNone()                    ? String ("none")
-                      : out.usesDefaultAudioOut()              ? String ("master")
-                                                               : "device:" + out.getOutputName();
+        auto* bus = at->getParentFolderTrack();
+        // A track inside a bus is heard through that bus, even when the bus is empty of effects.
+        String output = bus != nullptr && bus->isSubmixFolder() ? bus->itemID.toString()
+                      : out.getDestinationTrack() != nullptr    ? out.getDestinationTrack()->itemID.toString()
+                      : out.outputsToNone()                     ? String ("none")
+                      : out.usesDefaultAudioOut()               ? String ("master")
+                                                                : "device:" + out.getOutputName();
         o.set ("output", output);
 
         String inputName;

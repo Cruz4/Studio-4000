@@ -181,7 +181,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Add a track",
     group: "Tracks",
     where: "Right-click a track name or an empty lane, or the Add track row at the bottom",
-    how: "Choose an audio track (Ctrl+T), an instrument (Ctrl+Shift+T), a group, or an FX return. The return is created with a reverb. Right-click to duplicate or delete the track you clicked.",
+    how: "Choose an audio track (Ctrl+T), an instrument (Ctrl+Shift+T), a bus, or an FX return. A bus can be empty. Point a vocal, or any other track, at it with the output under the track name. The FX return is separate and starts with a reverb. Right-click to duplicate or delete the track you clicked.",
     also: ["new track", "instrument track", "bus", "fx return", "group"],
   },
   {

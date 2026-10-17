@@ -38,6 +38,26 @@ namespace
         auto subs = folder.getAllSubTracks (false);
         return subs.isEmpty() ? nullptr : subs.getLast();
     }
+
+    // A bus is a submix folder. Vocals and other tracks feed it by sitting inside it.
+    // An FX return is a different track, with a send, and is not required.
+    void leaveSubmix (te::Edit& edit, te::Track& t)
+    {
+        if (auto* parent = t.getParentFolderTrack(); parent != nullptr && parent->isSubmixFolder())
+            edit.moveTrack (&t, te::TrackInsertPoint (parent->getParentFolderTrack(), parent));
+    }
+
+    void routeIntoBus (te::Edit& edit, te::AudioTrack& at, te::FolderTrack& bus)
+    {
+        if (static_cast<const te::Track*> (&bus) == &at || bus.isAChildOf (at))
+            throw RpcError ("That routing would create a feedback loop");
+
+        if (at.getParentFolderTrack() != &bus)
+            edit.moveTrack (&at, te::TrackInsertPoint (&bus, lastChildOf (bus)));
+
+        // The bus reaches the speakers through the first track inside it.
+        at.getOutput().setOutputToDefaultDevice (false);
+    }
 }
 
 juce::Colour nextTrackColour (te::Edit& edit)
@@ -219,7 +239,7 @@ void registerTrackApi (AppEngine& app)
     });
 
     rpc.add ("track.set", K::write, "Changes track properties",
-             "{id, name?, colour?, mute?, solo?, volumeDb?, pan?, output?: master|none|trackId|device:<output name>, automationMode?, role?}",
+             "{id, name?, colour?, mute?, solo?, volumeDb?, pan?, output?: master|none|busId|device:<output name>, automationMode?, role?}",
              [&app] (const var& p)
     {
         auto& t = app.track (reqStr (p, "id"));
@@ -250,6 +270,10 @@ void registerTrackApi (AppEngine& app)
                 throw RpcError ("Only audio tracks have a routable output");
 
             auto out = str (p, "output");
+            const bool direct = out == "master" || out == "none" || out.startsWith ("device:");
+
+            if (direct)
+                leaveSubmix (app.edit(), *at);
 
             if (out == "master")
                 at->getOutput().setOutputToDefaultDevice (false);
@@ -270,6 +294,10 @@ void registerTrackApi (AppEngine& app)
 
                 at->getOutput().setOutputToDeviceID (device->getDeviceID());
             }
+            else if (auto* bus = dynamic_cast<te::FolderTrack*> (app.findTrack (out)))
+            {
+                routeIntoBus (app.edit(), *at, *bus);
+            }
             else
             {
                 auto& dest = app.audioTrack (out);
@@ -277,6 +305,7 @@ void registerTrackApi (AppEngine& app)
                 if (&dest == at || dest.getOutput().feedsInto (at))
                     throw RpcError ("That routing would create a feedback loop");
 
+                leaveSubmix (app.edit(), *at);
                 at->getOutput().setOutputToTrack (&dest);
             }
         }
