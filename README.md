@@ -1,6 +1,6 @@
 # Studio 4000
 
-Hey. COMMODIOUS WORKS LLC built Studio 4000 from scratch because making music should not start with a subscription.
+Built Studio 4000 from scratch because making music should not start with a subscription.
 
 Studio 4000 is a vibe-coded DAW, and it is fully free to use. Record, arrange, mix, and play with someone else, on your own Windows computer. Fully free means the songs you release too: there is no fee, no account, and the music you make is yours. If you are here to create, welcome in. Wishing the best to every artist, producer, and band who opens it.
 
