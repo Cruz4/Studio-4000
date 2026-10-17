@@ -625,8 +625,15 @@ export function Arrange() {
   const tracks = project.tracks;
   const depthOf = useCallback((t: Track) => { let d = 0, p = t.parent; while (p && d < 6) { d++; p = tracks.find((x) => x.id === p)?.parent ?? null; } return d; }, [tracks]);
 
-  const totalSec = Math.max(project.length + secondsPerBar(project) * 16, (view.width + 200) / pps);
-  const laneW = Math.ceil(totalSec * pps);
+  // Always paint at least one extra screen past the playhead, the last clip, and wherever
+  // the view is scrolled. A short session used to end early, and zooming in turned that
+  // gap into a blank page on the right.
+  const viewport = Math.max(view.width, 1);
+  let far = Math.max(project.length, live.tick.t, 0);
+  for (const t of tracks) for (const c of t.clips) far = Math.max(far, c.end);
+  const sparePx = Math.max(viewport * 1.25, 480);
+  const totalSec = far + secondsPerBar(project) * 8;
+  const laneW = Math.ceil(Math.max(totalSec * pps, view.left + viewport + sparePx));
 
   const updateView = useCallback(() => {
     const el = body.current;
@@ -640,7 +647,7 @@ export function Arrange() {
     return () => ro.disconnect();
   }, [updateView]);
 
-  useLayoutEffect(() => { updateView(); }, [headerW, updateView]);
+  useLayoutEffect(() => { updateView(); }, [headerW, pps, updateView]);
 
   useEffect(() => {
     const draw = () => {
@@ -971,7 +978,7 @@ export function Arrange() {
       </div>
 
       <div className="arrange-body" ref={body} onScroll={updateView}>
-        <div className="arrange-inner" style={{ width: headerW + laneW, minHeight: "100%" }}
+        <div className="arrange-inner" style={{ width: headerW + laneW, minWidth: "100%", minHeight: "100%" }}
           onDragOver={(e) => dragOver(e, "new")}
           onDrop={(e) => { if (!e.defaultPrevented) void onDrop(e); }}
           onPointerMove={(e) => {
@@ -981,7 +988,7 @@ export function Arrange() {
             else setGhost(null);
           }}
           onPointerLeave={() => { reportHover(null); setGhost(null); }}>
-          <div className="ruler" style={{ width: headerW + laneW }}>
+          <div className="ruler" style={{ width: headerW + laneW, minWidth: "100%" }}>
             <div className="ruler-corner">
               <span className="small faint">{tracks.length} tracks</span>
               <div className="grow" />
@@ -996,11 +1003,11 @@ export function Arrange() {
             const trackH = heightOf(heights, track.id);
             return (
               <div key={track.id}>
-                <div className={cx("track-row", (selectedTracks.includes(track.id) || (!selectedTracks.length && selectedTrack === track.id)) && "selected")} style={{ height: trackH }} data-track={track.id}>
+                <div className={cx("track-row", (selectedTracks.includes(track.id) || (!selectedTracks.length && selectedTrack === track.id)) && "selected")} style={{ height: trackH, width: "100%" }} data-track={track.id}>
                   <TrackHeader track={track} selected={selectedTracks.includes(track.id) || selectedTrack === track.id} height={trackH} depth={depthOf(track)} />
                   <TrackDivider id={track.id} height={trackH} />
                   <div className={cx("lane", dropLane === track.id && "drop")} data-lane-index={i} data-kind={track.kind}
-                    style={{ width: laneW, height: trackH, ...gridBg, backgroundColor: track.kind === "group" || track.kind === "return" ? "rgba(255,255,255,.015)" : undefined }}
+                    style={{ flex: "1 0 auto", width: laneW, minWidth: laneW, height: trackH, ...gridBg, backgroundColor: "var(--bg1)" }}
                     onPointerDown={(e) => onLaneDown(e, track)}
                     onDoubleClick={(e) => { if (e.target === e.currentTarget && track.kind === "instrument") addMidiClip(track.id, timeAtClient(e.clientX)); }}
                     onContextMenu={(e) => {

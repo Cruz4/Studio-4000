@@ -270,8 +270,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .history-item:hover { background: rgba(255, 255, 255, .06); }
 .history-item.redo { color: var(--faint); }
 .history-now { padding: 4px 8px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--cyan); }
-.arrange-body { flex: 1; overflow: auto; position: relative; min-height: 0; }
-.arrange-inner { position: relative; }
+.arrange-body { flex: 1; overflow: auto; position: relative; min-height: 0; width: 100%; background: var(--bg1); }
+.arrange-inner { position: relative; min-width: 100%; background: var(--bg1); }
 .ruler { position: sticky; top: 0; z-index: 7; height: 34px; display: flex; background: var(--bg1); border-bottom: 1px solid var(--line); }
 .ruler-corner { position: sticky; left: 0; z-index: 8; width: var(--header-w); flex: none; background: var(--bg1); border-right: 1px solid var(--line); display: flex; align-items: center; gap: 4px; padding: 0 8px; }
 .ruler-canvas { position: relative; flex: none; cursor: text; }
@@ -640,7 +640,7 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 .step .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(124, 92, 255, .2); color: var(--violet2); font-weight: 700; flex: none; }
 
 /* ---------- plug-in windows ---------- */
-.fx-window { position: fixed; z-index: 80; display: flex; flex-direction: column; max-height: calc(100vh - 70px); overflow: hidden; border-radius: 16px;
+.fx-window { position: fixed; z-index: 80; display: flex; flex-direction: column; max-height: calc(100vh - 16px); overflow: hidden; border-radius: 16px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, #151a2a), #0c0f18 55%);
   border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 0 38px color-mix(in srgb, var(--accent) 38%, transparent), 0 40px 110px rgba(0, 0, 0, .8);

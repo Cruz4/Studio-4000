@@ -31,34 +31,34 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
   const [maxH, setMaxH] = useState<number | undefined>();
 
   useEffect(() => { setTab(entry ? "editor" : "params"); }, [plugin.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Every open (including re-clicking the slot of an open effect) places the window next to the slot that opened it,
-  // never on top of it, so the highlighted slot and the window can be seen together.
+  // Size the window to its editor. Only the screen itself may shorten it, and then the body scrolls.
+  // The slot it was opened from is used to place it, not to crop it.
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const body = el.querySelector<HTMLElement>(".fx-window-body");
     const natural = body ? el.offsetHeight - body.clientHeight + body.scrollHeight : el.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, w = Math.min(width, vw - 24);
-    const gap = 14, top = 48, minH = 280;
-    const clampX = (x: number) => Math.min(Math.max(12, x), Math.max(12, vw - w - 12));
+    const margin = 8, top = 8, gap = 14;
+    const cap = vh - margin * 2;
+    const h = Math.min(Math.max(natural, 1), cap);
+    const clampX = (x: number) => Math.min(Math.max(margin, x), Math.max(margin, vw - w - margin));
+    const clampY = (y: number) => Math.min(Math.max(top, y), Math.max(top, vh - h - margin));
+    setMaxH(natural > cap + 1 ? cap : undefined);
     if (!anchor) {
-      setMaxH(undefined);
-      setPos((p) => ({ x: clampX(p.x), y: Math.min(Math.max(top, p.y), Math.max(top, vh - 200)) }));
+      setPos((p) => ({ x: clampX(p.x), y: clampY(p.y) }));
       return;
     }
-    const x = clampX((anchor.left + anchor.right) / 2 - w / 2);
-    const above = anchor.top - gap - top, below = vh - 12 - anchor.bottom - gap;
-    if (above >= Math.min(natural, minH) && (above >= natural || above >= below)) {
-      const h = Math.min(natural, above);
-      setMaxH(h); setPos({ x, y: anchor.top - gap - h });
-    } else if (below >= Math.min(natural, minH)) {
-      setMaxH(Math.min(natural, below)); setPos({ x, y: anchor.bottom + gap });
-    } else {
-      const fitsRight = vw - 12 - anchor.right - gap >= w;
-      setMaxH(undefined);
-      setPos({ x: fitsRight ? anchor.right + gap : clampX(anchor.left - gap - w), y: Math.max(top, Math.min(vh - natural - 12, anchor.top - natural / 2)) });
+    const fitsRight = anchor.right + gap + w <= vw - margin;
+    const fitsLeft = anchor.left - gap - w >= margin;
+    let x = fitsRight ? anchor.right + gap : fitsLeft ? anchor.left - gap - w : clampX((anchor.left + anchor.right) / 2 - w / 2);
+    let y = anchor.top;
+    if (!fitsRight && !fitsLeft) {
+      if (anchor.top - gap - h >= top) y = anchor.top - gap - h;
+      else if (anchor.bottom + gap + h <= vh - margin) y = anchor.bottom + gap;
     }
-  }, [ping]); // eslint-disable-line react-hooks/exhaustive-deps
+    setPos({ x: clampX(x), y: clampY(y) });
+  }, [ping, tab]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const keep = () => setPos((p) => ({ x: Math.min(p.x, Math.max(0, window.innerWidth - 120)), y: Math.min(p.y, Math.max(0, window.innerHeight - 60)) }));
     window.addEventListener("resize", keep);
