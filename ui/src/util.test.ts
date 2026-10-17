@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./types";
-import { pluginDropIndex } from "./pluginReorder";
-import { dbToFader, faderToDb, formatBars, formatDb, formatTime, gridSeconds, meterPos, noteName, parseDb, secondsPerBar, shade, snap } from "./util";
+import { groupOrder, pluginDropIndex } from "./pluginReorder";
+import { clipGainDbAt, dbToFader, faderToDb, formatBars, formatDb, formatRulerTime, formatTime, gridSeconds, meterPos, noteName, parseDb, rulerStep, secondsPerBar, shade, snap } from "./util";
 
 const song = (bpm: number, timeSig: [number, number] = [4, 4]) => ({ bpm, timeSig }) as Project;
 
@@ -23,7 +23,19 @@ describe("musical time", () => {
 
   it("snaps to the grid unless bypassed", () => {
     const p = song(120);
+    expect(gridSeconds("1/2", p)).toBeCloseTo(1);
+    expect(gridSeconds("beat", p)).toBeCloseTo(0.5);
     expect(gridSeconds("1/16", p)).toBeCloseTo(0.125);
+    expect(gridSeconds("1/32", p)).toBeCloseTo(0.0625);
+    expect(gridSeconds("1/64", p)).toBeCloseTo(0.03125);
+    expect(gridSeconds("1/128", p)).toBeCloseTo(0.015625);
+    expect(gridSeconds("bart", p)).toBeCloseTo(4 / 3);
+    expect(gridSeconds("1/2t", p)).toBeCloseTo(2 / 3);
+    expect(gridSeconds("1/4t", p)).toBeCloseTo(1 / 3);
+    expect(gridSeconds("1/8t", p)).toBeCloseTo(1 / 6);
+    expect(gridSeconds("1/16t", p)).toBeCloseTo(1 / 12);
+    expect(gridSeconds("1/32t", p)).toBeCloseTo(1 / 24);
+    expect(gridSeconds("1/64t", p)).toBeCloseTo(1 / 48);
     expect(snap(1.07, "beat", p)).toBeCloseTo(1);
     expect(snap(1.3, "beat", p)).toBeCloseTo(1.5);
     expect(snap(1.3, "bar", p)).toBeCloseTo(2);
@@ -45,6 +57,14 @@ describe("effect order", () => {
     expect(pluginDropIndex(2, 1, false)).toBe(1);
     expect(pluginDropIndex(0, 1, false)).toBe(0);
     expect(pluginDropIndex(1, 1, true)).toBe(1);
+  });
+
+  it("moves a selection as one block", () => {
+    expect(groupOrder(["a", "b", "c", "d"], ["a", "b"], 3, true)).toEqual(["c", "d", "a", "b"]);
+    expect(groupOrder(["a", "b", "c", "d"], ["c", "d"], 0, false)).toEqual(["c", "d", "a", "b"]);
+    expect(groupOrder(["a", "b", "c", "d"], ["a", "c"], 1, true)).toEqual(["b", "a", "c", "d"]);
+    expect(groupOrder(["a", "b", "c", "d"], ["a", "b"], null, true)).toEqual(["c", "d", "a", "b"]);
+    expect(groupOrder(["a", "b", "c", "d"], ["a", "b"], 0, false)).toBeNull();
   });
 });
 
@@ -87,6 +107,32 @@ describe("levels", () => {
     expect(parseDb("-12.5 db")).toBe(-12.5);
     expect(parseDb("-∞")).toBe(-100);
     expect(parseDb("nope")).toBeNull();
+  });
+});
+
+describe("ruler", () => {
+  it("spaces the time labels out as the zoom changes", () => {
+    expect(rulerStep(200)).toBe(0.5);
+    expect(rulerStep(40)).toBe(2);
+    expect(rulerStep(14)).toBe(5);
+    expect(rulerStep(4)).toBe(30);
+  });
+
+  it("prints seconds like 0:05.0", () => {
+    expect(formatRulerTime(5, 5)).toBe("0:05.0");
+    expect(formatRulerTime(65, 5)).toBe("1:05.0");
+    expect(formatRulerTime(0.5, 0.5)).toBe("0:00.5");
+    expect(formatRulerTime(0.05, 0.01)).toBe("0:00.05");
+  });
+});
+
+describe("clip gain", () => {
+  it("holds the end points and blends between them", () => {
+    const points: [number, number][] = [[1, -6], [3, 0]];
+    expect(clipGainDbAt(undefined, 2)).toBe(0);
+    expect(clipGainDbAt(points, 0)).toBe(-6);
+    expect(clipGainDbAt(points, 2)).toBe(-3);
+    expect(clipGainDbAt(points, 4)).toBe(0);
   });
 });
 

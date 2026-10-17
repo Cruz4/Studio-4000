@@ -1,6 +1,6 @@
 # Privacy
 
-Studio 4000 does not create an account, and it does not send your projects to the author.
+Studio 4000 does not create an account, and it does not send your projects to COMMODIOUS WORKS LLC.
 
 Projects, recordings, autosaves, and settings stay on the computer where you save them, under your Music folder and the app's data folder. Settings → General shows those paths.
 
@@ -8,7 +8,7 @@ An AI key you add under Settings → AI is stored on this computer. It is not wr
 
 The agent link listens on 127.0.0.1. A client needs the token stored in your user profile. Turning the link on does not publish the session on the internet by itself.
 
-A live session uses the relay address you type. Chat and session edits go through that relay. Voice and screen share are sent between the people in the room. If you point the app at a server you do not run, that server can see the session traffic it forwards. Use a room password when the room should not be open to anyone who has the code.
+A live session is hosted by the person who presses Host. Chat and session edits go through that person's Studio 4000. The app opens a path so someone with the code can connect from another network. Voice and screen share are sent between the people in the room. A custom server, if you set one, sees the session traffic it forwards. Use a room password when the room should not be open to anyone who has the code.
 
 The app talks to your audio devices, to plug-ins you scan, and to addresses you configure. It does not include a Studio 4000 analytics account.
 

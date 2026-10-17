@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { COLORS, Knob, Meter, Presets, Section, Seg, Toggle, rgba, useAnalyserFrame, useCanvas, useHistory, useTelemetry, drawFreqGrid, drawSpectrum } from "./core";
 import type { Fx, Telemetry } from "./core";
 import { clamp, compGainDb, freqToX, gainToDb, xToFreq } from "./dsp";
+import { knobLook } from "./knobLook";
 import { CLASSIC_COMP_PRESETS, COMP_PRESETS, DEESSER_PRESETS, GATE_PRESETS, LIMITER_PRESETS, TRANSIENT_PRESETS } from "./presets";
 
 /** Scrolling history of level (filled) with an optional second trace and horizontal markers. */
@@ -189,14 +190,14 @@ export function CompressorEditor({ fx, pluginId }: { fx: Fx; pluginId: string })
         </div>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="threshold" color={COLORS.amber} size={58} />
-        <Knob fx={fx} pid="ratio" size={58} />
-        <Knob fx={fx} pid="knee" />
-        <Knob fx={fx} pid="attack" color={COLORS.green} />
-        <Knob fx={fx} pid="release" color={COLORS.green} />
-        <Knob fx={fx} pid="makeup" label="Make-up" color={COLORS.cyan} disabled={false} />
-        <Knob fx={fx} pid="scHpf" label="Sidechain HPF" color={COLORS.pink} />
-        <Knob fx={fx} pid="mix" label="Dry / wet" color={COLORS.cyan} />
+        <Knob fx={fx} pid="threshold" size={58} {...knobLook("s4000comp", "threshold")} />
+        <Knob fx={fx} pid="ratio" size={58} {...knobLook("s4000comp", "ratio")} />
+        <Knob fx={fx} pid="knee" {...knobLook("s4000comp", "knee")} />
+        <Knob fx={fx} pid="attack" {...knobLook("s4000comp", "attack")} />
+        <Knob fx={fx} pid="release" {...knobLook("s4000comp", "release")} />
+        <Knob fx={fx} pid="makeup" disabled={false} {...knobLook("s4000comp", "makeup")} />
+        <Knob fx={fx} pid="scHpf" {...knobLook("s4000comp", "scHpf")} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000comp", "mix")} />
         <div className="col" style={{ gap: 8 }}>
           <Toggle fx={fx} pid="autoMakeup" label="Auto make-up" />
           <Seg fx={fx} pid="detect" small />
@@ -222,12 +223,12 @@ export function ClassicCompressorEditor({ fx }: { fx: Fx }) {
         <Section title="Transfer curve" className="fx-curve-box"><TransferCurve m={m} /></Section>
         <div className="col grow" style={{ gap: 10 }}>
           <div className="fx-row knobs">
-            <Knob fx={fx} pid="threshold" color={COLORS.amber} size={58} format={() => `${threshold.toFixed(1)} dB`} />
-            <Knob fx={fx} pid="ratio" size={58} format={() => `${ratio.toFixed(1)} : 1`} />
-            <Knob fx={fx} pid="attack" color={COLORS.green} />
-            <Knob fx={fx} pid="release" color={COLORS.green} />
-            <Knob fx={fx} pid="output gain" label="Output" color={COLORS.cyan} />
-            <Knob fx={fx} pid="input gain" label="Sidechain gain" color={COLORS.pink} />
+            <Knob fx={fx} pid="threshold" size={58} {...knobLook("compressor", "threshold")} format={() => `${threshold.toFixed(1)} dB`} />
+            <Knob fx={fx} pid="ratio" size={58} {...knobLook("compressor", "ratio")} format={() => `${ratio.toFixed(1)} : 1`} />
+            <Knob fx={fx} pid="attack" {...knobLook("compressor", "attack")} />
+            <Knob fx={fx} pid="release" {...knobLook("compressor", "release")} />
+            <Knob fx={fx} pid="output gain" {...knobLook("compressor", "output gain")} />
+            <Knob fx={fx} pid="input gain" {...knobLook("compressor", "input gain")} />
           </div>
           <p className="small faint">The Classic Compressor has no live meters. Swap in the Studio 4000 Compressor for gain-reduction metering, soft knee, RMS detection and parallel mix.</p>
           <Presets fx={fx} presets={CLASSIC_COMP_PRESETS} />
@@ -259,11 +260,11 @@ export function GateEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         </div>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="threshold" color={COLORS.amber} size={58} />
-        <Knob fx={fx} pid="range" label="Floor" format={(p) => (p.value <= -89.5 ? "Silent" : p.text)} />
-        <Knob fx={fx} pid="attack" color={COLORS.green} />
-        <Knob fx={fx} pid="hold" color={COLORS.green} />
-        <Knob fx={fx} pid="release" color={COLORS.green} />
+        <Knob fx={fx} pid="threshold" size={58} {...knobLook("s4000gate", "threshold")} />
+        <Knob fx={fx} pid="range" {...knobLook("s4000gate", "range")} format={(p) => (p.value <= -89.5 ? "Silent" : p.text)} />
+        <Knob fx={fx} pid="attack" {...knobLook("s4000gate", "attack")} />
+        <Knob fx={fx} pid="hold" {...knobLook("s4000gate", "hold")} />
+        <Knob fx={fx} pid="release" {...knobLook("s4000gate", "release")} />
         <div className="fx-note">Green line: the gate's gain. It stays at 0 dB while the signal is above the threshold, then falls to the floor ({range.toFixed(0)} dB) after the hold time.</div>
       </div>
       <Presets fx={fx} presets={GATE_PRESETS} />
@@ -330,9 +331,9 @@ export function DeEsserEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
           lines={[{ db: threshold, color: COLORS.amber, label: "Threshold" }]} onDragLine={(db) => fx.set("threshold", db)} />
       </Section>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="frequency" color={COLORS.pink} size={56} />
-        <Knob fx={fx} pid="threshold" color={COLORS.amber} size={56} />
-        <Knob fx={fx} pid="range" label="Max reduction" color={COLORS.red} />
+        <Knob fx={fx} pid="frequency" size={56} {...knobLook("s4000deesser", "frequency")} />
+        <Knob fx={fx} pid="threshold" size={56} {...knobLook("s4000deesser", "threshold")} />
+        <Knob fx={fx} pid="range" {...knobLook("s4000deesser", "range")} />
         <Toggle fx={fx} pid="listen" label="Listen to the S band only" />
       </div>
       <Presets fx={fx} presets={DEESSER_PRESETS} />
@@ -421,9 +422,9 @@ export function TransientEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
       </div>
       <Section title="Live gain changes"><canvas ref={activity.ref} className="fx-canvas" style={{ height: 70 }} /></Section>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="attack" color={COLORS.orange} size={64} />
-        <Knob fx={fx} pid="sustain" color={COLORS.violet2} size={64} />
-        <Knob fx={fx} pid="output" color={COLORS.cyan} />
+        <Knob fx={fx} pid="attack" size={64} {...knobLook("s4000transient", "attack")} />
+        <Knob fx={fx} pid="sustain" size={64} {...knobLook("s4000transient", "sustain")} />
+        <Knob fx={fx} pid="output" {...knobLook("s4000transient", "output")} />
       </div>
       <Presets fx={fx} presets={TRANSIENT_PRESETS} />
     </div>
@@ -446,9 +447,9 @@ export function LimiterEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         <div className="fx-meters"><Meter db={t.grDb as number | undefined} label="GR" gr height={170} /></div>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="inputGain" label="Drive" color={COLORS.orange} size={60} />
-        <Knob fx={fx} pid="ceiling" color={COLORS.amber} size={60} />
-        <Knob fx={fx} pid="release" color={COLORS.green} />
+        <Knob fx={fx} pid="inputGain" size={60} {...knobLook("s4000limiter", "inputGain")} />
+        <Knob fx={fx} pid="ceiling" size={60} {...knobLook("s4000limiter", "ceiling")} />
+        <Knob fx={fx} pid="release" {...knobLook("s4000limiter", "release")} />
         <div className="fx-note">Brickwall limiting with 5 ms lookahead: peaks never pass the ceiling. Push Drive for loudness and watch the red trace. Above about 6 dB of reduction it starts to sound squashed.</div>
       </div>
       <Presets fx={fx} presets={LIMITER_PRESETS} />

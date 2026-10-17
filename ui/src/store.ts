@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { on, rpc } from "./bridge";
 import type { AppInfo, CatalogueEntry, PlanCall, Project, Tick } from "./types";
+import { seenNotes, versionLabel } from "./whatsNew";
 
 export type BottomTab = "effects" | "mixer" | "editor" | "smart";
 export type SidePanel = "assistant" | "collab" | null;
-export type Grid = "bar" | "beat" | "1/8" | "1/16" | "off";
+export type Grid = "bar" | "1/2" | "beat" | "1/8" | "1/16" | "1/32" | "1/64" | "1/128"
+  | "bart" | "1/2t" | "1/4t" | "1/8t" | "1/16t" | "1/32t" | "1/64t" | "off";
 export type ArrangeTool = "move" | "time" | "split" | "slip" | "erase";
 
 export interface Toast {
@@ -42,6 +44,8 @@ interface State {
   tool: ArrangeTool;
   timeFormat: "bars" | "time";
   selectedTrack: string | null;
+  /** Every track in the current selection. The last one clicked stays in selectedTrack. */
+  selectedTracks: string[];
   selectedClips: string[];
   editorClip: string | null;
   automationOpen: Record<string, string | null>;
@@ -73,7 +77,7 @@ interface State {
   pluginPings: Record<string, number>;
   /** Screen rectangle of the slot that opened each effect; the window is placed so it doesn't cover it. */
   pluginAnchors: Record<string, { left: number; top: number; right: number; bottom: number }>;
-  picker: { trackId: string; synth?: boolean } | null;
+  picker: { trackId: string; synth?: boolean; clipId?: string } | null;
   browserTab: BrowserTab;
   devices: Devices | null;
   /** On-screen keyboard strip, and whether the computer keyboard plays notes. */
@@ -93,6 +97,19 @@ export interface Devices {
   masterOutput?: string;
 }
 
+/** Plain click keeps one track. Ctrl+click adds or removes a track and leaves the others selected. */
+export function selectTrack(id: string | null, mode: "replace" | "toggle" = "replace") {
+  const s = useStore.getState();
+  const current = s.selectedTracks.length ? s.selectedTracks : s.selectedTrack ? [s.selectedTrack] : [];
+  if (!id || mode === "replace") {
+    useStore.setState({ selectedTrack: id, selectedTracks: id ? [id] : [] });
+    return;
+  }
+  const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
+  const primary = next.includes(id) ? id : next[next.length - 1] ?? null;
+  useStore.setState({ selectedTrack: primary, selectedTracks: next });
+}
+
 export const useStore = create<State>((set) => ({
   info: null,
   project: null,
@@ -102,6 +119,7 @@ export const useStore = create<State>((set) => ({
   tool: "move",
   timeFormat: "bars",
   selectedTrack: null,
+  selectedTracks: [],
   selectedClips: [],
   editorClip: null,
   automationOpen: {},
@@ -172,15 +190,26 @@ export function toast(message: string, level: Toast["level"] = "info", extra: Pa
   setTimeout(() => useStore.setState((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), level === "error" ? 7000 : 4000);
 }
 
+/** Opens What's new the first time a session starts on this build. */
+export function offerWhatsNew() {
+  if (!useStore.getState().project || useStore.getState().aboutOpen) return;
+  const label = versionLabel(useStore.getState().info);
+  if (!label || seenNotes(label)) return;
+  useStore.setState({ aboutOpen: true });
+}
+
 export async function refreshInfo() {
   const info = await rpc<AppInfo>("app.info");
   useStore.setState({ info });
+  offerWhatsNew();
   return info;
 }
 
 export async function refreshProject() {
   const project = await rpc<Project | null>("project.get").catch(() => null);
+  const opening = project != null && useStore.getState().project == null;
   useStore.setState({ project });
+  if (opening) offerWhatsNew();
 }
 
 export async function loadCatalogue() {
@@ -229,6 +258,7 @@ export function initEvents() {
       ...(p?.tracks.flatMap((t) => t.plugins.map((pl) => pl.id)) ?? []),
       ...(p?.master.plugins.map((pl) => pl.id) ?? []),
     ]);
+    const opening = p != null && s.project == null;
     useStore.setState({
       project: p,
       selectedClips: s.selectedClips.filter((id) => ids.has(id)),
@@ -236,6 +266,7 @@ export function initEvents() {
       openPlugins: s.openPlugins.filter((id) => pluginIds.has(id)),
       selectedPlugin: s.selectedPlugin && pluginIds.has(s.selectedPlugin) ? s.selectedPlugin : null,
     });
+    if (opening) offerWhatsNew();
   });
 
   on("tick", (t: Tick) => {

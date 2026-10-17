@@ -1,5 +1,6 @@
 #include "AppEngine.h"
 #include "AgentServer.h"
+#include "SessionRelay.h"
 #include "MainWindow.h"
 #include "SelfTest.h"
 #include "Updater.h"
@@ -34,6 +35,8 @@ public:
 
         agent = std::make_unique<AgentServer> (*engine);
         agent->start();
+        relay = std::make_unique<SessionRelay> (engine->rpc);
+        relay->start();
         window = std::make_unique<MainWindow> (*engine, *agent);
 
         openFromCommandLine (commandLine);
@@ -47,6 +50,7 @@ public:
         alive = false;
         window.reset();
         agent.reset();
+        relay.reset();
         selfTest.reset();
         engine.reset();
     }
@@ -129,6 +133,7 @@ private:
     std::atomic<bool> updateCheck { false };
     std::unique_ptr<AppEngine> engine;
     std::unique_ptr<AgentServer> agent;
+    std::unique_ptr<SessionRelay> relay;
     std::unique_ptr<MainWindow> window;
     std::unique_ptr<SelfTest> selfTest;
 };

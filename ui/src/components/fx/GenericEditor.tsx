@@ -1,8 +1,9 @@
 // Fallback editor for plug-ins without a dedicated one: parameters grouped into panels of knobs and switches.
 import { useMemo, useState } from "react";
 import type { Param } from "../../types";
-import { BAND_COLORS, Knob, Pick, Section, Seg, Toggle } from "./core";
+import { Knob, Pick, Section, Seg, Toggle } from "./core";
 import type { Fx } from "./core";
+import { knobLook } from "./knobLook";
 
 /** "Osc 2 Tune" → "Osc 2"; "Filter Cutoff" → "Filter"; parameters left alone go to "Main". */
 function groupOf(name: string) {
@@ -12,7 +13,7 @@ function groupOf(name: string) {
   return first ? first[1] : "Main";
 }
 
-export function GenericEditor({ fx }: { fx: Fx }) {
+export function GenericEditor({ fx, type }: { fx: Fx; type?: string }) {
   const [query, setQuery] = useState("");
   const groups = useMemo(() => {
     const visible = fx.params.filter((p) => p && typeof p.name === "string" && (!query || p.name.toLowerCase().includes(query.toLowerCase())));
@@ -35,15 +36,16 @@ export function GenericEditor({ fx }: { fx: Fx }) {
         <input className="input sm" placeholder={`Filter ${fx.params.length} parameters`} value={query} onChange={(e) => setQuery(e.target.value)} />
       )}
       <div className="fx-generic">
-        {groups.map(([g, ps], gi) => (
+        {groups.map(([g, ps]) => (
           <Section key={g} title={g}>
             <div className="fx-row knobs wrap">
-              {ps.map((p) =>
-                p.options?.length === 2 ? <Toggle key={p.id} fx={fx} pid={p.id} label={short(g, p.name)} />
+              {ps.map((p) => {
+                const look = knobLook(type, p.id);
+                return p.options?.length === 2 ? <Toggle key={p.id} fx={fx} pid={p.id} label={short(g, p.name)} />
                   : p.options && p.options.length <= 5 ? <Seg key={p.id} fx={fx} pid={p.id} label={short(g, p.name)} small />
                     : p.options?.length ? <Pick key={p.id} fx={fx} pid={p.id} label={short(g, p.name)} />
-                      : <Knob key={p.id} fx={fx} pid={p.id} label={short(g, p.name)} color={BAND_COLORS[(gi + 3) % BAND_COLORS.length]} size={44} />,
-              )}
+                      : <Knob key={p.id} fx={fx} pid={p.id} label={look.label ?? short(g, p.name)} color={look.color} size={44} />;
+              })}
             </div>
           </Section>
         ))}

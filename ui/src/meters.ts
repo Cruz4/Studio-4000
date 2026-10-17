@@ -48,9 +48,10 @@ export function useMeterCanvas(source: string, vertical = true) {
       grad.addColorStop(meterPos(0), "#ff4d6d");
       grad.addColorStop(1, "#ff4d6d");
 
+      const light = document.documentElement.dataset.theme === "light";
       for (let ch = 0; ch < 2; ch++) {
         const off = ch * (bar + 1);
-        g.fillStyle = "rgba(255,255,255,0.05)";
+        g.fillStyle = light ? "rgba(16,20,28,0.4)" : "rgba(255,255,255,0.05)";
         if (vertical) g.fillRect(off, 0, bar, h); else g.fillRect(0, off, w, bar);
         const p = meterPos(smooth[ch]) * len;
         g.fillStyle = grad;

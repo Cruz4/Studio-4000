@@ -14,6 +14,8 @@ interface CollabState {
   error: string | null;
   role: "host" | "guest" | null;
   room: string;
+  /** Code the host sends, including the address of this computer. */
+  invite: string;
   server: string;
   me: Peer | null;
   peers: Peer[];
@@ -30,7 +32,7 @@ interface CollabState {
 }
 
 export const useCollab = create<CollabState>(() => ({
-  status: "idle", error: null, role: null, room: "", server: "", me: null, peers: [], allowGuestEdits: true,
+  status: "idle", error: null, role: null, room: "", invite: "", server: "", me: null, peers: [], allowGuestEdits: true,
   micOn: false, sharing: false, streams: {}, localScreen: null, chat: [], notes: "", activity: [], presence: {},
 }));
 
@@ -80,12 +82,30 @@ export function randomRoom() {
   return Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => a[b % a.length]).join("");
 }
 
-export async function startSession(opts: { server: string; room: string; name: string; role: "host" | "guest"; password?: string; turn?: string }) {
+/** A blank address, or this computer, means Studio 4000 should host the connection itself. */
+export function isBuiltInServer(server: string) {
+  return /^(wss?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(server.trim()) || server.trim() === "";
+}
+
+/** A pasted code is either the room, or room@address from the host. */
+export function parseJoinCode(raw: string): { room: string; server?: string } {
+  const text = raw.trim();
+  const at = text.lastIndexOf("@");
+  if (at > 0 && at < text.length - 1) {
+    const room = text.slice(0, at).trim().toUpperCase();
+    let host = text.slice(at + 1).trim();
+    if (!/^wss?:\/\//i.test(host)) host = `ws://${host}`;
+    return { room, server: host };
+  }
+  return { room: text.toUpperCase() };
+}
+
+export async function startSession(opts: { server: string; room: string; name: string; role: "host" | "guest"; password?: string; turn?: string; invite?: string }) {
   await leaveSession();
   if (opts.turn) {
     try { iceServers = [{ urls: "stun:stun.l.google.com:19302" }, ...JSON.parse(opts.turn)]; } catch { /* keep defaults */ }
   }
-  useCollab.setState({ status: "connecting", error: null, role: opts.role, room: opts.room.toUpperCase(), server: opts.server, chat: [], notes: "", peers: [], activity: [] });
+  useCollab.setState({ status: "connecting", error: null, role: opts.role, room: opts.room.toUpperCase(), invite: opts.invite ?? "", server: opts.server, chat: [], notes: "", peers: [], activity: [] });
 
   doc = new Y.Doc();
   const chat = doc.getArray<ChatLine>("chat");
@@ -125,11 +145,18 @@ export async function startSession(opts: { server: string; room: string; name: s
   });
 }
 
-export async function leaveSession() {
-  const s = ws;
+export function leaveSession() {
+  useCollab.setState({ status: "idle", error: null });
+  const socket = ws;
   ws = null;
-  s?.close();
-  teardown();
+  if (socket) {
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    try { socket.close(); } catch { /* already closed */ }
+  }
+  try { teardown(); } catch { /* the panel is already closed */ }
 }
 
 function teardown() {
@@ -147,7 +174,7 @@ function teardown() {
   doc = null;
   setRpcOverride(null);
   setNativeEventFilter(null);
-  useCollab.setState({ role: null, me: null, peers: [], streams: {}, localScreen: null, micOn: false, sharing: false, presence: {} });
+  useCollab.setState({ role: null, me: null, peers: [], invite: "", streams: {}, localScreen: null, micOn: false, sharing: false, presence: {} });
   myHover = null;
   if (wasGuest) refreshProject();
 }

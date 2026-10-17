@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useMeterCanvas } from "../meters";
 import { type Choice, inputChoices, outputChoices } from "../io";
-import { trackMenu, createTrackItems } from "../trackMenu";
-import { act, type Devices, loadDevices, openPlugin, selectPlugin, useStore } from "../store";
+import { openTrackMenu, createTrackItems } from "../trackMenu";
+import { act, type Devices, loadDevices, openPlugin, selectPlugin, selectTrack, useStore } from "../store";
 import type { Plugin, Project, Track } from "../types";
 import { clamp, cx, dbToFader, faderToDb, formatDb, shade } from "../util";
 import { toggleTrackFx, trackFxOn } from "../commands";
@@ -149,11 +149,12 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
     <div className={cx("strip", selected && "selected")} data-track={track.id}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        useStore.setState({ selectedTrack: track.id });
+        if (e.ctrlKey || e.metaKey) { selectTrack(track.id, "toggle"); return; }
+        selectTrack(track.id);
         if ((e.target as HTMLElement).closest("button, input, select, .slot, .fader, .knob, canvas")) return;
         beginTrackReorder(e, { id: track.id, name: track.name, colour: track.colour, axis: "x", source: e.currentTarget });
       }}
-      onContextMenu={(e) => { if ((e.target as HTMLElement).closest(".slot, button, select, input")) return; openMenu(e, trackMenu(track)); }}>
+      onContextMenu={(e) => { if ((e.target as HTMLElement).closest(".slot, button, select, input")) return; openTrackMenu(e, track); }}>
       <div className="strip-name" style={{ background: shade(track.colour, 0.3), borderBottom: `2px solid ${track.colour}` }} title={`${track.name}. Drag to reorder. A line shows where it will land.`}>
         <span className="grip" />
         <span className="ellipsis">{track.name}</span>
@@ -248,6 +249,7 @@ function MasterStrip({ project, devices, full }: { project: Project; devices: De
 export function Mixer({ full }: { full?: boolean }) {
   const project = useStore((s) => s.project)!;
   const selected = useStore((s) => s.selectedTrack);
+  const selectedTracks = useStore((s) => s.selectedTracks);
   const devices = useStore((s) => s.devices);
 
   useEffect(() => { loadDevices().catch(() => {}); }, []);
@@ -257,7 +259,7 @@ export function Mixer({ full }: { full?: boolean }) {
       if ((e.target as HTMLElement).closest(".strip")) return;
       openMenu(e, createTrackItems());
     }}>
-      {project.tracks.map((t) => <Strip key={t.id} track={t} project={project} devices={devices} selected={selected === t.id} full={full} />)}
+      {project.tracks.map((t) => <Strip key={t.id} track={t} project={project} devices={devices} selected={selectedTracks.includes(t.id) || (!selectedTracks.length && selected === t.id)} full={full} />)}
       <div className="grow" />
       <MasterStrip project={project} devices={devices} full={full} />
     </div>

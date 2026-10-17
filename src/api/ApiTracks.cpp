@@ -101,10 +101,7 @@ te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& na
             at->state.setProperty (TrackKind::property, kind, &edit.getUndoManager());
 
             if (kind == TrackKind::instrument)
-            {
-                insertPlugin (app, at->pluginList, "kit:piano", 0);
                 assignDefaultInput (app, *at, true);
-            }
             else if (kind == TrackKind::audio)
             {
                 assignDefaultInput (app, *at, false);

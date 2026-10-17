@@ -4,6 +4,7 @@ import { cx } from "../../util";
 import { openMenu } from "../ContextMenu";
 import type { MenuItem } from "../ContextMenu";
 import { BAND_COLORS, COLORS, Knob, Meter, Pick, Presets, rgba, useAnalyserFrame, useCanvas, useTelemetry, drawFreqGrid, drawSpectrum } from "./core";
+import { knobLook } from "./knobLook";
 import { CLASSIC_EQ_PRESETS, EQ_PRESETS } from "./presets";
 import type { Fx } from "./core";
 import { EQ, EQ_TYPES, bandDb, clamp, dbToY, formatHz, freqToX, xToFreq, yToDb } from "./dsp";
@@ -263,7 +264,7 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
           <div className="fx-eq-side">
             <Meter db={t.inDb} label="In" height={210} />
             <Meter db={t.outDb} label="Out" height={210} color={COLORS.cyan} />
-            <Knob fx={fx} pid="output" label="Output" size={44} />
+            <Knob fx={fx} pid="output" size={44} {...knobLook("s4000eq", "output")} />
           </div>
         )}
       </div>
@@ -305,9 +306,9 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
           )}
         </div>
         <div className="fx-row">
-          <Knob fx={fx} pid={s.freq} label="Frequency" color={color} size={54} />
-          <Knob fx={fx} pid={s.gain} label="Gain" color={color} size={54} disabled={!hasGain(b.type)} />
-          <Knob fx={fx} pid={s.q} label={b.type === EQ.lowShelf || b.type === EQ.highShelf ? "Slope (Q)" : "Width (Q)"} color={color} size={54} />
+          <Knob fx={fx} pid={s.freq} label="Frequency" color={knobLook(classic ? "4bandEq" : "s4000eq", s.freq).color} size={54} />
+          <Knob fx={fx} pid={s.gain} label="Gain" color={knobLook(classic ? "4bandEq" : "s4000eq", s.gain).color} size={54} disabled={!hasGain(b.type)} />
+          <Knob fx={fx} pid={s.q} label={b.type === EQ.lowShelf || b.type === EQ.highShelf ? "Slope (Q)" : "Width (Q)"} color={knobLook(classic ? "4bandEq" : "s4000eq", s.q).color} size={54} />
           {s.slope && (b.type === EQ.lowCut || b.type === EQ.highCut) && <Pick fx={fx} pid={s.slope} label="Steepness" />}
           {s.on && (
             <button className={cx("fx-toggle", b.on && "on")} onClick={() => setBand(sel, { on: b.on ? 0 : 1 })}>

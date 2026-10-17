@@ -29,9 +29,11 @@ That copy is their own app. It does not join your session by itself, and it does
 To work on one session together:
 
 1. Both people run Studio 4000.
-2. One of you starts the relay on a computer you can both reach: `node server\index.mjs --port 3031`
-3. The host opens the people button (**Ctrl+Shift+C**), sets the server (for example `ws://<that computer>:3031`), and clicks Host.
-4. The host shares the room code. The other person joins with that code.
+2. The host opens a project, presses the people button (**Ctrl+Shift+C**), and clicks **Host this session**.
+3. The host copies the code and sends it.
+4. The other person pastes that whole code and clicks **Join**.
+
+Studio 4000 opens the connection. The code looks like `AB12CD@203.0.113.5:3031`. The other person can be on another network. **End** closes the session. **Leave** drops out and returns to the join screen.
 
 Voice and screen share are in the same panel. An optional password can lock the room. The host's project is the one everyone hears.
 
@@ -105,7 +107,7 @@ cd ui; npm run dev
 node tools\ui-screens.mjs
 ```
 
-`npm run dev` opens the interface in a browser with a stand-in engine. `ui-screens.mjs` refreshes the pictures in `docs/screenshots`. For the live-session pictures, start `node server\index.mjs` first.
+`npm run dev` opens the interface in a browser with a stand-in engine. `ui-screens.mjs` refreshes the pictures in `docs/screenshots`. The app hosts live sessions itself. The browser preview has no relay, so a picture of a connected session still needs `node server\index.mjs`.
 
 ### Dependencies the script does not download
 

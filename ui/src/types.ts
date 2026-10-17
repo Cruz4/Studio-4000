@@ -63,6 +63,10 @@ export interface Clip {
   autoTempo?: boolean;
   takes?: { count: number; current: number; names?: string[] };
   notes?: Note[];
+  /** Audio clips can own their own insert chain. MIDI clips play the track instrument. */
+  plugins?: Plugin[];
+  /** Gain breakpoints in seconds from the clip's left edge, and dB. The line holds the end values. */
+  gainPoints?: [number, number][];
 }
 
 export interface AutomationLane {

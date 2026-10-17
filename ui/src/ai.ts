@@ -19,7 +19,7 @@ export const PROVIDERS: Record<Provider, { label: string; model: string; baseUrl
 export interface ToolCall { id: string; name: string; args: Record<string, unknown> }
 
 export type Msg =
-  | { role: "user"; content: string }
+  | { role: "user"; content: string; hidden?: boolean }
   | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
   | { role: "tool"; toolCallId: string; name: string; content: string };
 
@@ -106,7 +106,7 @@ How you work:
 - Prefer the smart.* planners for gain staging, ducking and mastering, then pass their calls into propose_plan (you may combine and adjust them).
 - Volumes are in dB (track.set volumeDb, master.set volumeDb), pan is -1..1. Plug-in parameters use plugin.setParam with norm 0..1 unless you know the real value range from plugin.params.
 - Built-in plug-in ids come from plugins.list (e.g. "4bandEq", "compressor", "reverb", "delay", "s4000limiter"). Use exact ids.
-- Be brief and practical. Explain the musical reason for each change in plain words.
+- Be brief and practical. Explain the musical reason for each change in plain words. Never paste JSON, parameter lists, or tool results into the chat.
 ${takeOver ? "- TAKE-OVER MODE: you are driving this session. Analyse, then propose one complete, well-ordered plan. After it's applied you'll be told the results; re-check with smart.analyze and propose a follow-up only if it clearly helps. Stop when the mix is in good shape and summarise what you did.\n" : ""}
 Edit methods for propose_plan:
 ${edits}

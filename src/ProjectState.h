@@ -24,6 +24,9 @@ bool isChannelStripPlugin (const te::Plugin&);
 var describePlugin (te::Plugin&, int maxParams = 128);
 var describeParameter (te::AutomatableParameter&);
 var describeClip (te::Clip&);
+
+/** Replaces an audio clip's gain envelope. Points are [seconds from the clip start, dB]. An empty list clears it. */
+void setClipGainPoints (te::AudioClipBase&, const juce::Array<juce::var>& points);
 var describeTrack (AppEngine&, te::Track&);
 
 /** The full project model the UI renders from. */

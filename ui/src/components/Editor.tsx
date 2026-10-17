@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { splitClipAt } from "../commands";
 import { noteOff, noteOn } from "../keys";
 import { act, onTick, useStore } from "../store";
 import type { Clip, Project, Track } from "../types";
 import { clamp, cx, formatDb, noteName, secondsPerBeat } from "../util";
+import { openMenu } from "./ContextMenu";
 import { Icon, startDrag } from "./ui";
 import { Waveform } from "./Waveform";
 
@@ -34,22 +36,27 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const loop = project.loop;
   const [stretch, setStretch] = useState(String((clip.end - clip.start).toFixed(3)));
   useEffect(() => setStretch(String((clip.end - clip.start).toFixed(3))), [clip.end, clip.start]);
-  const box = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(600);
+  const [zoom, setZoom] = useState(1);
+  const [scroll, setScroll] = useState(0);
+  useEffect(() => { setZoom(1); setScroll(0); }, [clip.id]);
   useLayoutEffect(() => {
-    const ro = new ResizeObserver(() => box.current && setW(box.current.clientWidth));
-    if (box.current) ro.observe(box.current);
+    const ro = new ResizeObserver(() => scroller.current && setW(scroller.current.clientWidth));
+    if (scroller.current) ro.observe(scroller.current);
     return () => ro.disconnect();
   }, []);
   const len = clip.end - clip.start;
-  const pps = w / Math.max(0.1, len);
+  const fit = Math.max(8, (Math.max(80, w) - 2) / Math.max(0.1, len));
+  const pps = fit * zoom;
+  const contentW = zoom <= 1 ? Math.max(80, w) : Math.ceil(len * pps);
   const playhead = useRef<HTMLDivElement>(null);
   useEffect(() => onTick((t) => {
     if (!playhead.current) return;
     const x = (t.t - clip.start) * pps;
-    playhead.current.style.display = x >= 0 && x <= w ? "block" : "none";
+    playhead.current.style.display = x >= -1 && x <= contentW + 1 ? "block" : "none";
     playhead.current.style.transform = `translateX(${x}px)`;
-  }) as () => void, [clip.start, pps, w]);
+  }) as () => void, [clip.start, pps, contentW]);
 
   return (
     <div className="editor">
@@ -107,12 +114,35 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
         )}
         <span className="small faint ellipsis" title={clip.file}>{clip.file?.split(/[\\/]/).pop()} · {clip.channels === 1 ? "mono" : "stereo"} · {(clip.sourceLength ?? 0).toFixed(2)} s source</span>
       </div>
-      <div className="grow" style={{ position: "relative", padding: 12, minWidth: 0 }}>
-        <div ref={box} className="clip" style={{ position: "relative", inset: 0, height: "100%", top: 0, bottom: 0, cursor: "pointer", background: "linear-gradient(180deg, rgba(124,92,255,.25), rgba(124,92,255,.08))", border: "1px solid rgba(124,92,255,.5)" }}
-          onPointerDown={(e) => { const r = e.currentTarget.getBoundingClientRect(); act("transport.setPosition", { time: clip.start + (e.clientX - r.left) / pps }); }}>
-          <div className="clip-label">{clip.name} · gain {formatDb(clip.gainDb ?? 0)} dB</div>
-          <Waveform clip={clip} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={0} viewWidth={w} clipLeft={0} />
-          <div ref={playhead} className="playhead" />
+      <div className="col grow" style={{ minWidth: 0, minHeight: 0, gap: 0 }}>
+        <div className="row" style={{ padding: "6px 10px", gap: 6, borderBottom: "1px solid var(--line)" }}>
+          <span className="small faint">Waveform</span>
+          <div className="grow" />
+          <button className="btn sm ghost icon" title="Zoom out" onClick={() => setZoom((z) => clamp(z / 1.4, 1, 32))}><Icon name="zoomOut" size={13} /></button>
+          <button className="btn sm ghost icon" title="Zoom in" onClick={() => setZoom((z) => clamp(z * 1.4, 1, 32))}><Icon name="zoomIn" size={13} /></button>
+          <button className="btn sm ghost" title="Fit the clip" onClick={() => { setZoom(1); if (scroller.current) scroller.current.scrollLeft = 0; setScroll(0); }}>Fit</button>
+        </div>
+        <div ref={scroller} className="grow" style={{ position: "relative", overflowX: "auto", overflowY: "hidden", minWidth: 0, padding: 12 }}
+          onScroll={(e) => setScroll(e.currentTarget.scrollLeft)}>
+          <div className="editor-clip" style={{ width: contentW, cursor: "pointer", background: "linear-gradient(180deg, rgba(124,92,255,.25), rgba(124,92,255,.08))", border: "1px solid rgba(124,92,255,.5)" }}
+            onPointerDown={(e) => { if (e.button !== 0) return; const r = e.currentTarget.getBoundingClientRect(); act("transport.setPosition", { time: clip.start + (e.clientX - r.left) / pps }); }}
+            onContextMenu={(e) => {
+              const here = clip.start + (e.clientX - e.currentTarget.getBoundingClientRect().left) / pps;
+              openMenu(e, [
+                { label: "Open in editor", icon: "wave", run: () => useStore.setState({ editorClip: clip.id, bottom: "editor", selectedClips: [clip.id] }) },
+                { separator: true },
+                { label: "Split here", icon: "scissors", run: () => splitClipAt(clip.id, here) },
+                { label: "Duplicate", icon: "copy", keys: "Ctrl+D", run: () => act("clip.duplicate", { id: clip.id }) },
+                { label: clip.muted ? "Unmute" : "Mute", icon: "power", keys: "Shift+M", run: () => act("clip.set", { id: clip.id, muted: !clip.muted }) },
+                { label: "Normalize to −1 dB", icon: "wave", run: () => act("clip.normalize", { id: clip.id, peakDb: -1 }) },
+                { separator: true },
+                { label: "Delete", icon: "trash", danger: true, keys: "Del", run: () => act("clip.delete", { id: clip.id }) },
+              ]);
+            }}>
+            <div className="clip-label">{clip.name} · gain {formatDb(clip.gainDb ?? 0)} dB</div>
+            <Waveform clip={clip} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={scroll} viewWidth={w} clipLeft={0} />
+            <div ref={playhead} className="playhead" />
+          </div>
         </div>
       </div>
     </div>
@@ -244,8 +274,12 @@ function PianoRoll({ clip, project }: { clip: Clip; project: Project }) {
         <button className="btn sm" title="Quantize note starts to the grid" onClick={() => act("midi.quantize", { clipId: clip.id, grid })}>Quantize</button>
         <button className="btn sm" title="Transpose down an octave" onClick={() => act("midi.transpose", { clipId: clip.id, semitones: -12 })}>−8va</button>
         <button className="btn sm" title="Transpose up an octave" onClick={() => act("midi.transpose", { clipId: clip.id, semitones: 12 })}>+8va</button>
-        <button className="btn sm ghost icon" onClick={() => setPpb((p) => clamp(p / 1.3, 12, 400))}><Icon name="zoomOut" size={13} /></button>
-        <button className="btn sm ghost icon" onClick={() => setPpb((p) => clamp(p * 1.3, 12, 400))}><Icon name="zoomIn" size={13} /></button>
+        <button className="btn sm ghost icon" title="Zoom out" onClick={() => setPpb((p) => clamp(p / 1.3, 12, 400))}><Icon name="zoomOut" size={13} /></button>
+        <button className="btn sm ghost icon" title="Zoom in" onClick={() => setPpb((p) => clamp(p * 1.3, 12, 400))}><Icon name="zoomIn" size={13} /></button>
+        <button className="btn sm ghost" title="Fit the clip" onClick={() => {
+          const view = scroller.current?.clientWidth ?? 600;
+          setPpb(clamp((view - 24) / Math.max(1, clipBeats), 12, 400));
+        }}>Fit</button>
       </div>
       <div className="piano grow">
         <div className="piano-keys" ref={keys}>

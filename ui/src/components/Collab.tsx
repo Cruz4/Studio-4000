@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { localRpc, rpc } from "../bridge";
-import { downloadFile, leaveSession, randomRoom, sendChat, setNotes, startSession, toggleMic, toggleScreen, useCollab } from "../collab";
+import { downloadFile, isBuiltInServer, leaveSession, parseJoinCode, randomRoom, sendChat, setNotes, startSession, toggleMic, toggleScreen, useCollab } from "../collab";
 import { toast, useStore } from "../store";
 import { cx } from "../util";
 import { Icon, Spinner, Tabs } from "./ui";
@@ -30,7 +30,7 @@ function JoinForm() {
   const hasProject = useStore((s) => !!s.project);
   const st = useCollab();
   const [name, setName] = useState("");
-  const [server, setServer] = useState("ws://localhost:3031");
+  const [server, setServer] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [turn, setTurn] = useState("");
@@ -39,23 +39,35 @@ function JoinForm() {
   useEffect(() => {
     Promise.all(["collabName", "collabServer", "collabTurn"].map((key) => localRpc<string>("settings.get", { key }).catch(() => ""))).then(([n, s, t]) => {
       setName(n || "Musician");
-      if (s) setServer(s);
+      if (s && !isBuiltInServer(s)) setServer(s);
       if (t) setTurn(t);
     });
   }, []);
 
   const go = async (role: "host" | "guest") => {
-    const room = role === "host" ? randomRoom() : code.trim().toUpperCase();
-    if (!room) return toast("Enter the session code you were given", "warning");
+    const parsed = role === "host" ? { room: randomRoom() } : parseJoinCode(code);
+    if (!/^[A-Z0-9]{4,16}$/.test(parsed.room)) return toast(role === "host" ? "Couldn't start the session" : "Paste the code the host sent you", "warning");
     setBusy(true);
     localRpc("settings.set", { key: "collabName", value: name });
-    localRpc("settings.set", { key: "collabServer", value: server });
+    if (!isBuiltInServer(server)) localRpc("settings.set", { key: "collabServer", value: server });
     localRpc("settings.set", { key: "collabTurn", value: turn });
+    const builtIn = !parsed.server && isBuiltInServer(server);
     try {
-      await startSession({ server, room, name: name || "Musician", role, password, turn });
-      toast(role === "host" ? `Session ${room} is live. Share the code with your collaborators.` : "Joined the session", "success");
+      let target = parsed.server ?? server.trim();
+      let invite = "";
+      if (builtIn) {
+        const relay = await localRpc<{ running: boolean; local: string; share: string }>("collab.relay");
+        if (!relay?.running || !relay.local) throw new Error("Couldn't open the session on this computer. Try Host again.");
+        target = relay.local;
+        if (role === "host" && relay.share) invite = `${parsed.room}@${relay.share}`;
+      }
+      await startSession({ server: target, room: parsed.room, name: name || "Musician", role, password, turn, invite });
+      toast(role === "host" ? "Session is live. Copy the code and send it." : "Joined the session", "success");
     } catch (e) {
-      toast((e as Error).message, "error");
+      let msg = (e as Error).message;
+      if (builtIn && /Couldn't reach/.test(msg)) msg = "Couldn't open the session on this computer. Try Host again.";
+      if (role === "guest" && !code.includes("@") && /No live session/.test(msg)) msg += " Paste the full code the host copied. It includes an @ and an address.";
+      toast(msg, "error");
     } finally {
       setBusy(false);
     }
@@ -65,7 +77,7 @@ function JoinForm() {
     <div className="col" style={{ gap: 12 }}>
       <div className="card col" style={{ padding: 12, background: "linear-gradient(135deg, rgba(0,209,255,.12), rgba(124,92,255,.1))" }}>
         <b><Icon name="users" size={14} /> Make music together</b>
-        <span className="small dim">Host your session and others see it live, edit with you, talk over voice and watch your screen. Share your screen with audio to let everyone hear the mix in real time.</span>
+        <span className="small dim">Press Host. Studio 4000 opens the connection and gives you a code. Send that code. The other person pastes it into Join, from anywhere.</span>
       </div>
       <label className="field"><span>Your name</span><input className="input sm" value={name} onChange={(e) => setName(e.target.value)} /></label>
       <button className="btn primary" disabled={busy || !hasProject} onClick={() => go("host")} title={hasProject ? "" : "Open a project first"}>
@@ -73,14 +85,14 @@ function JoinForm() {
       </button>
       <div className="row"><div className="grow" style={{ height: 1, background: "var(--line)" }} /><span className="small faint">or join one</span><div className="grow" style={{ height: 1, background: "var(--line)" }} /></div>
       <div className="row">
-        <input className="input sm grow mono" placeholder="Session code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} />
+        <input className="input sm grow mono" placeholder="Paste the host's code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={80} />
         <button className="btn" disabled={busy || !code.trim()} onClick={() => go("guest")}>Join</button>
       </div>
       <details>
         <summary className="small faint" style={{ cursor: "pointer" }}>Connection settings</summary>
         <div className="col" style={{ marginTop: 8 }}>
-          <label className="field"><span>Session server</span><input className="input sm mono" value={server} onChange={(e) => setServer(e.target.value)} /></label>
-          <span className="small faint">Run <span className="kbd">node server/index.mjs</span> on any machine everyone can reach (your LAN, or a small cloud VM with wss://).</span>
+          <label className="field"><span>Custom server</span><input className="input sm mono" placeholder="Leave blank. Studio 4000 hosts the connection." value={server} onChange={(e) => setServer(e.target.value)} /></label>
+          <span className="small faint">Fill this in only when you already have a relay of your own. A room password is optional.</span>
           <label className="field"><span>Room password (optional)</span><input className="input sm" type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
           <label className="field"><span>TURN servers (JSON, for strict networks)</span><input className="input sm mono" placeholder='[{"urls":"turn:host:3478","username":"u","credential":"p"}]' value={turn} onChange={(e) => setTurn(e.target.value)} /></label>
         </div>
@@ -108,10 +120,19 @@ function Live() {
       <div className="row">
         <span className="pill live"><span className="dot" /> Live</span>
         <span className="mono" style={{ fontSize: 16, fontWeight: 700, letterSpacing: ".12em" }}>{st.room}</span>
-        <button className="btn sm ghost icon" title="Copy session code" onClick={() => { navigator.clipboard?.writeText(st.room); toast("Code copied", "success"); }}><Icon name="copy" size={12} /></button>
         <div className="grow" />
-        <button className="btn sm danger" onClick={leaveSession}>{st.role === "host" ? "End" : "Leave"}</button>
+        <button className="btn sm danger" onClick={() => leaveSession()}>{st.role === "host" ? "End" : "Leave"}</button>
       </div>
+      {st.role === "host" && st.invite && (
+        <div className="card col" style={{ padding: 8, gap: 6 }}>
+          <span className="small">Send this code</span>
+          <div className="row">
+            <input className="input sm mono grow" readOnly value={st.invite} onFocus={(e) => e.target.select()} />
+            <button className="btn sm" onClick={() => { navigator.clipboard?.writeText(st.invite); toast("Code copied", "success"); }}><Icon name="copy" size={12} /> Copy</button>
+          </div>
+          <span className="small faint">They paste this into Join.</span>
+        </div>
+      )}
       <div className="row">
         <button className={cx("btn grow", st.micOn && "on")} onClick={toggleMic}><Icon name={st.micOn ? "mic" : "micOff"} size={14} /> {st.micOn ? "Mic on" : "Mic off"}</button>
         <button className={cx("btn grow", st.sharing && "on")} onClick={toggleScreen} title="Share a window or screen. Tick 'share audio' to stream the mix"><Icon name="screen" size={14} /> {st.sharing ? "Stop sharing" : "Share screen"}</button>

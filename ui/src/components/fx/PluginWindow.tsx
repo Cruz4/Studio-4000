@@ -108,8 +108,8 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
           <button className="btn sm" onClick={() => act("plugin.openEditor", { id: plugin.id })} title="Open the plug-in's own window"><Icon name="window" size={12} /> Plug-in UI</button>
         )}
         {canReset && <button className="btn sm ghost" onClick={fx.resetAll} title="Reset every control to its default"><Icon name="undo" size={12} /> Reset</button>}
-        <button className={cx("btn sm fx-power", plugin.enabled && "on")} onClick={() => act("plugin.set", { id: plugin.id, enabled: !plugin.enabled })}
-          title={plugin.enabled ? "Bypass" : "Turn on"}>
+        <button className={cx("fx-power", plugin.enabled && "on")} onClick={() => act("plugin.set", { id: plugin.id, enabled: !plugin.enabled })}
+          title={plugin.enabled ? "On — click to bypass" : "Off — click to turn on"}>
           <Icon name="power" size={12} />
         </button>
         <button className="btn ghost icon sm" onClick={onClose} title="Close"><Icon name="x" size={14} /></button>
@@ -117,7 +117,7 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
       {!plugin.loaded && <div className="pill err" style={{ margin: 12 }}>This plug-in failed to load. It may be missing or blocked.</div>}
       <div className={cx("fx-window-body", !plugin.enabled && "bypassed")}>
         <ErrorBoundary key={`${plugin.id}-${tab}`} name={plugin.name}>
-          {tab === "editor" && entry ? entry.render(fx, plugin.id) : GENERIC.render(fx, plugin.id)}
+          {tab === "editor" && entry ? entry.render(fx, plugin.id, plugin.type) : GENERIC.render(fx, plugin.id, plugin.type)}
         </ErrorBoundary>
       </div>
     </div>

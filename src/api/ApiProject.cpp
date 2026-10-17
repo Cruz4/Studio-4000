@@ -209,10 +209,14 @@ namespace
         return v;
     }
 
-    var computePeaks (te::Engine& engine, const juce::File& file)
+    // `lengthSeconds` <= 0 reads the whole file. `requestedBins` <= 0 keeps the cheap 200-pair overview.
+    // A zoomed view asks for about one pair per pixel of the visible span; the pair count is capped.
+    var computePeaks (te::Engine& engine, const juce::File& file, double startSeconds, double lengthSeconds, int requestedBins)
     {
         static std::map<String, var> cache;
-        const auto key = file.getFullPathName() + ":" + String (file.getLastModificationTime().toMilliseconds());
+        const int ask = requestedBins > 0 ? juce::jlimit (32, 8000, requestedBins) : 200;
+        const auto key = file.getFullPathName() + ":" + String (file.getLastModificationTime().toMilliseconds())
+                        + ":" + String (startSeconds, 3) + ":" + String (lengthSeconds, 3) + ":" + String (ask);
 
         if (auto it = cache.find (key); it != cache.end())
             return it->second;
@@ -222,9 +226,25 @@ namespace
         if (reader == nullptr)
             throw RpcError ("Cannot read audio file: " + file.getFileName());
 
-        constexpr int binsPerSecond = 200;
-        const auto samplesPerBin = juce::jmax (1, (int) std::round (reader->sampleRate / binsPerSecond));
-        const auto totalBins = (int) (reader->lengthInSamples / samplesPerBin) + 1;
+        const double fileLength = reader->sampleRate > 0.0 ? (double) reader->lengthInSamples / reader->sampleRate : 0.0;
+        const double start = lengthSeconds > 0.0 ? juce::jlimit (0.0, fileLength, startSeconds) : 0.0;
+        double length = lengthSeconds > 0.0 ? juce::jmin (lengthSeconds, fileLength - start) : fileLength;
+
+        if (length <= 0.0)
+            length = fileLength;
+
+        int binsPerSecond = ask;
+        constexpr int maxBins = 12000;
+        int totalBins = juce::jmax (1, (int) std::ceil (length * binsPerSecond));
+
+        if (totalBins > maxBins)
+        {
+            binsPerSecond = juce::jmax (32, (int) std::floor ((double) maxBins / juce::jmax (0.001, length)));
+            totalBins = juce::jmax (1, (int) std::ceil (length * binsPerSecond));
+        }
+
+        const auto startSample = (juce::int64) std::llround (start * reader->sampleRate);
+        const int samplesPerBin = juce::jmax (1, (int) std::llround (reader->sampleRate / (double) binsPerSecond));
         const int numChannels = juce::jmin (2, (int) reader->numChannels);
 
         juce::MemoryBlock data ((size_t) totalBins * 2);
@@ -235,8 +255,8 @@ namespace
 
         for (int bin = 0; bin < totalBins; bin += binsPerChunk)
         {
-            const auto start = (juce::int64) bin * samplesPerBin;
-            const auto num = (int) juce::jmin ((juce::int64) buffer.getNumSamples(), reader->lengthInSamples - start);
+            const auto sampleStart = startSample + (juce::int64) bin * samplesPerBin;
+            const auto num = (int) juce::jmin ((juce::int64) buffer.getNumSamples(), reader->lengthInSamples - sampleStart);
 
             if (num <= 0)
             {
@@ -246,7 +266,7 @@ namespace
                 break;
             }
 
-            reader->read (&buffer, 0, num, start, true, numChannels > 1);
+            reader->read (&buffer, 0, num, sampleStart, true, numChannels > 1);
 
             for (int b = 0; b < binsPerChunk && bin + b < totalBins; ++b)
             {
@@ -272,12 +292,13 @@ namespace
 
         var result = Obj().set ("file", file.getFullPathName())
                           .set ("binsPerSecond", binsPerSecond)
-                          .set ("length", (double) reader->lengthInSamples / reader->sampleRate)
+                          .set ("start", start)
+                          .set ("length", length)
                           .set ("sampleRate", reader->sampleRate)
                           .set ("channels", (int) reader->numChannels)
                           .set ("data", juce::Base64::toBase64 (data.getData(), data.getSize()));
 
-        if (cache.size() > 256)
+        if (cache.size() > 64)
             cache.clear();
 
         cache[key] = result;
@@ -361,14 +382,14 @@ void registerProjectApi (AppEngine& app)
     rpc.add ("edit.undo", K::read, "Undo the last change", "{}", [&app] (const var&)
     {
         app.edit().undo();
-        app.markProjectChanged();
+        app.pushSnapshotNow();
         return var (true);
     });
 
     rpc.add ("edit.redo", K::read, "Redo", "{}", [&app] (const var&)
     {
         app.edit().redo();
-        app.markProjectChanged();
+        app.pushSnapshotNow();
         return var (true);
     });
 
@@ -396,7 +417,7 @@ void registerProjectApi (AppEngine& app)
             for (int i = 0; i < -steps && um.canRedo(); ++i)
                 um.redo();
 
-        app.markProjectChanged();
+        app.pushSnapshotNow();
         return var (true);
     });
 
@@ -477,8 +498,14 @@ void registerProjectApi (AppEngine& app)
         throw RpcError ("Marker not found");
     });
 
-    rpc.add ("media.peaks", K::read, "Waveform overview of an audio file (200 min/max pairs per second, base64 int8)", "{file}",
-             [&app] (const var& p) { return computePeaks (app.getEngine(), juce::File (reqStr (p, "file"))); });
+    rpc.add ("media.peaks", K::read,
+             "Waveform min/max pairs for an audio file. Omit start, length and binsPerSecond for a 200-pair overview; pass a visible range and about one pair per pixel when zoomed in",
+             "{file, start?, length?, binsPerSecond?}",
+             [&app] (const var& p)
+    {
+        return computePeaks (app.getEngine(), juce::File (reqStr (p, "file")),
+                             num (p, "start", 0.0), num (p, "length", 0.0), integer (p, "binsPerSecond", 0));
+    });
 
     rpc.add ("media.info", K::read, "Length, rate and channels of an audio file", "{file}", [&app] (const var& p)
     {

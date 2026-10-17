@@ -56,19 +56,20 @@ export function Browser() {
   }, [catalogue, q, tab, favs]);
 
   const addTo = async (c: CatalogueEntry) => {
-    const t = selectedTrack();
-    if (!t) return toast("Select a track first", "warning");
-    if (c.synth && t.kind !== "instrument") {
-      const ids = await act("track.add", { kind: "instrument", name: c.name });
-      const created = ids?.[0] ? useStore.getState().project?.tracks.find((x) => x.id === ids[0]) : undefined;
-      const old = created?.plugins.find((p) => p.synth);
-      await act("batch.run", { label: `Instrument: ${c.name}`, calls: [...(old ? [{ method: "plugin.remove", params: { id: old.id } }] : []), { method: "plugin.add", params: { trackId: ids[0], plugin: c.id } }] });
+    if (c.synth) {
+      const current = selectedTrack();
+      let id = current?.kind === "instrument" ? current.id : undefined;
+      if (!id) id = (await act("track.add", { kind: "instrument", name: c.name }))?.[0];
+      if (!id) return;
+      useStore.setState({ selectedTrack: id, bottom: "effects" });
+      const added = await act("plugin.add", { trackId: id, plugin: c.id }) as { id?: string } | undefined;
+      const name = useStore.getState().project?.tracks.find((x) => x.id === id)?.name ?? c.name;
+      if (added?.id) openPlugin(added.id);
+      toast(`${c.name} → ${name}`, "success");
       return;
     }
-    if (c.synth) {
-      const old = t.plugins.find((p) => p.synth);
-      return act("batch.run", { label: `Instrument: ${c.name}`, calls: [...(old ? [{ method: "plugin.remove", params: { id: old.id } }] : []), { method: "plugin.add", params: { trackId: t.id, plugin: c.id } }] });
-    }
+    const t = selectedTrack();
+    if (!t) return toast("Select a track first", "warning");
     const r = await act("plugin.add", { trackId: t.id, plugin: c.id });
     if (r?.id) { toast(`${c.name} → ${t.name}`, "success"); openPlugin(r.id); }
   };

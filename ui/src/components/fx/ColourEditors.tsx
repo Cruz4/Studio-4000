@@ -2,6 +2,7 @@
 import { COLORS, Knob, Meter, Presets, Section, Seg, rgba, useAnalyserFrame, useCanvas, useTelemetry, drawFreqGrid, drawSpectrum } from "./core";
 import type { Fx } from "./core";
 import { clamp, dbToGain, freqToX, saturate } from "./dsp";
+import { knobLook } from "./knobLook";
 import { CRUSHER_PRESETS, SATURATOR_PRESETS } from "./presets";
 
 export function SaturatorEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
@@ -83,10 +84,10 @@ export function SaturatorEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) 
       </div>
       <div className="fx-row knobs">
         <Seg fx={fx} pid="type" label="Character" />
-        <Knob fx={fx} pid="drive" color={COLORS.orange} size={64} />
-        <Knob fx={fx} pid="tone" color={COLORS.amber} format={(p) => (Math.abs(p.value) < 1 ? "Neutral" : p.value < 0 ? `Darker ${(-p.value).toFixed(0)}%` : `Brighter ${p.value.toFixed(0)}%`)} />
-        <Knob fx={fx} pid="output" color={COLORS.cyan} />
-        <Knob fx={fx} pid="mix" label="Dry / wet" color={COLORS.green} />
+        <Knob fx={fx} pid="drive" size={64} {...knobLook("s4000saturator", "drive")} />
+        <Knob fx={fx} pid="tone" {...knobLook("s4000saturator", "tone")} format={(p) => (Math.abs(p.value) < 1 ? "Neutral" : p.value < 0 ? `Darker ${(-p.value).toFixed(0)}%` : `Brighter ${p.value.toFixed(0)}%`)} />
+        <Knob fx={fx} pid="output" {...knobLook("s4000saturator", "output")} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000saturator", "mix")} />
       </div>
       <Presets fx={fx} presets={SATURATOR_PRESETS} />
     </div>
@@ -145,10 +146,10 @@ export function CrusherEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         <div className="fx-meters"><Meter db={t.inDb} label="In" height={200} /><Meter db={t.outDb} label="Out" height={200} color={COLORS.green} /></div>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="bits" color={COLORS.green} size={64} format={(p) => `${p.value.toFixed(1)} bits`} />
-        <Knob fx={fx} pid="downsample" label="Downsample" color={COLORS.cyan} size={64} format={(p) => `${(sr / Math.max(1, p.value) / 1000).toFixed(1)} kHz`} />
-        <Knob fx={fx} pid="mix" label="Dry / wet" color={COLORS.violet2} />
-        <Knob fx={fx} pid="output" color={COLORS.amber} />
+        <Knob fx={fx} pid="bits" size={64} {...knobLook("s4000crusher", "bits")} format={(p) => `${p.value.toFixed(1)} bits`} />
+        <Knob fx={fx} pid="downsample" size={64} {...knobLook("s4000crusher", "downsample")} format={(p) => `${(sr / Math.max(1, p.value) / 1000).toFixed(1)} kHz`} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000crusher", "mix")} />
+        <Knob fx={fx} pid="output" {...knobLook("s4000crusher", "output")} />
       </div>
       <Presets fx={fx} presets={CRUSHER_PRESETS} />
     </div>

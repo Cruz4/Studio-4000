@@ -87,6 +87,135 @@ var describePlugin (te::Plugin& p, int maxParams)
     return o;
 }
 
+namespace
+{
+    const juce::Identifier clipGainTag { "s3clipGain" };
+
+    te::VolumeAndPanPlugin* clipGainPlugin (te::AudioClipBase& ac, bool create)
+    {
+        auto* list = ac.getPluginList();
+
+        if (list == nullptr)
+            return nullptr;
+
+        for (auto* plugin : list->getPlugins())
+            if (auto* vol = dynamic_cast<te::VolumeAndPanPlugin*> (plugin))
+                if (vol->state[clipGainTag])
+                    return vol;
+
+        if (! create)
+            return nullptr;
+
+        auto created = list->insertPlugin (te::VolumeAndPanPlugin::create(), -1);
+        auto* vol = dynamic_cast<te::VolumeAndPanPlugin*> (created.get());
+
+        if (vol == nullptr)
+            return nullptr;
+
+        vol->state.setProperty (clipGainTag, true, ac.getUndoManager());
+        vol->setVolumeDb (0.0f);
+        return vol;
+    }
+
+    te::AutomationCurve* clipGainCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, bool create)
+    {
+        auto* curves = ac.getAutomationCurveList (create);
+
+        if (curves == nullptr)
+            return nullptr;
+
+        const te::AutomatableParameterID want { vol.itemID, vol.volParam->paramID };
+
+        for (auto item : curves->getItems())
+            if (item != nullptr && item->getDestID() == want)
+                return &item->getCurve (te::CurveModifierType::absolute).curve;
+
+        if (! create || vol.volParam == nullptr)
+            return nullptr;
+
+        auto mod = curves->addCurve (*vol.volParam);
+        return mod != nullptr ? &mod->getCurve (te::CurveModifierType::absolute).curve : nullptr;
+    }
+
+    void clearClipGain (te::AudioClipBase& ac)
+    {
+        auto* vol = clipGainPlugin (ac, false);
+
+        if (vol == nullptr)
+            return;
+
+        auto* um = ac.getUndoManager();
+
+        if (auto* curve = clipGainCurve (ac, *vol, false))
+            curve->clear (um);
+
+        if (auto* curves = ac.getAutomationCurveList (false))
+            for (int i = (int) curves->getItems().size(); --i >= 0;)
+                if (curves->getItems()[(size_t) i] != nullptr && curves->getItems()[(size_t) i]->getDestID().paramID == vol->volParam->paramID)
+                    curves->removeCurve (i);
+
+        vol->deleteFromParent();
+    }
+
+    juce::Array<var> clipGainPointVars (te::AudioClipBase& ac)
+    {
+        juce::Array<var> out;
+        auto* vol = clipGainPlugin (ac, false);
+        auto* curve = vol != nullptr ? clipGainCurve (ac, *vol, false) : nullptr;
+
+        if (curve == nullptr)
+            return out;
+
+        const double clipStart = ac.getPosition().getStart().inSeconds();
+        const double content = ac.getContentStartBeat().inBeats();
+        auto& ts = ac.edit.tempoSequence;
+
+        for (int i = 0; i < curve->getNumPoints(); ++i)
+        {
+            const double beats = te::toBeats (curve->getPointPosition (i), ts).inBeats();
+            const double time = ts.toTime (te::BeatPosition::fromBeats (content + beats)).inSeconds();
+            const float db = te::volumeFaderPositionToDB (curve->getPointValue (i));
+            out.add (var (juce::Array<var> { time - clipStart, std::round (db * 10.0) / 10.0 }));
+        }
+
+        return out;
+    }
+}
+
+void setClipGainPoints (te::AudioClipBase& ac, const juce::Array<juce::var>& points)
+{
+    if (points.isEmpty())
+    {
+        clearClipGain (ac);
+        return;
+    }
+
+    auto* vol = clipGainPlugin (ac, true);
+    auto* curve = vol != nullptr ? clipGainCurve (ac, *vol, true) : nullptr;
+
+    if (vol == nullptr || curve == nullptr || vol->volParam == nullptr)
+        return;
+
+    auto* um = ac.getUndoManager();
+    curve->clear (um);
+
+    const double clipStart = ac.getPosition().getStart().inSeconds();
+    const double content = ac.getContentStartBeat().inBeats();
+    auto& ts = ac.edit.tempoSequence;
+
+    for (const auto& pt : points)
+    {
+        if (! pt.isArray() || pt.size() < 2)
+            continue;
+
+        const double local = (double) pt[0];
+        const float db = juce::jlimit (-48.0f, 12.0f, (float) (double) pt[1]);
+        const float fader = vol->volParam->valueRange.snapToLegalValue (te::decibelsToVolumeFaderPosition (db));
+        const double beats = ts.toBeats (te::TimePosition::fromSeconds (clipStart + local)).inBeats() - content;
+        curve->addPoint (te::BeatPosition::fromBeats (juce::jmax (0.0, beats)), fader, 0.0f, um);
+    }
+}
+
 var describeClip (te::Clip& c)
 {
     auto& edit = c.edit;
@@ -108,11 +237,20 @@ var describeClip (te::Clip& c)
         auto file = ac->getCurrentSourceFile();
         te::AudioFile af (edit.engine, file);
 
-        o.set ("kind", "audio")
+        juce::Array<var> clipPlugins;
+
+        if (auto* list = ac->getPluginList())
+            for (auto* p : *list)
+                if (p != nullptr && ! isChannelStripPlugin (*p))
+                    clipPlugins.add (describePlugin (*p));
+
+        o.set ("plugins", clipPlugins)
+         .set ("kind", "audio")
          .set ("file", file.getFullPathName())
          .set ("sourceLength", af.getLength())
          .set ("channels", af.getNumChannels())
          .set ("gainDb", ac->getGainDB())
+         .set ("gainPoints", clipGainPointVars (*ac))
          .set ("pan", ac->getPan())
          .set ("fadeIn", ac->getFadeIn().inSeconds())
          .set ("fadeOut", ac->getFadeOut().inSeconds())

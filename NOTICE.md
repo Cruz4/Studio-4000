@@ -1,5 +1,7 @@
 # Third-party notices
 
+Studio 4000 is operated by COMMODIOUS WORKS LLC. It was built from scratch. © 2026 COMMODIOUS WORKS LLC. All rights reserved.
+
 Studio 4000 0.1.0 includes or is built with:
 
 | Component | License | Where to read it |

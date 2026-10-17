@@ -137,6 +137,9 @@ export function TopBar() {
           <button className={cx("tbtn", project.looping && "on")} title="Loop (L). Recording while looping stacks takes" onClick={() => runCommand("loop")}><Icon name="loop" /></button>
           <button className={cx("tbtn", project.punch && "on")} title="Punch in/out inside the loop range (P)" onClick={() => runCommand("punch")}><Icon name="punch" /></button>
           <button className={cx("tbtn", project.click && "on")} title="Metronome (C)" onClick={() => runCommand("click")}><Icon name="metronome" /></button>
+          <button className={cx("tbtn", project.countIn !== "none" && "on")} title={`Count-in before recording: ${project.countIn === "twoBars" ? "2 bars" : project.countIn === "oneBar" ? "1 bar" : "off"}. Click to cycle off, 1 bar, 2 bars (Shift+C).`} onClick={() => runCommand("countIn")}>
+            <span className="count-in">{project.countIn === "twoBars" ? "2" : project.countIn === "oneBar" ? "1" : "In"}</span>
+          </button>
         </div>
         <Clock />
         <Tempo />
@@ -146,6 +149,7 @@ export function TopBar() {
       <div className="topbar-side right">
         <Cpu />
         <div className="seg">
+          <button className={cx("btn ghost icon", bottom === "effects" && "on")} title="Effects for the selected track" onClick={() => runCommand("effectsPanel")}><span className="fx-mark">FX</span></button>
           <button className={cx("btn ghost icon", bottom === "mixer" && "on")} title="Mixer panel under the tracks (Tab)" onClick={() => runCommand("mixer")}><Icon name="mixer" /></button>
           <button className={cx("btn ghost icon", bottom === "editor" && "on")} title="Editor (E)" onClick={() => runCommand("editor")}><Icon name="piano" /></button>
           <button className={cx("btn ghost icon", bottom === "smart" && "on")} title="Smart Mix (Ctrl+M)" onClick={() => runCommand("smart")}><Icon name="sparkles" /></button>

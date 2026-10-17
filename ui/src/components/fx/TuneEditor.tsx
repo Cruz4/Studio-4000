@@ -3,6 +3,7 @@ import { cx } from "../../util";
 import { COLORS, Knob, Meter, Pick, Presets, Section, rgba, useCanvas, useHistory, useTelemetry } from "./core";
 import type { Fx } from "./core";
 import { NOTE_NAMES, SCALE_MASKS, clamp, noteName } from "./dsp";
+import { knobLook } from "./knobLook";
 import { TUNE_PRESETS } from "./presets";
 
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -129,11 +130,11 @@ export function TuneEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
       </div>
 
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="speed" label="Retune speed" color={COLORS.cyan} size={64}
+        <Knob fx={fx} pid="speed" size={64} {...knobLook("s4000tune", "speed")}
           format={(p) => (p.value <= 2 ? "Instant (robotic)" : p.value > 150 ? `${p.value.toFixed(0)} ms · natural` : `${p.value.toFixed(0)} ms`)} />
-        <Knob fx={fx} pid="amount" label="Correction amount" color={COLORS.violet2} size={56} />
-        <Knob fx={fx} pid="tolerance" label="Tolerance" color={COLORS.amber} />
-        <Knob fx={fx} pid="mix" label="Dry / wet" color={COLORS.green} />
+        <Knob fx={fx} pid="amount" size={56} {...knobLook("s4000tune", "amount")} />
+        <Knob fx={fx} pid="tolerance" {...knobLook("s4000tune", "tolerance")} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000tune", "mix")} />
         <div className="fx-note">Retune speed sets how fast notes snap to the scale: 0 ms gives the hard, robotic effect, 50–150 ms sounds natural. Tolerance leaves notes alone when they are already within that many cents.</div>
       </div>
       <Presets fx={fx} presets={TUNE_PRESETS} />

@@ -4,6 +4,7 @@ import { cx } from "../../util";
 import { COLORS, Knob, Meter, Pick, Presets, Section, Seg, Toggle, rgba, useCanvas, useTelemetry } from "./core";
 import type { Fx } from "./core";
 import { NOTE_VALUES, clamp, freqToX, lfo } from "./dsp";
+import { knobLook } from "./knobLook";
 import { CHORUS_PRESETS, DELAY_PRESETS, DOUBLER_PRESETS, REVERB_PRESETS, TREMOLO_PRESETS, WIDTH_PRESETS } from "./presets";
 
 export function DelayEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
@@ -80,16 +81,16 @@ export function DelayEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
       </div>
       <div className="fx-row knobs">
         <Pick fx={fx} pid="sync" label="Tempo sync" />
-        <Knob fx={fx} pid="time" label="Free time" disabled={sync > 0} color={COLORS.cyan} size={58} />
-        <Knob fx={fx} pid="feedback" color={COLORS.violet2} size={58} />
+        <Knob fx={fx} pid="time" disabled={sync > 0} size={58} {...knobLook("s4000delay", "time")} />
+        <Knob fx={fx} pid="feedback" size={58} {...knobLook("s4000delay", "feedback")} />
         <Toggle fx={fx} pid="pingPong" label="Ping-pong" />
         <div className="col" style={{ gap: 4, width: 160 }}>
           <span className="fx-label">Echo filter</span>
           <canvas ref={filt.ref} className="fx-canvas" style={{ height: 36 }} />
         </div>
-        <Knob fx={fx} pid="lowCut" label="Low cut" color={COLORS.amber} />
-        <Knob fx={fx} pid="highCut" label="High cut" color={COLORS.amber} />
-        <Knob fx={fx} pid="mix" label="Dry / wet" color={COLORS.green} />
+        <Knob fx={fx} pid="lowCut" {...knobLook("s4000delay", "lowCut")} />
+        <Knob fx={fx} pid="highCut" {...knobLook("s4000delay", "highCut")} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000delay", "mix")} />
       </div>
       <Presets fx={fx} presets={DELAY_PRESETS} />
     </div>
@@ -164,9 +165,9 @@ export function WidthEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         <div className="fx-meters"><Meter db={t.inDb} label="In" height={220} /><Meter db={t.outDb} label="Out" height={220} color={COLORS.cyan} /></div>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="width" color={COLORS.violet2} size={66} />
-        <Knob fx={fx} pid="bassMono" label="Mono below" color={COLORS.amber} format={(p) => (p.value < 1 ? "Off" : `${p.value.toFixed(0)} Hz`)} />
-        <Knob fx={fx} pid="output" color={COLORS.cyan} />
+        <Knob fx={fx} pid="width" size={66} {...knobLook("s4000width", "width")} />
+        <Knob fx={fx} pid="bassMono" {...knobLook("s4000width", "bassMono")} format={(p) => (p.value < 1 ? "Off" : `${p.value.toFixed(0)} Hz`)} />
+        <Knob fx={fx} pid="output" {...knobLook("s4000width", "output")} />
         <div className="fx-note">Keep correlation above 0 so the mix still works in mono. "Mono below" keeps the bass centred while you widen the rest.</div>
       </div>
       <Presets fx={fx} presets={WIDTH_PRESETS} />
@@ -211,10 +212,10 @@ export function DoublerEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         <Section title="Vectorscope"><Goniometer t={t} height={170} /></Section>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="detune" color={COLORS.pink} size={60} />
-        <Knob fx={fx} pid="delay" color={COLORS.cyan} size={60} />
-        <Knob fx={fx} pid="width" color={COLORS.violet2} />
-        <Knob fx={fx} pid="mix" label="Double level" color={COLORS.green} />
+        <Knob fx={fx} pid="detune" size={60} {...knobLook("s4000doubler", "detune")} />
+        <Knob fx={fx} pid="delay" size={60} {...knobLook("s4000doubler", "delay")} />
+        <Knob fx={fx} pid="width" {...knobLook("s4000doubler", "width")} />
+        <Knob fx={fx} pid="mix" {...knobLook("s4000doubler", "mix")} />
       </div>
       <Presets fx={fx} presets={DOUBLER_PRESETS} />
     </div>
@@ -278,8 +279,8 @@ export function TremoloEditor({ fx, pluginId }: { fx: Fx; pluginId: string }) {
         <Seg fx={fx} pid="mode" label="Mode" />
         <Seg fx={fx} pid="shape" label="Shape" />
         <Pick fx={fx} pid="sync" label="Tempo sync" />
-        <Knob fx={fx} pid="rate" disabled={sync > 0} color={COLORS.cyan} size={58} />
-        <Knob fx={fx} pid="depth" color={COLORS.violet2} size={58} />
+        <Knob fx={fx} pid="rate" disabled={sync > 0} size={58} {...knobLook("s4000tremolo", "rate")} />
+        <Knob fx={fx} pid="depth" size={58} {...knobLook("s4000tremolo", "depth")} />
       </div>
       <Presets fx={fx} presets={TREMOLO_PRESETS} />
     </div>
@@ -352,11 +353,11 @@ export function ReverbEditor({ fx }: { fx: Fx }) {
         <Section title="Room"><canvas ref={room.ref} className="fx-canvas square" style={{ height: 190 }} /></Section>
       </div>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="room size" label="Size" color={COLORS.violet2} size={62} format={(p) => `${(0.3 + p.value * 4.5).toFixed(1)} s`} />
-        <Knob fx={fx} pid="damping" color={COLORS.amber} size={56} />
-        <Knob fx={fx} pid="width" color={COLORS.cyan} />
-        <Knob fx={fx} pid="wet level" label="Wet" color={COLORS.green} />
-        <Knob fx={fx} pid="dry level" label="Dry" color="#cfd3e6" />
+        <Knob fx={fx} pid="room size" size={62} {...knobLook("reverb", "room size")} format={(p) => `${(0.3 + p.value * 4.5).toFixed(1)} s`} />
+        <Knob fx={fx} pid="damping" size={56} {...knobLook("reverb", "damping")} />
+        <Knob fx={fx} pid="width" {...knobLook("reverb", "width")} />
+        <Knob fx={fx} pid="wet level" {...knobLook("reverb", "wet level")} />
+        <Knob fx={fx} pid="dry level" {...knobLook("reverb", "dry level")} />
         <button className={cx("fx-toggle", frozen && "on")} onClick={() => fx.set("mode", frozen ? 0 : 1)}><span className="led" /> Freeze</button>
       </div>
       <Presets fx={fx} presets={REVERB_PRESETS} />
@@ -432,10 +433,10 @@ export function ChorusEditor({ fx }: { fx: Fx }) {
     <div className="fx-layout">
       <Section title="How the voices move"><canvas ref={ref} className="fx-canvas" style={{ height: 180 }} /></Section>
       <div className="fx-row knobs">
-        <Knob fx={fx} pid="depthMs" label="Depth" color={COLORS.cyan} size={64} />
-        <Knob fx={fx} pid="speedHz" label="Speed" color={COLORS.violet2} size={64} />
-        <Knob fx={fx} pid="width" label="Width" color={COLORS.pink} size={56} />
-        <Knob fx={fx} pid="mixProportion" label="Mix" color={COLORS.green} size={56} />
+        <Knob fx={fx} pid="depthMs" size={64} {...knobLook("chorus", "depthMs")} />
+        <Knob fx={fx} pid="speedHz" size={64} {...knobLook("chorus", "speedHz")} />
+        <Knob fx={fx} pid="width" size={56} {...knobLook("chorus", "width")} />
+        <Knob fx={fx} pid="mixProportion" size={56} {...knobLook("chorus", "mixProportion")} />
       </div>
       <div className="fx-note">Depth is how far the voices drift. Speed is how fast that drift moves. Width pulls the two voices apart. Mix is the chorus against the dry sound.</div>
       <Presets fx={fx} presets={CHORUS_PRESETS} />

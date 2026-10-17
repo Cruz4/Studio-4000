@@ -251,6 +251,20 @@ void registerClipApi (AppEngine& app)
         return var (copy->itemID.toString());
     });
 
+    rpc.add ("clip.setGainPoints", K::write, "Sets the clip gain envelope. Points are [seconds from the clip start, dB]; an empty list clears it",
+             "{id, points}", [&app] (const var& p)
+    {
+        auto& ac = audioClip (app, reqStr (p, "id"));
+        juce::Array<var> points;
+
+        if (auto* list = p["points"].getArray())
+            for (const auto& pt : *list)
+                points.add (pt);
+
+        setClipGainPoints (ac, points);
+        return var (true);
+    });
+
     rpc.add ("clip.set", K::write, "Changes clip properties",
              "{id, name?, colour?, muted?, gainDb?, pan?, fadeIn?, fadeOut?, fadeInType?, fadeOutType?, pitch?, reversed?, autoTempo?, take?}",
              [&app] (const var& p)

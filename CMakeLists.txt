@@ -35,6 +35,7 @@ target_sources(Studio4000 PRIVATE
     src/ProjectState.cpp
     src/MainWindow.cpp
     src/AgentServer.cpp
+    src/SessionRelay.cpp
     src/LoudnessMeterPlugin.cpp
     src/LimiterPlugin.cpp
     src/SmartMix.cpp

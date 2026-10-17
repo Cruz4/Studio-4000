@@ -4,26 +4,28 @@ import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
-import { act, live, loadDevices, onTick, toast, useStore, type ArrangeTool, type Grid } from "../store";
-import { createTrackItems, toggleAutomation, trackMenu } from "../trackMenu";
+import { act, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
+import { createTrackItems, openTrackMenu, toggleAutomation } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
-import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, secondsPerBar, secondsPerBeat, shade, snap } from "../util";
+import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap } from "../util";
 import { askText } from "./Ask";
+import { ClipGain } from "./ClipGain";
 import { openMenu, type MenuItem } from "./ContextMenu";
 import { FxToggle, InsertSlot, SynthSlot } from "./Mixer";
+import { FX_COPY } from "../pluginReorder";
 import { beginTrackReorder } from "../trackReorder";
 import { DbField, Icon, startDrag } from "./ui";
 import { Waveform } from "./Waveform";
 
 const TOOL_LABEL: Record<ArrangeTool, string> = { move: "Move", time: "Time", split: "Split", slip: "Slip", erase: "Erase" };
 const TOOL_HINT: Record<ArrangeTool, string> = {
-  move: "Move tool: select and drag clips",
-  time: "Time selection: drag a range to loop it",
-  split: "Split tool: click a clip to cut it there",
-  slip: "Slip tool: drag the audio inside a clip",
-  erase: "Erase tool: click a clip to delete it",
+  move: "Move tool (1): select and drag clips",
+  time: "Time tool (2): click to move the playhead, drag to set the loop",
+  split: "Split tool (3): click a clip to cut it, or empty space to move the playhead",
+  slip: "Slip tool (4): drag the audio inside a clip",
+  erase: "Erase tool (5): click a clip to delete it",
 };
 
 const AUTO_H = 76;
@@ -70,8 +72,6 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
   const headerW = useHeaderWidth((s) => s.w);
   const theme = useThemeName();
   const ref = useRef<HTMLCanvasElement>(null);
-  const spBar = secondsPerBar(project);
-  const spBeat = secondsPerBeat(project);
 
   useLayoutEffect(() => {
     const c = ref.current;
@@ -82,35 +82,34 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
     const g = c.getContext("2d")!;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
-    const barPx = spBar * pps;
-    const every = barPx < 28 ? Math.ceil(28 / barPx / 4) * 4 : 1;
     const t0 = view.left / pps, t1 = (view.left + w) / pps;
     const paint = getComputedStyle(document.documentElement);
     const tick = paint.getPropertyValue("--ruler-tick").trim() || "rgba(255,255,255,.35)";
     const text = paint.getPropertyValue("--ruler-text").trim() || "rgba(232,234,242,.8)";
-    g.font = "10px " + getComputedStyle(document.body).getPropertyValue("--mono");
-    for (let bar = Math.floor(t0 / spBar); bar * spBar <= t1; bar++) {
-      const x = bar * spBar * pps - view.left;
-      if (bar % every === 0) {
-        g.fillStyle = tick;
-        g.fillRect(x, 14, 1, 20);
+    const step = rulerStep(pps);
+    const sub = [5, 2, 1].find((n) => (step / n) * pps >= 8) ?? 1;
+    g.font = "11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+    const first = Math.floor(t0 / step) - 1;
+    const last = Math.ceil(t1 / step) + 1;
+    for (let i = first; i <= last; i++) {
+      const t = i * step;
+      const x = t * pps - view.left;
+      g.fillStyle = tick;
+      g.fillRect(Math.round(x), 24, 1, 10);
+      if (x > -8 && x < w - 4) {
         g.fillStyle = text;
-        g.fillText(String(bar + 1), x + 4, 26);
-      } else if (barPx > 6) {
-        g.fillStyle = tick;
-        g.fillRect(x, 26, 1, 8);
+        g.fillText(formatRulerTime(t, step), Math.round(x) + 4, 20);
       }
-      if (barPx > 60 && every === 1) {
-        for (let b = 1; b < project.timeSig[0]; b++) {
-          const bx = x + b * spBeat * pps;
+      if (sub > 1 && i < last) {
+        for (let n = 1; n < sub; n++) {
+          const sx = (t + (step * n) / sub) * pps - view.left;
           g.fillStyle = tick;
-          g.fillRect(bx, 29, 1, 5);
+          g.fillRect(Math.round(sx), 28, 1, 6);
         }
       }
     }
-    void grid;
     void theme;
-  }, [view.left, view.width, pps, spBar, spBeat, project.timeSig, grid, theme]);
+  }, [view.left, view.width, pps, theme]);
 
   const timeAt = (clientX: number, el: HTMLElement) => (clientX - el.getBoundingClientRect().left + view.left) / pps;
 
@@ -171,35 +170,64 @@ function LoopBar({ project, pps, viewLeft, grid }: { project: Project; pps: numb
 
 /* ------------------------------------------------------------------ clips */
 
-const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, view, onDown, trackIndex, timeAt, onTime }: {
-  clip: Clip; track: Track; pps: number; selected: boolean; preview: DragPreview | null; view: { left: number; width: number };
+interface SettledClip { id: string; start: number; end: number; offset: number; fadeIn: number; fadeOut: number }
+
+/** The clip as the drag is showing it, so the picture and the value we save are the same. */
+function shownClip(clip: Clip, preview: DragPreview | null, settled: SettledClip[] | null) {
+  let start = clip.start, end = clip.end, fadeIn = clip.fadeIn ?? 0, fadeOut = clip.fadeOut ?? 0, offset = clip.offset;
+  const dragging = preview != null && preview.ids.includes(clip.id);
+  if (dragging && preview) {
+    if (preview.mode === "move") { start += preview.dt; end += preview.dt; }
+    if (preview.mode === "l") {
+      if (clip.kind === "midi") start = clamp(start + preview.dt, 0, end - 0.02);
+      else {
+        const ns = clamp(start + preview.dt, Math.max(0, clip.start - clip.offset), end - 0.02);
+        offset += ns - start;
+        start = ns;
+      }
+    }
+    if (preview.mode === "r") end = Math.max(start + 0.02, end + preview.dt);
+    if (preview.mode === "fi") fadeIn = clamp(fadeIn + preview.dt, 0, end - start);
+    if (preview.mode === "fo") fadeOut = clamp(fadeOut - preview.dt, 0, end - start);
+    if (preview.mode === "slip") offset = Math.max(0, offset - preview.dt);
+    return { start, end, fadeIn, fadeOut, offset };
+  }
+  const held = settled?.find((item) => item.id === clip.id);
+  if (held) return held;
+  return { start, end, fadeIn, fadeOut, offset };
+}
+
+const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, settled, view, onDown, trackIndex, timeAt, onTime }: {
+  clip: Clip; track: Track; pps: number; selected: boolean; preview: DragPreview | null; settled: SettledClip[] | null; view: { left: number; width: number };
   onDown: (e: React.PointerEvent, clip: Clip, mode: DragPreview["mode"]) => void; trackIndex: number;
   timeAt: (clientX: number) => number;
   onTime: (e: React.PointerEvent) => void;
 }) {
   const tool = useStore((s) => s.tool);
-  let start = clip.start, end = clip.end, fadeIn = clip.fadeIn ?? 0, fadeOut = clip.fadeOut ?? 0, offset = clip.offset;
-  const affected = preview && preview.ids.includes(clip.id);
-  if (affected && preview) {
-    if (preview.mode === "move") { start += preview.dt; end += preview.dt; }
-    if (preview.mode === "l") { const ns = clamp(start + preview.dt, Math.max(0, clip.start - clip.offset), end - 0.02); offset += ns - start; start = ns; }
-    if (preview.mode === "r") end = Math.max(start + 0.02, end + preview.dt);
-    if (preview.mode === "fi") fadeIn = clamp(fadeIn + preview.dt, 0, end - start);
-    if (preview.mode === "fo") fadeOut = clamp(fadeOut - preview.dt, 0, end - start);
-    if (preview.mode === "slip") offset = Math.max(0, offset - preview.dt);
-  }
+  const heights = useTrackHeights();
+  const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
+  const shown = shownClip(clip, preview, settled);
+  const { start, end, fadeIn, fadeOut, offset } = shown;
+  const affected = preview != null && preview.ids.includes(clip.id);
   const colour = clip.colour || track.colour;
   const left = start * pps, width = Math.max(2, (end - start) * pps);
   if (left > view.left + view.width + 400 || left + width < view.left - 400) return null;
   const moved = affected && preview?.mode === "move" && preview.trackDelta !== 0;
+  const destTrack = moved ? useStore.getState().project?.tracks[trackIndex + preview.trackDelta] : undefined;
   const style: React.CSSProperties = {
     left, width,
     background: `linear-gradient(180deg, ${shade(colour, 0.55)}, ${shade(colour, 0.28)})`,
     border: `1px solid ${shade(colour, 0.9)}`,
     transform: moved ? `translateY(${preview!.dy}px)` : undefined,
     opacity: affected && preview?.copy ? 0.75 : undefined,
+    ...(destTrack ? { height: Math.max(28, heightOf(heights, destTrack.id) - 8), bottom: "auto", zIndex: 5 } : {}),
   };
-  const drawClip = { ...clip, start, end, offset, fadeIn, fadeOut };
+  const offsetDelta = offset - clip.offset;
+  const gainSource = liveGain ?? clip.gainPoints;
+  const drawClip = {
+    ...clip, start, end, offset, fadeIn, fadeOut,
+    gainPoints: gainSource?.map(([t, db]) => [t - offsetDelta, db] as [number, number]),
+  };
   const notes = clip.notes ?? [];
   const pitches = notes.map((n) => n[0]);
   const lo = Math.min(...pitches, 60) - 2, hi = Math.max(...pitches, 72) + 2;
@@ -208,16 +236,23 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, v
     <div className={cx("clip", selected && "selected", clip.muted && "muted")} style={style} data-clip={clip.id} data-track-index={trackIndex}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        if (tool === "erase") { e.stopPropagation(); act("clip.delete", { id: clip.id }); return; }
-        if (tool === "split") { e.stopPropagation(); splitClipAt(clip.id, timeAt(e.clientX)); return; }
+        const selectOnly = () => { selectTrack(track.id); useStore.setState({ selectedClips: [clip.id], selectedPlugin: null }); };
+        if (tool === "erase") { e.stopPropagation(); selectOnly(); act("clip.delete", { id: clip.id }); return; }
+        if (tool === "split") {
+          e.stopPropagation();
+          selectOnly();
+          const t = snap(timeAt(e.clientX), useStore.getState().grid, useStore.getState().project!, e.altKey);
+          splitClipAt(clip.id, t);
+          return;
+        }
         if (tool === "slip") { onDown(e, clip, "slip"); return; }
-        if (tool === "time") { e.stopPropagation(); onTime(e); return; }
+        if (tool === "time") { e.stopPropagation(); selectOnly(); onTime(e); return; }
         onDown(e, clip, "move");
       }}
       onDoubleClick={() => { if (tool === "move") useStore.setState({ editorClip: clip.id, bottom: "editor", selectedClips: [clip.id], selectedPlugin: null }); }}
       onContextMenu={(e) => {
         const st = useStore.getState();
-        if (!st.selectedClips.includes(clip.id)) useStore.setState({ selectedClips: [clip.id], selectedTrack: track.id, selectedPlugin: null });
+        if (!st.selectedClips.includes(clip.id)) { selectTrack(track.id); useStore.setState({ selectedClips: [clip.id], selectedPlugin: null }); }
         const ids = useStore.getState().selectedClips;
         const each = (method: string, params: (id: string) => Record<string, unknown>, label: string) =>
           act("batch.run", { label, calls: ids.map((id) => ({ method, params: params(id) })) });
@@ -243,7 +278,8 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, v
           { label: "Delete", icon: "trash", danger: true, keys: "Del", run: () => each("clip.delete", (id) => ({ id }), "Delete clips") },
         ]);
       }}>
-      <div className="clip-label" style={{ background: shade(colour, 0.5) }}>{clip.name}</div>
+      <div className="clip-label" style={{ background: shade(colour, 0.5) }} title="Drag to move"
+        onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); onDown(e, clip, "move"); }}>{clip.name}</div>
       {clip.takes && clip.takes.count > 1 && (
         <span className="takes" title="Takes recorded in a loop. Click to cycle; open the editor to comp"
           onPointerDown={(e) => e.stopPropagation()}
@@ -254,11 +290,20 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, v
       {clip.kind === "audio" && (
         <Waveform clip={drawClip} pxPerSec={pps} colour="rgba(255,255,255,.82)" viewLeft={view.left} viewWidth={view.width} clipLeft={left} />
       )}
+      {clip.kind === "audio" && (
+        <ClipGain id={clip.id} points={clip.gainPoints} duration={end - start} offsetDelta={offsetDelta} onDraft={setLiveGain} />
+      )}
       {clip.kind === "midi" && (
-        <svg style={{ position: "absolute", left: 0, top: 17, width: "100%", height: "calc(100% - 17px)" }} preserveAspectRatio="none" viewBox={`0 0 ${Math.max(1, end - start)} ${hi - lo}`}>
-          {notes.map((n, i) => (
-            <rect key={i} x={n[1] - clip.start} y={hi - n[0] - 1} width={Math.max(0.03, n[2])} height={0.8} fill="rgba(255,255,255,.85)" rx={0.05} />
-          ))}
+        <svg style={{ position: "absolute", left: 0, top: 17, width, height: "calc(100% - 17px)" }} preserveAspectRatio="none" viewBox={`0 0 ${Math.max(1, width)} ${Math.max(1, hi - lo)}`}>
+          {notes.map((n, i) => {
+            const heldNow = settled?.find((item) => item.id === clip.id);
+            const holdingMove = !affected && !!heldNow && Math.abs((heldNow.end - heldNow.start) - (clip.end - clip.start)) < 0.0005 && Math.abs(heldNow.start - clip.start) > 0.0005;
+            const noteOrigin = (affected && preview?.mode === "move") || holdingMove ? clip.start : start;
+            const x = (n[1] - noteOrigin) * pps;
+            const w = Math.max(1, n[2] * pps);
+            if (x + w <= 0 || x >= width) return null;
+            return <rect key={i} x={x} y={hi - n[0] - 1} width={w} height={0.8} fill="rgba(255,255,255,.85)" />;
+          })}
         </svg>
       )}
       {clip.kind === "audio" && (
@@ -342,9 +387,11 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
   const [vol, setVol] = useState<number | null>(null);
   const db = vol ?? track.volumeDb ?? 0;
 
-  const menu = trackMenu(track);
   const tight = height < 88;
   const compact = height < 148;
+  const menuButton = (
+    <button className="toggle" title="Track menu" onClick={(e) => { e.stopPropagation(); openTrackMenu(e, track); }}>⋯</button>
+  );
   const controls = (
     <>
       <button className={cx("toggle mute", track.mute && "on")} title="Mute" onClick={() => act("track.set", { id: track.id, mute: !track.mute })}>M</button>
@@ -359,23 +406,22 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
         </button>
       )}
       <button className={cx("toggle", autoOpen && "on")} title="Automation lane (A)" onClick={() => toggleAutomation(track)}><Icon name="automation" size={12} /></button>
-      {!tight && <div className="grow" />}
-      <button className="toggle" title="Track menu" onClick={(e) => openMenu(e, menu)}>⋯</button>
     </>
   );
 
   return (
-    <div className={cx("track-head", compact && "compact", tight && "tight")} style={{ height }}
+    <div className={cx("track-head", compact && "compact", tight && "tight")} style={{ height }} title="Click to select this track. Ctrl+click adds or removes it."
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         if (e.clientX > e.currentTarget.getBoundingClientRect().right - 10) return;
         if ((e.target as HTMLElement).closest("button, select, .slot, .slider")) return;
-        useStore.setState({ selectedTrack: track.id });
+        if (e.ctrlKey || e.metaKey) { selectTrack(track.id, "toggle"); return; }
+        selectTrack(track.id);
         const row = e.currentTarget.closest(".track-row");
         if (!(row instanceof HTMLElement)) return;
         beginTrackReorder(e, { id: track.id, name: track.name, colour: track.colour, axis: "y", source: row });
       }}
-      onContextMenu={(e) => openMenu(e, menu)}>
+      onContextMenu={(e) => openTrackMenu(e, track)}>
       <div className="colour" style={{ background: track.colour, boxShadow: `0 0 12px ${shade(track.colour, 0.6)}` }} />
       <div className="track-head-scroll" style={{ paddingLeft: 12 + depth * 12 }}>
       <div className="row name-line" style={{ gap: tight ? 4 : 6, paddingRight: 6 }}>
@@ -384,6 +430,8 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
           onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") { setName(track.name); (e.target as HTMLInputElement).blur(); } }} />
         <PeerDots trackId={track.id} />
         {!tight && <span className="kind">{track.kind === "return" ? "FX" : track.kind === "instrument" ? "INST" : track.kind === "group" ? "GROUP" : ""}</span>}
+        <div className="grow" />
+        {menuButton}
         {tight && controls}
       </div>
       {track.kind !== "group" && <TrackIo track={track} />}
@@ -537,6 +585,7 @@ export function Arrange() {
   const arrangeTool = useStore((s) => s.tool);
   const grid = useStore((s) => s.grid);
   const selectedTrack = useStore((s) => s.selectedTrack);
+  const selectedTracks = useStore((s) => s.selectedTracks);
   const selectedClips = useStore((s) => s.selectedClips);
   const automationOpen = useStore((s) => s.automationOpen);
   const recording = useStore((s) => s.transport.recording);
@@ -544,8 +593,24 @@ export function Arrange() {
   const playhead = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ left: 0, width: 1200 });
   const [preview, setPreview] = useState<DragPreview | null>(null);
+  // Kept after the mouse is released so the clip does not flash its old length while the edit is saved.
+  const [settled, setSettled] = useState<SettledClip[] | null>(null);
+  useEffect(() => {
+    if (!settled) return;
+    const clips = project.tracks.flatMap((t) => t.clips);
+    const matched = settled.every((held) => {
+      const c = clips.find((item) => item.id === held.id);
+      return !!c && Math.abs(c.start - held.start) < 0.0005 && Math.abs(c.end - held.end) < 0.0005
+        && Math.abs(c.offset - held.offset) < 0.0005
+        && Math.abs((c.fadeIn ?? 0) - held.fadeIn) < 0.0005 && Math.abs((c.fadeOut ?? 0) - held.fadeOut) < 0.0005;
+    });
+    if (matched) { setSettled(null); return; }
+    const timer = window.setTimeout(() => setSettled(null), 400);
+    return () => window.clearTimeout(timer);
+  }, [project, settled]);
   const [rubber, setRubber] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [timeDrag, setTimeDrag] = useState<{ a: number; b: number } | null>(null);
+  const [ghost, setGhost] = useState<number | null>(null);
   const [dropLane, setDropLane] = useState<string | null>(null);
   const [fileDrag, setFileDrag] = useState(false);
   const heights = useTrackHeights();
@@ -654,7 +719,12 @@ export function Arrange() {
       if (!ids.includes(clip.id) && mode === "move") { useStore.setState({ selectedClips: ids }); return; }
     } else if (!ids.includes(clip.id)) ids = [clip.id];
     const owner = st.project!.tracks.find((t) => t.clips.some((c) => c.id === clip.id));
-    useStore.setState({ selectedClips: ids, selectedPlugin: null, selectedTrack: owner?.id ?? st.selectedTrack, editorClip: st.bottom === "editor" ? clip.id : st.editorClip });
+    if (owner && (e.ctrlKey || e.metaKey)) {
+      const cur = useStore.getState();
+      const tracks = cur.selectedTracks.length ? cur.selectedTracks : cur.selectedTrack ? [cur.selectedTrack] : [];
+      if (!tracks.includes(owner.id)) selectTrack(owner.id, "toggle");
+    } else if (owner) selectTrack(owner.id);
+    useStore.setState({ selectedClips: ids, selectedPlugin: null, editorClip: st.bottom === "editor" ? clip.id : st.editorClip });
     const moveIds = mode === "move" ? ids : [clip.id];
     const trackIndex = st.project!.tracks.findIndex((t) => t.id === owner?.id);
     let moved = false;
@@ -688,74 +758,102 @@ export function Arrange() {
       last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.ctrlKey };
       setPreview(last);
     }, () => {
-      setPreview(null);
-      if (!moved) return;
+      if (!moved) { setPreview(null); return; }
       const p = useStore.getState().project!;
       const all = p.tracks.flatMap((t) => t.clips.map((c) => ({ c, t })));
       const calls: { method: string; params: Record<string, unknown> }[] = [];
+      const held: SettledClip[] = [];
       for (const id of last.ids) {
         const hit = all.find((x) => x.c.id === id);
         if (!hit) continue;
         const { c } = hit;
+        const edge = shownClip(c, last, null);
+        held.push({ id, start: edge.start, end: edge.end, offset: edge.offset, fadeIn: edge.fadeIn, fadeOut: edge.fadeOut });
         if (last.mode === "move") {
           const ti = p.tracks.findIndex((t) => t.id === hit.t.id) + last.trackDelta;
           const target = p.tracks[clamp(ti, 0, p.tracks.length - 1)];
           const compatible = (target.kind === "instrument") === (c.kind === "midi") || target.kind === "audio" && c.kind === "audio";
           const trackId = last.trackDelta !== 0 && compatible ? target.id : undefined;
-          if (last.copy) calls.push({ method: "clip.duplicate", params: { id, start: c.start + last.dt } });
-          else calls.push({ method: "clip.move", params: { id, start: Math.max(0, c.start + last.dt), ...(trackId ? { trackId } : {}) } });
-        } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: Math.max(0, c.start + last.dt) } });
-        else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: Math.max(c.start + 0.02, c.end + last.dt) } });
-        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: clamp((c.fadeIn ?? 0) + last.dt, 0, c.end - c.start) } });
-        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: clamp((c.fadeOut ?? 0) - last.dt, 0, c.end - c.start) } });
-        else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: Math.max(0, c.offset - last.dt) } });
+          if (last.copy) calls.push({ method: "clip.duplicate", params: { id, start: edge.start } });
+          else calls.push({ method: "clip.move", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
+        } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: edge.start } });
+        else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: edge.end } });
+        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: edge.fadeIn } });
+        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut } });
+        else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: edge.offset } });
       }
+      setPreview(null);
+      if (!last.copy) setSettled(held);
       const label = { move: last.copy ? "Copy clips" : "Move clips", fi: "Fade", fo: "Fade", slip: "Slip", l: "Trim", r: "Trim" }[last.mode];
-      if (calls.length) act("batch.run", { label, calls });
+      if (calls.length) void act("batch.run", { label, calls });
+      else setSettled(null);
     });
   }, [pps]);
 
   const beginTime = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
-    const anchor = timeAtClient(e.clientX);
+    const at = (ev: { clientX: number; altKey: boolean }) => snap(timeAtClient(ev.clientX), useStore.getState().grid, project, ev.altKey);
+    const anchor = at(e);
     let end = anchor;
-    startDrag(e, (dx) => {
-      end = Math.max(0, anchor + dx / pps);
+    let dragged = false;
+    startDrag(e, (dx, _dy, ev) => {
+      if (Math.abs(dx) > 3) dragged = true;
+      end = at(ev);
       setTimeDrag({ a: Math.min(anchor, end), b: Math.max(anchor, end) });
     }, () => {
-      const start = Math.min(anchor, end), stop = Math.max(anchor, end);
       setTimeDrag(null);
-      if (stop - start > 0.02) act("transport.setLoop", { start, end: stop, enabled: true });
+      if (!dragged) act("transport.setPosition", { time: anchor });
+      else if (Math.abs(end - anchor) > 0.02) act("transport.setLoop", { start: Math.min(anchor, end), end: Math.max(anchor, end), enabled: true });
     });
   };
 
   const onLaneDown = (e: React.PointerEvent, track: Track) => {
     if (e.button !== 0) return;
-    if (useStore.getState().tool === "time") { beginTime(e); return; }
+    const toolNow = useStore.getState().tool;
+    if (toolNow === "time") { beginTime(e); return; }
+    if (toolNow === "split") {
+      const t = snap(timeAtClient(e.clientX), useStore.getState().grid, project, e.altKey);
+      const clipEl = (e.target as HTMLElement).closest<HTMLElement>("[data-clip]");
+      if (clipEl?.dataset.clip) {
+        if (e.ctrlKey || e.metaKey) selectTrack(track.id, "toggle");
+        else selectTrack(track.id);
+        useStore.setState({ selectedClips: [clipEl.dataset.clip], selectedPlugin: null });
+        splitClipAt(clipEl.dataset.clip, t);
+      } else {
+        selectTrack(track.id, e.ctrlKey || e.metaKey ? "toggle" : "replace");
+        act("transport.setPosition", { time: t });
+      }
+      return;
+    }
     if (e.target !== e.currentTarget) return;
-    const inner = (e.currentTarget.parentElement!.parentElement as HTMLElement).getBoundingClientRect();
-    const x0 = e.clientX - inner.left, y0 = e.clientY - inner.top;
+    const host = e.currentTarget.closest(".arrange-inner") as HTMLElement;
+    const origin = () => host.getBoundingClientRect();
+    const start = origin();
+    const x0 = e.clientX - start.left, y0 = e.clientY - start.top;
     let dragged = false;
-    const additive = e.shiftKey || e.ctrlKey;
+    const extendTracks = (e.ctrlKey || e.metaKey) && !e.shiftKey;
+    const additive = e.shiftKey || e.ctrlKey || e.metaKey;
     const base = additive ? useStore.getState().selectedClips : [];
-    useStore.setState({ selectedTrack: track.id });
+    if (!extendTracks) selectTrack(track.id);
     startDrag(e, (dx, dy, ev) => {
       if (!dragged && Math.abs(dx) + Math.abs(dy) < 4) return;
       dragged = true;
-      const x1 = ev.clientX - inner.left, y1 = ev.clientY - inner.top;
+      const box = origin();
+      const x1 = ev.clientX - box.left, y1 = ev.clientY - box.top;
       const r = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
       setRubber(r);
       const sel = new Set(base);
       document.querySelectorAll<HTMLElement>(".arrange [data-clip]").forEach((el) => {
         const b = el.getBoundingClientRect();
-        const bx = b.left - inner.left, by = b.top - inner.top;
+        const bx = b.left - box.left, by = b.top - box.top;
         if (bx < r.x + r.w && bx + b.width > r.x && by < r.y + r.h && by + b.height > r.y) sel.add(el.dataset.clip!);
       });
       useStore.setState({ selectedClips: [...sel] });
     }, (ev) => {
       setRubber(null);
       if (!dragged) {
-        if (!additive) useStore.setState({ selectedClips: [] });
+        if (extendTracks) selectTrack(track.id, "toggle");
+        else if (!additive) useStore.setState({ selectedClips: [] });
         act("transport.setPosition", { time: snap(timeAtClient(ev.clientX), useStore.getState().grid, project, ev.altKey) });
       }
     });
@@ -767,21 +865,38 @@ export function Arrange() {
     setFileDrag(false);
     const t = snap(timeAtClient(e.clientX), grid, project, e.altKey);
     const plugin = e.dataTransfer.getData("application/x-s3-plugin");
+    const copiedFx = e.dataTransfer.getData(FX_COPY);
     const media = e.dataTransfer.getData("application/x-s3-media");
     const chain = e.dataTransfer.getData("application/x-s3-chain");
+    if (copiedFx) {
+      const { ids } = JSON.parse(copiedFx) as { ids: string[] };
+      let target = track?.id;
+      if (!target) {
+        const created = await act("track.add", { kind: "audio" });
+        target = created?.[0];
+      }
+      if (target && ids?.length) {
+        selectTrack(target);
+        useStore.setState({ bottom: "effects" });
+        for (const id of ids) await act("plugin.duplicate", { id, trackId: target });
+        toast(ids.length > 1 ? `${ids.length} effects added` : "Effect added", "success");
+      }
+      return;
+    }
     if (plugin) {
       const { id, synth, name } = JSON.parse(plugin);
       let target = track?.id;
       if (!target || (synth && track?.kind !== "instrument")) {
         const ids = await act("track.add", { kind: synth ? "instrument" : "audio", name: synth ? name : undefined });
         target = ids?.[0];
-        if (synth && target) {
-          const created = useStore.getState().project?.tracks.find((x) => x.id === target);
-          const existing = created?.plugins.find((p) => p.synth);
-          if (existing) await act("plugin.remove", { id: existing.id });
-        }
       }
-      if (target) { await act("plugin.add", { trackId: target, plugin: id }); toast(`${name} added`, "success"); }
+      if (target) {
+        selectTrack(target);
+        useStore.setState({ bottom: "effects" });
+        const added = await act("plugin.add", { trackId: target, plugin: id }) as { id?: string } | undefined;
+        if (synth && added?.id) openPlugin(added.id);
+        toast(`${name} added`, "success");
+      }
       return;
     }
     if (chain && track) return act("chain.load", { trackId: track.id, name: chain });
@@ -796,7 +911,7 @@ export function Arrange() {
 
   const dragOver = (e: React.DragEvent, id: string) => {
     const types = e.dataTransfer.types;
-    if (types.includes("Files") || types.includes("application/x-s3-plugin") || types.includes("application/x-s3-media") || types.includes("application/x-s3-chain")) {
+    if (types.includes("Files") || types.includes("application/x-s3-plugin") || types.includes(FX_COPY) || types.includes("application/x-s3-media") || types.includes("application/x-s3-chain")) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
       if (dropLane !== id) setDropLane(id);
@@ -805,10 +920,12 @@ export function Arrange() {
   };
 
   const barPx = secondsPerBar(project) * pps;
-  const beatPx = secondsPerBeat(project) * pps * (4 / project.timeSig[1]);
+  const step = gridSeconds(grid, project);
+  const stepPx = step * pps;
+  const showStep = grid !== "off" && grid !== "bar" && stepPx > 6;
   const gridBg = {
-    backgroundImage: `linear-gradient(90deg, var(--grid-bar) 1px, transparent 1px)${beatPx > 12 ? `, linear-gradient(90deg, var(--grid-beat) 1px, transparent 1px)` : ""}`,
-    backgroundSize: `${barPx}px 100%${beatPx > 12 ? `, ${beatPx}px 100%` : ""}`,
+    backgroundImage: `linear-gradient(90deg, var(--grid-bar) 1px, transparent 1px)${showStep ? `, linear-gradient(90deg, var(--grid-beat) 1px, transparent 1px)` : ""}`,
+    backgroundSize: `${barPx}px 100%${showStep ? `, ${stepPx}px 100%` : ""}`,
   };
 
   const loopVisible = project.loop[1] - project.loop[0] > 0.01;
@@ -830,7 +947,22 @@ export function Arrange() {
         <div className="grow" />
         <span className="small faint">Snap</span>
         <select className="input sm" value={grid} onChange={(e) => useStore.setState({ grid: e.target.value as Grid })} title="Snap grid. Hold Alt while dragging to bypass">
-          <option value="bar">Bar</option><option value="beat">Beat</option><option value="1/8">1/8</option><option value="1/16">1/16</option><option value="off">Off</option>
+          <option value="bar">1 Bar</option>
+          <option value="1/2">1/2</option>
+          <option value="beat">1/4</option>
+          <option value="1/8">1/8</option>
+          <option value="1/16">1/16</option>
+          <option value="1/32">1/32</option>
+          <option value="1/64">1/64</option>
+          <option value="1/128">1/128</option>
+          <option value="bart">1 Bar T</option>
+          <option value="1/2t">1/2T</option>
+          <option value="1/4t">1/4T</option>
+          <option value="1/8t">1/8T</option>
+          <option value="1/16t">1/16T</option>
+          <option value="1/32t">1/32T</option>
+          <option value="1/64t">1/64T</option>
+          <option value="off">Off</option>
         </select>
         <button className={cx("btn sm ghost", follow && "on")} onClick={() => setFollow(!follow)} title="Follow playhead"><Icon name="arrowRight" size={13} /></button>
         <button className="btn sm ghost icon" onClick={() => useStore.setState({ pxPerSec: clamp(pps / 1.4, 4, 1200) })} title="Zoom out (-)"><Icon name="zoomOut" size={14} /></button>
@@ -840,11 +972,15 @@ export function Arrange() {
 
       <div className="arrange-body" ref={body} onScroll={updateView}>
         <div className="arrange-inner" style={{ width: headerW + laneW, minHeight: "100%" }}
+          onDragOver={(e) => dragOver(e, "new")}
+          onDrop={(e) => { if (!e.defaultPrevented) void onDrop(e); }}
           onPointerMove={(e) => {
             const inLanes = e.clientX - body.current!.getBoundingClientRect().left > headerW;
             reportHover(inLanes ? Math.round(timeAtClient(e.clientX) * 100) / 100 : null);
+            if (inLanes && (arrangeTool === "time" || arrangeTool === "split")) setGhost(snap(timeAtClient(e.clientX), grid, project, e.altKey));
+            else setGhost(null);
           }}
-          onPointerLeave={() => reportHover(null)}>
+          onPointerLeave={() => { reportHover(null); setGhost(null); }}>
           <div className="ruler" style={{ width: headerW + laneW }}>
             <div className="ruler-corner">
               <span className="small faint">{tracks.length} tracks</span>
@@ -860,8 +996,8 @@ export function Arrange() {
             const trackH = heightOf(heights, track.id);
             return (
               <div key={track.id}>
-                <div className={cx("track-row", selectedTrack === track.id && "selected")} style={{ height: trackH }} data-track={track.id}>
-                  <TrackHeader track={track} selected={selectedTrack === track.id} height={trackH} depth={depthOf(track)} />
+                <div className={cx("track-row", (selectedTracks.includes(track.id) || (!selectedTracks.length && selectedTrack === track.id)) && "selected")} style={{ height: trackH }} data-track={track.id}>
+                  <TrackHeader track={track} selected={selectedTracks.includes(track.id) || selectedTrack === track.id} height={trackH} depth={depthOf(track)} />
                   <TrackDivider id={track.id} height={trackH} />
                   <div className={cx("lane", dropLane === track.id && "drop")} data-lane-index={i} data-kind={track.kind}
                     style={{ width: laneW, height: trackH, ...gridBg, backgroundColor: track.kind === "group" || track.kind === "return" ? "rgba(255,255,255,.015)" : undefined }}
@@ -884,7 +1020,7 @@ export function Arrange() {
                     onDragOver={(e) => dragOver(e, track.id)}
                     onDrop={(e) => onDrop(e, track)}>
                     {track.clips.map((c) => (
-                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
+                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
                     ))}
                     {track.armed && recording && <div style={{ position: "absolute", inset: 0, background: "rgba(255,59,92,.05)", pointerEvents: "none" }} />}
                   </div>
@@ -906,16 +1042,19 @@ export function Arrange() {
             <div style={{ position: "absolute", top: 34, bottom: 0, left: headerW + project.loop[0] * pps, width: (project.loop[1] - project.loop[0]) * pps, background: "rgba(124,92,255,.06)", borderLeft: "1px solid rgba(124,92,255,.4)", borderRight: "1px solid rgba(124,92,255,.4)", pointerEvents: "none", zIndex: 1 }} />
           )}
           <div ref={playhead} className={cx("playhead", recording && "rec")} style={{ left: 0 }} />
+          {ghost != null && (arrangeTool === "time" || arrangeTool === "split") && (
+            <div className="tool-ghost" style={{ transform: `translateX(${headerW + ghost * pps}px)` }} />
+          )}
           <PeerCursors pps={pps} scrollLeft={view.left} />
           {timeDrag && <div className="time-range" style={{ left: headerW + timeDrag.a * pps, width: Math.max(1, (timeDrag.b - timeDrag.a) * pps) }} />}
           {rubber && <div className="rubber" style={{ left: rubber.x, top: rubber.y, width: rubber.w, height: rubber.h }} />}
         </div>
         {!tracks.length && (
-          <div className="empty" style={{ position: "absolute", inset: "34px 0 0 0" }}>
+          <div className="empty" style={{ position: "absolute", inset: "34px 0 120px 0", pointerEvents: "none", zIndex: 2 }}>
             <Icon name="wave" size={36} />
             <b style={{ color: "var(--text)" }}>Your session is empty</b>
             <span>Add a track, or drop audio files here to start.</span>
-            <div className="row"><button className="btn primary" onClick={() => addTrack("audio")}>Add audio track</button><button className="btn" onClick={() => addTrack("instrument")}>Add instrument</button></div>
+            <div className="row" style={{ pointerEvents: "auto" }}><button className="btn primary" onClick={() => addTrack("audio")}>Add audio track</button><button className="btn" onClick={() => addTrack("instrument")}>Add instrument</button></div>
           </div>
         )}
       </div>

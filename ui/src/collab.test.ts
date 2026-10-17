@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import { applyTextEdit, textEdit } from "./collab";
+import { applyTextEdit, isBuiltInServer, parseJoinCode, textEdit } from "./collab";
+
+describe("session codes", () => {
+  it("reads a pasted host code", () => {
+    expect(parseJoinCode("ab12cd@192.168.1.20:3031")).toEqual({ room: "AB12CD", server: "ws://192.168.1.20:3031" });
+    expect(parseJoinCode("ROOM@wss://example.com/live")).toEqual({ room: "ROOM", server: "wss://example.com/live" });
+    expect(parseJoinCode("ab12cd")).toEqual({ room: "AB12CD" });
+    expect(isBuiltInServer("")).toBe(true);
+    expect(isBuiltInServer("ws://localhost:3031")).toBe(true);
+    expect(isBuiltInServer("ws://127.0.0.1:3031")).toBe(true);
+    expect(isBuiltInServer("ws://192.168.1.20:3031")).toBe(false);
+  });
+});
 
 describe("shared notes", () => {
   it("finds the single changed span", () => {

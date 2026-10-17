@@ -282,9 +282,9 @@ function SettingRow({ k, label, placeholder, hint }: { k: string; label: string;
 function CollabTab() {
   return (
     <div className="col" style={{ gap: 14 }}>
-      <span className="small dim">Live sessions run through a tiny relay server. Start it with <span className="kbd">node server/index.mjs</span> on your machine for LAN sessions, or on a small cloud VM (behind HTTPS, as wss://) for sessions over the internet. Voice and screen go peer to peer.</span>
+      <span className="small dim">Press Host on the people button. Studio 4000 opens the connection and shows a code to send. The other person pastes that code and presses Join. They can be anywhere. Voice and screen go directly between you. A custom server is only for a relay you already have.</span>
       <SettingRow k="collabName" label="Your display name" placeholder="Musician" />
-      <SettingRow k="collabServer" label="Session server" placeholder="ws://localhost:3031" />
+      <SettingRow k="collabServer" label="Custom server" placeholder="Leave blank. Studio 4000 hosts the connection." />
       <SettingRow k="collabTurn" label="TURN servers (JSON)" placeholder='[{"urls":"turn:example.com:3478","username":"u","credential":"p"}]' hint="Only needed when peers can't connect directly (strict corporate or mobile networks)." />
     </div>
   );

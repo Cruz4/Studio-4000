@@ -51,10 +51,12 @@ namespace
             { "track.duplicate", "Duplicate track" }, { "track.arm", "Arm track" }, { "track.setInput", "Track input" },
             { "track.setMonitor", "Input monitoring" }, { "bus.create", "New FX return" },
             { "plugin.add", "Add effect" }, { "plugin.remove", "Remove effect" }, { "plugin.move", "Reorder effect" },
+            { "plugin.duplicate", "Duplicate effect" }, { "chain.load", "Load effect chain" },
             { "plugin.set", "Effect bypass" }, { "plugin.setParams", "Effect change" }, { "plugin.setParam", "Effect change" },
             { "plugin.setSidechain", "Sidechain" }, { "clip.move", "Move clip" }, { "clip.delete", "Delete clip" },
             { "clip.split", "Split" }, { "clip.duplicate", "Duplicate" }, { "clip.trim", "Trim" }, { "clip.slip", "Slip" },
             { "clip.importAudio", "Import audio" }, { "clip.addMidi", "New MIDI clip" }, { "clip.normalize", "Normalize" },
+            { "clip.setGainPoints", "Clip gain" },
             { "master.set", "Master volume" }, { "send.add", "Add send" }, { "send.set", "Send level" }, { "send.remove", "Remove send" },
             { "marker.add", "Add marker" }, { "marker.set", "Edit marker" }, { "project.setTempo", "Tempo" },
             { "automation.addPoint", "Automation" }, { "automation.movePoint", "Automation" }, { "automation.deletePoint", "Automation" },
@@ -199,7 +201,7 @@ namespace
         explicit StudioEngineBehaviour (AppEngine& a) : app (a) {}
 
         bool canScanPluginsOutOfProcess() override                  { return true; }
-        bool autoAddClipEdgeFades() override                        { return true; }
+        bool autoAddClipEdgeFades() override                        { return false; }
         bool muteTrackContentsWhilstRecording() override            { return true; }
 
         te::EditLimits getEditLimits() override
@@ -440,8 +442,21 @@ void AppEngine::attachEdit (std::unique_ptr<te::Edit> newEdit, const juce::File&
     e.visitAllTracksRecursive ([] (te::Track& t)
     {
         if (auto* at = dynamic_cast<te::AudioTrack*> (&t))
+        {
             if (! at->state.hasProperty ("s4monitor"))
                 at->state.setProperty ("s4monitor", "auto", nullptr);
+
+            // Older sessions stored the automatic 5 ms edge fade on every clip.
+            const auto automatic = te::TimeDuration::fromSeconds (0.006);
+            for (auto* clip : at->getClips())
+                if (auto* audio = dynamic_cast<te::AudioClipBase*> (clip))
+                {
+                    if (audio->getFadeIn() > te::TimeDuration() && audio->getFadeIn() <= automatic)
+                        audio->setFadeIn ({});
+                    if (audio->getFadeOut() > te::TimeDuration() && audio->getFadeOut() <= automatic)
+                        audio->setFadeOut ({});
+                }
+        }
 
         return true;
     });

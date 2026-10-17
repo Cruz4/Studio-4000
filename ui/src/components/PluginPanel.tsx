@@ -55,13 +55,21 @@ export function PluginPicker() {
 
   const choose = async (c: CatalogueEntry) => {
     close();
-    const p = useStore.getState().project;
-    const track = p?.tracks.find((t) => t.id === picker.trackId);
-    if (c.synth && track && track.kind !== "instrument") return toast("Instruments go on instrument tracks", "warning");
-    if (c.synth && track) {
-      const old = track.plugins.find((x) => x.synth);
-      const calls = [...(old ? [{ method: "plugin.remove", params: { id: old.id } }] : []), { method: "plugin.add", params: { trackId: track.id, plugin: c.id } }];
-      return act("batch.run", { label: `Instrument: ${c.name}`, calls });
+    if (picker.clipId) {
+      if (c.synth) return toast("Instruments go on the track. Clip effects are for this audio clip.", "warning");
+      const r = await act("plugin.add", { clipId: picker.clipId, plugin: c.id }) as { id?: string } | undefined;
+      if (r?.id) openPlugin(r.id);
+      return;
+    }
+    if (c.synth) {
+      const track = useStore.getState().project?.tracks.find((t) => t.id === picker.trackId);
+      let id = track?.kind === "instrument" ? track.id : undefined;
+      if (!id) id = (await act("track.add", { kind: "instrument", name: c.name }))?.[0];
+      if (!id) return;
+      useStore.setState({ selectedTrack: id, bottom: "effects" });
+      const added = await act("plugin.add", { trackId: id, plugin: c.id }) as { id?: string } | undefined;
+      if (added?.id) openPlugin(added.id);
+      return;
     }
     const r = await act("plugin.add", { trackId: picker.trackId, plugin: c.id });
     if (r?.id) openPlugin(r.id);

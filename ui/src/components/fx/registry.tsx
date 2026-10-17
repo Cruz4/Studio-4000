@@ -9,7 +9,7 @@ import { GenericEditor } from "./GenericEditor";
 import { ChorusEditor, DelayEditor, DoublerEditor, ReverbEditor, TremoloEditor, WidthEditor } from "./SpaceEditors";
 import { TuneEditor } from "./TuneEditor";
 
-export interface EditorEntry { render: (fx: Fx, id: string) => ReactNode; width: number; accent: string; kind: string }
+export interface EditorEntry { render: (fx: Fx, id: string, type?: string) => ReactNode; width: number; accent: string; kind: string }
 
 export const EDITORS: Record<string, EditorEntry> = {
   s4000eq: { kind: "EQ", accent: COLORS.violet2, width: 940, render: (fx, id) => <EqEditor fx={fx} pluginId={id} /> },
@@ -43,4 +43,4 @@ export const shortName = (p: { type: string; name: string }) => SHORT_NAMES[p.ty
 export const accentFor = (p: { type: string; synth?: boolean; external?: boolean }) =>
   EDITORS[p.type]?.accent ?? (p.synth ? COLORS.cyan : p.external ? COLORS.amber : COLORS.violet2);
 
-export const GENERIC: EditorEntry = { kind: "Effect", accent: COLORS.violet, width: 680, render: (fx) => <GenericEditor fx={fx} /> };
+export const GENERIC: EditorEntry = { kind: "Effect", accent: COLORS.violet, width: 680, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> };

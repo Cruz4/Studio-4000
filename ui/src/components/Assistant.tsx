@@ -73,10 +73,10 @@ export function Assistant() {
   useEffect(() => { check(); }, []);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [chat.messages.length, chat.plan, chat.status]);
 
-  const send = async (text: string, takeOver = useChat.getState().takeOver) => {
+  const send = async (text: string, takeOver = useChat.getState().takeOver, hidden = false) => {
     if (!cfg || !text.trim() || useChat.getState().status) return;
     cancel = { cancelled: false };
-    const history: Msg[] = [...useChat.getState().messages, { role: "user", content: text.trim() }];
+    const history: Msg[] = [...useChat.getState().messages, { role: "user", content: text.trim(), hidden }];
     useChat.setState({ messages: history, plan: null, takeOver });
     setInput("");
     try {
@@ -97,21 +97,24 @@ export function Assistant() {
     const plan = useChat.getState().plan;
     if (!plan) return;
     useChat.setState({ plan: null, status: "Applying…" });
-    let report: string;
+    let note: string;
+    let failed = false;
     try {
-      const results = await applyPlan(plan);
+      await applyPlan(plan);
       toast(plan.summary, "success", { title: "Applied", action: { label: "Undo", run: () => act("edit.undo") } });
-      report = `The plan was applied as one undo step. Results: ${JSON.stringify(results).slice(0, 2000)}`;
+      note = `Done. ${plan.summary} Undo puts this back.`;
     } catch (e) {
-      report = `The plan failed and was rolled back: ${(e as Error).message}`;
+      failed = true;
+      note = `That change didn't apply, and nothing was left half-done. ${(e as Error).message}`;
     }
     useChat.setState({ status: null });
     const s = useChat.getState();
-    if (s.takeOver && s.rounds < 3) {
-      useChat.setState({ rounds: s.rounds + 1 });
-      send(`${report}\nRe-check the result and continue if something still needs work; otherwise summarise and stop.`, true);
+    if (!failed && s.takeOver && s.rounds < 3) {
+      const done = plan.calls.map((c) => c.method).join(", ") || "no changes";
+      useChat.setState((st) => ({ rounds: st.rounds + 1, messages: [...st.messages, { role: "assistant", content: note }] }));
+      send(`${note}\nCompleted: ${done}. Re-check the session and continue only if something still needs work. Otherwise summarise and stop.`, true, true);
     } else {
-      useChat.setState((st) => ({ messages: [...st.messages, { role: "user", content: report }], rounds: 0 }));
+      useChat.setState((st) => ({ messages: [...st.messages, { role: "assistant", content: note }], rounds: 0 }));
     }
   };
 
@@ -139,6 +142,7 @@ export function Assistant() {
           </div>
         )}
         {visible.map((m, i) => {
+          if (m.role === "user" && m.hidden) return null;
           if (m.role === "tool") return <div key={i} className="msg tool">→ {m.name.replace(/__/g, ".")} {m.content.startsWith("Error") ? "✗" : "✓"} {m.content.slice(0, 160)}</div>;
           if (m.role === "assistant" && !m.content && m.toolCalls) {
             return showTools ? <div key={i} className="msg tool">{m.toolCalls.map((t) => t.name.replace(/__/g, ".")).join(", ")}</div> : null;

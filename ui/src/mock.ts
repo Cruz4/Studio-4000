@@ -31,8 +31,10 @@ const isLive = (t: Track) => !!t.input && (t.monitor === "on" || (t.monitor !== 
 
 function audioClip(name: string, start: number, len: number, colour: string): Clip {
   return { id: nid(), name, kind: "audio", start, end: start + len, offset: 0, colour, muted: false, speed: 1, looping: false,
-    file: `mock://${name}`, sourceLength: len + 4, channels: 2, gainDb: 0, pan: 0, fadeIn: 0.02, fadeOut: 0.02, pitch: 0 };
+    file: `mock://${name}`, sourceLength: len + 4, channels: 2, gainDb: 0, pan: 0, fadeIn: 0, fadeOut: 0, pitch: 0, plugins: [] };
 }
+
+const savedChains = new Map<string, Plugin[]>();
 
 function demoProject(name = "Night Drive"): Project {
   const vox = track("Lead Vocal", "audio", "#ff6b8b", [audioClip("Lead take 3", 8, 24, "#ff6b8b"), audioClip("Lead take 1", 36, 20, "#ff6b8b")]);
@@ -55,7 +57,7 @@ function demoProject(name = "Night Drive"): Project {
     markers: [{ id: nid(), number: 1, name: "Verse", time: 8, colour: "#ffc857" }, { id: nid(), number: 2, name: "Hook", time: 36, colour: "#ffc857" }],
     tracks: [beat, vox, keys, plate], master: { plugins: [], volumeDb: 0, pan: 0, volumePluginId: nid() },
     buses: [{ bus: 0, name: "Plate" }], click: false, clickRecordOnly: true, clickGainDb: -6, countIn: "oneBar", punch: false,
-    loop: [8, 24], looping: false, canUndo: true, canRedo: false, undoName: "Move clip", redoName: "", modified: false, sampleRate: 48000,
+    loop: [8, 24], looping: false, canUndo: false, canRedo: false, undoName: "", redoName: "", modified: false, sampleRate: 48000,
   };
 }
 
@@ -63,11 +65,31 @@ export function createMock(emit: Emit) {
   let project: Project | null = null;
   let t = 0, playing = false, recording = false;
   let last = performance.now();
+  const undoStack: { before: Project; name: string }[] = [];
+  const redoStack: { before: Project; name: string }[] = [];
+  const stampHistory = () => {
+    if (!project) return;
+    project.canUndo = undoStack.length > 0;
+    project.undoName = undoStack.length ? undoStack[undoStack.length - 1].name : "";
+    project.canRedo = redoStack.length > 0;
+    project.redoName = redoStack.length ? redoStack[redoStack.length - 1].name : "";
+  };
 
   const findTrack = (id: string) => project?.tracks.find((x) => x.id === id);
-  const findPlugin = (id: string) => project ? [...project.tracks.flatMap((t) => t.plugins), ...project.master.plugins].find((x) => x.id === id) : undefined;
+  const pluginLists = () => project
+    ? [...project.tracks.map((t) => t.plugins), ...project.tracks.flatMap((t) => t.clips.map((c) => (c.plugins ??= []))), project.master.plugins]
+    : [];
+  const findPlugin = (id: string) => pluginLists().flat().find((x) => x.id === id);
+  const targetList = (p: { trackId?: string; clipId?: string }) => {
+    if (p.clipId) {
+      const clip = project!.tracks.flatMap((t) => t.clips).find((c) => c.id === p.clipId);
+      if (!clip || clip.kind !== "audio") return null;
+      return clip.plugins ??= [];
+    }
+    return p.trackId === "master" ? project!.master.plugins : findTrack(p.trackId!)!.plugins;
+  };
   const findClip = (id: string) => project?.tracks.flatMap((x) => x.clips).find((c) => c.id === id);
-  const changed = () => emit("project", project ? structuredClone(project) : null);
+  const changed = () => { stampHistory(); emit("project", project ? structuredClone(project) : null); };
 
   setInterval(() => {
     const now = performance.now();
@@ -89,6 +111,7 @@ export function createMock(emit: Emit) {
   }, 33);
 
   const handlers: Record<string, (p: any) => unknown> = {
+    "collab.relay": () => ({ running: true, port: 3031, local: "ws://127.0.0.1:3031", share: "127.0.0.1:3031" }),
     "app.info": () => ({ version: "0.1.0-mock", commit: "local", projectsDir: "C:/Users/you/Music/Studio 4000", dataDir: "", hasProject: !!project,
       recent: [{ file: "C:/demo/Night Drive.s4000", name: "Night Drive", modified: new Date().toISOString() },
                { file: "C:/demo/Podcast Ep 12.s4000", name: "Podcast Ep 12", modified: new Date(Date.now() - 864e5).toISOString() }],
@@ -138,7 +161,16 @@ export function createMock(emit: Emit) {
       if (p.trackId) { const from = project!.tracks.find((x) => x.clips.includes(c))!; from.clips = from.clips.filter((x) => x !== c); findTrack(p.trackId)!.clips.push(c); }
       changed(); return true; },
     "clip.slip": (p) => { findClip(p.id)!.offset = Math.max(0, p.offset); changed(); return true; },
-    "clip.trim": (p) => { const c = findClip(p.id)!; if (p.start !== undefined) { c.offset += p.start - c.start; c.start = p.start; } if (p.end !== undefined) c.end = p.end; changed(); return true; },
+    "clip.trim": (p) => {
+      const c = findClip(p.id)!;
+      if (p.start !== undefined) {
+        if (c.kind === "audio") c.offset += p.start - c.start;
+        c.start = p.start;
+      }
+      if (p.end !== undefined) c.end = p.end;
+      changed();
+      return true;
+    },
     "clip.split": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => x.clips.includes(c))!;
       const right = { ...structuredClone(c), id: nid(), start: p.time, offset: c.offset + p.time - c.start }; c.end = p.time; tr.clips.push(right); changed(); return right.id; },
     "clip.delete": (p) => { for (const tr of project!.tracks) tr.clips = tr.clips.filter((c) => c.id !== p.id && !(p.ids || []).includes(c.id)); changed(); return true; },
@@ -146,6 +178,17 @@ export function createMock(emit: Emit) {
       const at = p.start ?? c.end;
       const d = { ...structuredClone(c), id: nid(), start: at, end: at + len, notes: c.notes?.map((n): Note => [n[0], n[1] + at - c.start, n[2], n[3], n[4], n[5]]) }; tr.clips.push(d); changed(); return d.id; },
     "clip.set": (p) => { Object.assign(findClip(p.id)!, { ...p, id: p.id }); changed(); return true; },
+    "clip.setGainPoints": (p) => {
+      const c = findClip(p.id);
+      if (!c || c.kind !== "audio") return false;
+      const pts = ((p.points as number[][]) ?? [])
+        .map((pt) => [Number(pt[0]), Number(pt[1])] as [number, number])
+        .filter((pt) => Number.isFinite(pt[0]) && Number.isFinite(pt[1]))
+        .sort((a, b) => a[0] - b[0]);
+      c.gainPoints = pts;
+      changed();
+      return true;
+    },
     "clip.addMidi": (p) => { const c: Clip = { id: nid(), name: "MIDI", kind: "midi", start: p.start, end: p.end, offset: 0, colour: "#00d1ff", muted: false, speed: 1, looping: false, notes: [] };
       findTrack(p.trackId)!.clips.push(c); changed(); return c.id; },
     "midi.setNotes": (p) => { const c = findClip(p.clipId)!; const spb = 60 / project!.bpm;
@@ -171,11 +214,29 @@ export function createMock(emit: Emit) {
     ], blocked: [], scanning: false, vst3Paths: "", vst2: false, unhostableVst2: 30,
       studioFolders: [{ path: "C:\\Studio 4000\\vsts", exists: false }, { path: "G:\\daw\\vsts", exists: true }] }),
     "plugins.scan": () => { emit("pluginScan", { state: "done", found: 8, failed: [] }); return true; },
-    "plugin.add": (p) => { const entry = (handlers["plugins.list"]({}) as { plugins: { id: string; name: string; synth: boolean }[] }).plugins.find((x) => x.id === p.plugin);
-      const pl = { ...plugin(p.plugin, entry?.name ?? p.plugin), synth: !!entry?.synth }; const list = p.trackId === "master" ? project!.master.plugins : findTrack(p.trackId)!.plugins; list.push(pl); changed(); return pl; },
-    "plugin.remove": (p) => { for (const tr of project!.tracks) tr.plugins = tr.plugins.filter((x) => x.id !== p.id); project!.master.plugins = project!.master.plugins.filter((x) => x.id !== p.id); changed(); return true; },
+    "plugin.add": (p) => {
+      const entry = (handlers["plugins.list"]({}) as { plugins: { id: string; name: string; synth: boolean }[] }).plugins.find((x) => x.id === p.plugin);
+      const pl = { ...plugin(p.plugin, entry?.name ?? p.plugin), synth: !!entry?.synth };
+      const list = targetList(p);
+      if (!list) return null;
+      if (pl.synth && !p.clipId && p.trackId !== "master") {
+        const old = list.findIndex((x) => x.synth);
+        if (old >= 0) list.splice(old, 1);
+        list.unshift(pl);
+      } else list.push(pl);
+      changed();
+      return pl;
+    },
+    "plugin.remove": (p) => {
+      for (const list of pluginLists()) {
+        const i = list.findIndex((x) => x.id === p.id);
+        if (i >= 0) list.splice(i, 1);
+      }
+      changed();
+      return true;
+    },
     "plugin.move": (p) => {
-      const lists = [...project!.tracks.map((t) => t.plugins), project!.master.plugins];
+      const lists = pluginLists();
       for (const list of lists) {
         const from = list.findIndex((x) => x.id === p.id);
         if (from < 0) continue;
@@ -187,7 +248,24 @@ export function createMock(emit: Emit) {
       }
       return false;
     },
-    "plugin.set": (p) => { for (const pl of [...project!.tracks.flatMap((t) => t.plugins), ...project!.master.plugins]) if (pl.id === p.id) pl.enabled = p.enabled; changed(); return true; },
+    "plugin.set": (p) => { for (const pl of pluginLists().flat()) if (pl.id === p.id) pl.enabled = p.enabled; changed(); return true; },
+    "plugin.duplicate": (p) => {
+      const home = pluginLists().find((list) => list.some((x) => x.id === p.id));
+      if (!home) return null;
+      const src = home.find((x) => x.id === p.id)!;
+      const copy = structuredClone(src);
+      copy.id = nid();
+      const onto = (p.clipId || p.trackId) ? targetList(p) : null;
+      if (copy.synth && p.clipId) throw new Error("Instruments belong on a track");
+      if (onto && onto !== home) {
+        if (copy.synth && p.trackId !== "master") {
+          for (let i = onto.length - 1; i >= 0; i--) if (onto[i].synth) onto.splice(i, 1);
+          onto.unshift(copy);
+        } else onto.push(copy);
+      } else home.splice(home.indexOf(src) + 1, 0, copy);
+      changed();
+      return copy;
+    },
     "plugin.params": (p) => structuredClone(findPlugin(p.id)?.params ?? []),
     "plugin.setParam": (p) => {
       const pl = findPlugin(p.id);
@@ -204,17 +282,72 @@ export function createMock(emit: Emit) {
       return pl ? mockTelemetry(pl, p, playing || !!host?.live) : {};
     },
     "plugin.openEditor": () => false,
-    "chain.list": () => [],
+    "chain.list": () => [...savedChains.keys()].map((name) => ({ name, file: name })),
+    "chain.save": (p) => {
+      const list = targetList(p);
+      if (!list || !p.name) return null;
+      savedChains.set(String(p.name), structuredClone(list));
+      return String(p.name);
+    },
+    "chain.load": (p) => {
+      const saved = savedChains.get(String(p.name));
+      const list = targetList(p);
+      if (!saved || !list) return 0;
+      for (const item of structuredClone(saved)) {
+        item.id = nid();
+        if (item.synth && !p.clipId) {
+          const old = list.findIndex((x) => x.synth);
+          if (old >= 0) list.splice(old, 1);
+          list.unshift(item);
+        } else list.push(item);
+      }
+      changed();
+      return saved.length;
+    },
     "media.peaks": (p) => {
-      const len = 70; const bins = len * 200; const bytes = new Int8Array(bins * 2);
-      let seed = p.file.length;
-      for (let i = 0; i < bins; i++) { seed = (seed * 9301 + 49297) % 233280; const env = 0.35 + 0.35 * Math.sin(i / 900) ** 2; const v = (seed / 233280) * env * 127;
-        bytes[i * 2] = -v; bytes[i * 2 + 1] = v; }
+      const bpsAsk = Math.min(8000, Math.max(32, Number(p.binsPerSecond) || 200));
+      const start = Math.max(0, Number(p.start) || 0);
+      const length = Number(p.length) > 0 ? Number(p.length) : 70;
+      let bins = Math.ceil(length * bpsAsk);
+      const bps = bins > 12000 ? 12000 / length : bpsAsk;
+      bins = Math.max(1, Math.min(12000, Math.ceil(length * bps)));
+      const bytes = new Int8Array(bins * 2);
+      for (let i = 0; i < bins; i++) {
+        const time = start + i / bps;
+        const env = 0.22 + 0.62 * Math.abs(Math.sin(time * 17.3) * Math.sin(time * 2.1));
+        const v = Math.round(env * 127);
+        bytes[i * 2] = -v; bytes[i * 2 + 1] = v;
+      }
       let s = ""; bytes.forEach((b) => (s += String.fromCharCode(b & 255)));
-      return { file: p.file, binsPerSecond: 200, length: len, sampleRate: 48000, channels: 2, data: btoa(s) };
+      return { file: p.file, binsPerSecond: bps, start, length, sampleRate: 48000, channels: 2, data: btoa(s) };
     },
     "media.list": () => [{ file: "C:/demo/Audio/Lead take 3.wav", name: "Lead take 3.wav", folder: "Audio", size: 4.2e6 }],
-    "edit.undo": () => true, "edit.redo": () => true,
+    "edit.undo": () => {
+      const step = undoStack.pop();
+      if (!step || !project) return false;
+      redoStack.push({ before: structuredClone(project), name: step.name });
+      project = step.before;
+      changed();
+      return true;
+    },
+    "edit.redo": () => {
+      const step = redoStack.pop();
+      if (!step || !project) return false;
+      undoStack.push({ before: structuredClone(project), name: step.name });
+      project = step.before;
+      changed();
+      return true;
+    },
+    "edit.history": () => ({
+      undo: undoStack.map((s) => s.name).reverse(),
+      redo: redoStack.map((s) => s.name).reverse(),
+    }),
+    "edit.jump": (p) => {
+      const steps = Number(p.steps) || 0;
+      const n = Math.abs(steps);
+      for (let i = 0; i < n; i++) (steps > 0 ? handlers["edit.undo"] : handlers["edit.redo"])({});
+      return true;
+    },
     "smart.analyze": () => ({
       tracks: project!.tracks.map((tr) => ({ id: tr.id, name: tr.name, role: "music", lufs: -20 + Math.random() * 8, peakDb: -3, lra: 5, activeSeconds: 30, hasAudio: true })),
       master: { lufs: -16.8, peakDb: -0.4, lra: 6.1, correlation: 0.62, lowEndRatio: 0.38 },
@@ -261,6 +394,21 @@ export function createMock(emit: Emit) {
         const h = handlers[method];
         await new Promise((r) => setTimeout(r, 5));
         if (!h) return { ok: true, result: null };
+        const undoable = new Set(["track.add", "track.remove", "track.set", "track.arm", "track.move", "track.duplicate",
+          "clip.move", "clip.slip", "clip.trim", "clip.split", "clip.delete", "clip.duplicate", "clip.set", "clip.setGainPoints", "clip.importAudio", "clip.addMidi", "clip.normalize", "clip.stretch",
+          "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "master.set", "chain.load", "batch.run",
+          "midi.setNotes", "midi.addNote", "midi.quantize", "midi.transpose"]);
+        if (project && undoable.has(method)) {
+          const names: Record<string, string> = {
+            "plugin.add": "Add effect", "plugin.remove": "Remove effect", "plugin.move": "Reorder effect", "plugin.duplicate": "Duplicate effect",
+            "plugin.set": "Effect bypass", "chain.load": "Load effect chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
+            "clip.split": "Split", "clip.duplicate": "Duplicate", "clip.trim": "Trim", "clip.slip": "Slip", "clip.set": "Clip change",
+            "clip.addMidi": "New MIDI clip", "clip.normalize": "Normalize", "clip.setGainPoints": "Clip gain", "track.add": "New track", "track.remove": "Delete track",
+            "master.set": "Master volume", "midi.setNotes": "Edit notes", "batch.run": "Edit",
+          };
+          undoStack.push({ before: structuredClone(project), name: method === "batch.run" ? (p?.label || "Edit") : (names[method] ?? "Edit") });
+          redoStack.length = 0;
+        }
         try {
           return { ok: true, result: h(p ?? {}) };
         } catch (e) {

@@ -126,6 +126,10 @@ namespace
         if (auto* t = p.getOwnerTrack())
             return &t->pluginList;
 
+        if (auto* clip = p.getOwnerClip())
+            if (auto* clips = clip->getPluginList())
+                return clips;
+
         if (app.edit().getMasterPluginList().indexOf (&p) >= 0)
             return &app.edit().getMasterPluginList();
 
@@ -156,6 +160,36 @@ var builtInPluginCatalogue()
     return list;
 }
 
+te::PluginList& pluginTarget (AppEngine& app, const var& p)
+{
+    auto clipId = str (p, "clipId");
+
+    if (clipId.isNotEmpty())
+    {
+        if (auto* list = app.clip (clipId).getPluginList())
+            return *list;
+
+        throw RpcError ("This clip has no effect chain");
+    }
+
+    return pluginListFor (app, str (p, "trackId", "master"));
+}
+
+void replaceExistingSynth (te::PluginList& list, te::Plugin& incoming)
+{
+    if (! incoming.isSynth() || list.getOwnerTrack() == nullptr)
+        return;
+
+    juce::Array<te::Plugin*> previous;
+
+    for (auto* existing : list.getPlugins())
+        if (existing != nullptr && existing != &incoming && existing->isSynth() && ! isChannelStripPlugin (*existing))
+            previous.add (existing);
+
+    for (auto* existing : previous)
+        existing->deleteFromParent();
+}
+
 te::Plugin::Ptr insertPlugin (AppEngine& app, te::PluginList& list, const String& typeOrId, int index)
 {
     auto& edit = app.edit();
@@ -184,6 +218,7 @@ te::Plugin::Ptr insertPlugin (AppEngine& app, te::PluginList& list, const String
         throw RpcError ("The plug-in could not be created");
 
     const bool synth = plugin->isSynth();
+    replaceExistingSynth (list, *plugin);
     list.insertPlugin (plugin, synth ? 0 : absoluteIndexForInsert (list, index), nullptr);
 
     if (list.indexOf (plugin.get()) < 0)
@@ -270,10 +305,10 @@ void registerPluginApi (AppEngine& app)
         return var (true);
     });
 
-    rpc.add ("plugin.add", K::write, "Inserts an effect or instrument on a track or the master, optionally setting parameters",
-             "{trackId|'master', plugin, index?, params?: {paramId: value}}", [&app] (const var& p)
+    rpc.add ("plugin.add", K::write, "Inserts an effect or instrument on a track, an audio clip, or the master, optionally setting parameters",
+             "{trackId|'master' | clipId, plugin, index?, params?: {paramId: value}}", [&app] (const var& p)
     {
-        auto& list = pluginListFor (app, str (p, "trackId", "master"));
+        auto& list = pluginTarget (app, p);
         auto plugin = insertPlugin (app, list, reqStr (p, "plugin"), integer (p, "index", -1));
 
         if (auto* values = p["params"].getDynamicObject())
@@ -347,6 +382,50 @@ void registerPluginApi (AppEngine& app)
         plugin->removeFromParent();
         list->insertPlugin (plugin, insertAbs, nullptr);
         return var (true);
+    });
+
+    rpc.add ("plugin.duplicate", K::write, "Copies a plug-in onto its own chain, or onto another track or audio clip", "{id, trackId?, clipId?}", [&app] (const var& p)
+    {
+        te::Plugin::Ptr plugin = &app.plugin (reqStr (p, "id"));
+
+        if (isChannelStripPlugin (*plugin))
+            throw RpcError ("That plug-in is part of the channel strip");
+
+        auto* home = owningList (app, *plugin);
+
+        if (home == nullptr)
+            throw RpcError ("Plug-in is not in a chain");
+
+        const bool onto = str (p, "clipId").isNotEmpty() || str (p, "trackId").isNotEmpty();
+        auto* list = onto ? &pluginTarget (app, p) : home;
+
+        if (plugin->isSynth() && list->getOwnerTrack() == nullptr)
+            throw RpcError ("Instruments belong on a track");
+
+        plugin->flushPluginStateToValueTree();
+        auto copy = plugin->state.createCopy();
+        te::EditItemID::remapIDs (copy, nullptr, app.edit());
+        auto created = app.edit().getPluginCache().createNewPlugin (copy);
+
+        if (created == nullptr)
+            throw RpcError ("Could not duplicate the plug-in");
+
+        // Same chain: the copy sits just after the original. Another chain: it is added at the end,
+        // and a copied instrument replaces the one already on that track.
+        int after = home->indexOf (plugin.get()) + 1;
+
+        if (list != home)
+        {
+            replaceExistingSynth (*list, *plugin);
+            after = plugin->isSynth() ? 0 : list->size();
+        }
+
+        list->insertPlugin (created, after, nullptr);
+
+        if (list->indexOf (created.get()) < 0)
+            throw RpcError ("This chain is full");
+
+        return describePlugin (*created);
     });
 
     rpc.add ("plugin.set", K::write, "Bypass a plug-in", "{id, enabled}", [&app] (const var& p)
@@ -449,9 +528,9 @@ void registerPluginApi (AppEngine& app)
         return var (true);
     });
 
-    rpc.add ("chain.save", K::read, "Saves a track's insert chain as a reusable preset", "{trackId, name}", [&app] (const var& p)
+    rpc.add ("chain.save", K::read, "Saves a track or audio clip insert chain as a reusable preset", "{trackId | clipId, name}", [&app] (const var& p)
     {
-        auto& list = pluginListFor (app, str (p, "trackId", "master"));
+        auto& list = pluginTarget (app, p);
         juce::ValueTree chain ("S3CHAIN");
         chain.setProperty ("name", reqStr (p, "name"), nullptr);
 
@@ -482,9 +561,9 @@ void registerPluginApi (AppEngine& app)
         return var (list);
     });
 
-    rpc.add ("chain.load", K::write, "Appends a saved chain to a track", "{trackId, name}", [&app] (const var& p)
+    rpc.add ("chain.load", K::write, "Appends a saved chain to a track or an audio clip", "{trackId | clipId, name}", [&app] (const var& p)
     {
-        auto& list = pluginListFor (app, str (p, "trackId", "master"));
+        auto& list = pluginTarget (app, p);
         auto f = chainsDir().getChildFile (juce::File::createLegalFileName (reqStr (p, "name")) + ".s3chain");
         auto xml = juce::parseXML (f);
 
@@ -501,7 +580,8 @@ void registerPluginApi (AppEngine& app)
 
             if (auto plugin = app.edit().getPluginCache().createNewPlugin (copy))
             {
-                list.insertPlugin (plugin, anchorIndex (list), nullptr);
+                replaceExistingSynth (list, *plugin);
+                list.insertPlugin (plugin, plugin->isSynth() ? 0 : anchorIndex (list), nullptr);
                 ++added;
             }
         }

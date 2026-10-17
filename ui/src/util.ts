@@ -4,6 +4,24 @@ import type { Project } from "./types";
 
 export const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+/** Clip gain at a time measured from the clip's left edge. No points means a flat 0 dB. */
+export function clipGainDbAt(points: [number, number][] | undefined, time: number) {
+  if (!points?.length) return 0;
+  const sorted = points.length > 1 ? [...points].sort((a, b) => a[0] - b[0]) : points;
+  if (time <= sorted[0][0]) return sorted[0][1];
+  const last = sorted[sorted.length - 1];
+  if (time >= last[0]) return last[1];
+  for (let i = 1; i < sorted.length; i++) {
+    const a = sorted[i - 1], b = sorted[i];
+    if (time <= b[0]) {
+      const span = b[0] - a[0];
+      if (span <= 0) return b[1];
+      return a[1] + ((time - a[0]) / span) * (b[1] - a[1]);
+    }
+  }
+  return last[1];
+}
+
 export function secondsPerBeat(p: Project | null) {
   return 60 / (p?.bpm || 120);
 }
@@ -21,6 +39,23 @@ export function formatBars(t: number, p: Project | null) {
   const beat = Math.floor(totalBeats % beatsPerBar) + 1;
   const sixteenth = Math.floor((totalBeats % 1) * 4) + 1;
   return `${bar}.${beat}.${sixteenth}`;
+}
+
+/** Seconds between ruler labels, wide enough to read at this zoom. */
+export function rulerStep(pxPerSec: number) {
+  const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600];
+  for (const step of steps) if (step * pxPerSec >= 68) return step;
+  return steps[steps.length - 1];
+}
+
+/** Ruler label, like 0:05.0. Finer zooms show hundredths. */
+export function formatRulerTime(t: number, step: number) {
+  const neg = t < -1e-6;
+  const abs = Math.abs(t);
+  const minutes = Math.floor(abs / 60 + 1e-8);
+  const seconds = abs - minutes * 60;
+  const decimals = step < 0.1 ? 2 : 1;
+  return `${neg ? "-" : ""}${minutes}:${seconds.toFixed(decimals).padStart(decimals + 3, "0")}`;
 }
 
 export function formatTime(t: number, ms = true) {
@@ -48,9 +83,20 @@ export function gridSeconds(grid: Grid, p: Project | null) {
   const beat = secondsPerBeat(p);
   switch (grid) {
     case "bar": return secondsPerBar(p);
+    case "1/2": return beat * 2;
     case "beat": return beat;
     case "1/8": return beat / 2;
     case "1/16": return beat / 4;
+    case "1/32": return beat / 8;
+    case "1/64": return beat / 16;
+    case "1/128": return beat / 32;
+    case "bart": return secondsPerBar(p) * 2 / 3;
+    case "1/2t": return beat * 4 / 3;
+    case "1/4t": return beat * 2 / 3;
+    case "1/8t": return beat / 3;
+    case "1/16t": return beat / 6;
+    case "1/32t": return beat / 12;
+    case "1/64t": return beat / 24;
     default: return 0;
   }
 }
@@ -104,9 +150,17 @@ export const noteName = (pitch: number) => NOTE_NAMES[pitch % 12] + (Math.floor(
 
 export interface Peaks {
   binsPerSecond: number;
+  /** Source time, in seconds, of the first pair. The overview starts at 0. */
+  start: number;
   length: number;
   channels: number;
   data: Int8Array;
+}
+
+export interface PeakRequest {
+  start?: number;
+  length?: number;
+  binsPerSecond?: number;
 }
 
 const peakCache = new Map<string, Peaks>();
@@ -116,18 +170,23 @@ export function cachedPeaks(file: string) {
   return peakCache.get(file);
 }
 
-/** Loads peaks for a file; `key` lets callers re-fetch when the file changes (e.g. while recording). */
-export function loadPeaks(file: string, key = file): Promise<Peaks | null> {
+/** Loads peaks for a file; `key` lets callers re-fetch when the file, range, or resolution changes. */
+export function loadPeaks(file: string, key = file, req?: PeakRequest): Promise<Peaks | null> {
   const hit = peakCache.get(key);
   if (hit) return Promise.resolve(hit);
   let w = peakWaiters.get(key);
   if (!w) {
-    w = rpc<{ binsPerSecond: number; length: number; channels: number; data: string }>("media.peaks", { file })
+    w = rpc<{ binsPerSecond: number; start?: number; length: number; channels: number; data: string }>("media.peaks", {
+      file,
+      ...(req?.start ? { start: req.start } : {}),
+      ...(req?.length ? { length: req.length } : {}),
+      ...(req?.binsPerSecond ? { binsPerSecond: req.binsPerSecond } : {}),
+    })
       .then((r) => {
         const bin = atob(r.data);
         const data = new Int8Array(bin.length);
         for (let i = 0; i < bin.length; i++) data[i] = (bin.charCodeAt(i) << 24) >> 24;
-        const peaks = { binsPerSecond: r.binsPerSecond, length: r.length, channels: r.channels, data };
+        const peaks = { binsPerSecond: r.binsPerSecond, start: r.start ?? req?.start ?? 0, length: r.length, channels: r.channels, data };
         peakCache.set(key, peaks);
         return peaks;
       })

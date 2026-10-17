@@ -1,7 +1,7 @@
 import { native, rpc } from "./bridge";
 import { COFFEE_URL, supportMailto } from "./support";
 import { panic, shiftOctave, toggleTyping } from "./keys";
-import { act, type BrowserTab, live, refreshInfo, toast, useStore } from "./store";
+import { act, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
 import type { Clip, Track } from "./types";
 import { AUDIO_FILTER, gridSeconds, secondsPerBar, secondsPerBeat } from "./util";
 
@@ -75,7 +75,7 @@ export async function addTrack(kind: Track["kind"] = "audio", place: { afterId?:
   const at = { afterId: place.afterId ?? (place.beforeId ? undefined : S().selectedTrack ?? undefined), beforeId: place.beforeId };
   if (kind === "return") return act("bus.create", { name: "FX Return", effect: "reverb", ...at });
   const ids = await act("track.add", { kind, ...at });
-  if (ids?.[0]) useStore.setState({ selectedTrack: ids[0] });
+  if (ids?.[0]) selectTrack(ids[0]);
 }
 
 let clipClipboard: { ids: string[]; cut: boolean } | null = null;
@@ -319,6 +319,16 @@ export const commands: Command[] = [
   { id: "history", group: "Edit", title: "History", run: () => useStore.setState((s) => ({ historyOpen: !s.historyOpen })), when: hasProject },
   { id: "redo", group: "Edit", title: "Redo", keys: "Ctrl+Y", run: () => act("edit.redo"), when: hasProject },
   { id: "split", group: "Edit", title: "Split at playhead", keys: "S", run: splitAtPlayhead, when: hasProject },
+  { id: "toolMove", group: "Edit", title: "Move tool", keys: "1", when: hasProject, run: () => useStore.setState({ tool: "move" }) },
+  { id: "toolTime", group: "Edit", title: "Time tool", keys: "2", when: hasProject, run: () => useStore.setState({ tool: "time" }) },
+  { id: "toolSplit", group: "Edit", title: "Split tool", keys: "3", when: hasProject, run: () => useStore.setState({ tool: "split" }) },
+  { id: "toolSlip", group: "Edit", title: "Slip tool", keys: "4", when: hasProject, run: () => useStore.setState({ tool: "slip" }) },
+  { id: "toolErase", group: "Edit", title: "Erase tool", keys: "5", when: hasProject, run: () => useStore.setState({ tool: "erase" }) },
+  { id: "toolCycle", group: "Edit", title: "Cycle arrange tool", keys: "`", when: hasProject, run: () => {
+    const order = ["move", "time", "split", "slip", "erase"] as const;
+    const i = Math.max(0, order.indexOf(S().tool));
+    useStore.setState({ tool: order[(i + 1) % order.length] });
+  } },
   { id: "delete", group: "Edit", title: "Delete selected clips or effect", keys: "Delete", run: deleteSelection, when: hasProject },
   { id: "duplicate", group: "Edit", title: "Duplicate selected clips", keys: "Ctrl+D", run: duplicateSelection, when: hasProject },
   { id: "cut", group: "Edit", title: "Cut selected clips", keys: "Ctrl+X", run: cutSelection, when: hasProject },
@@ -348,6 +358,7 @@ export const commands: Command[] = [
 
   { id: "mixerView", group: "View", title: "Full-page mixer (again: back to tracks)", keys: "F3", run: toggleMixerView, when: hasProject, checked: () => S().view === "mixer" },
   { id: "trackFx", group: "Track", title: "Effects on/off for selected track", keys: "Shift+F", when: hasProject, run: () => { const t = S().selectedTrack; if (t) toggleTrackFx(t); } },
+  { id: "effectsPanel", group: "View", title: "Effects panel for the selected track", run: () => toggleBottom("effects"), when: hasProject, checked: () => S().bottom === "effects" },
   { id: "mixer", group: "View", title: "Mixer panel", keys: "Tab", run: () => toggleBottom("mixer"), when: hasProject, checked: () => S().bottom === "mixer" },
   { id: "editor", group: "View", title: "Clip editor / piano roll", keys: "E", run: () => toggleBottom("editor"), when: hasProject, checked: () => S().bottom === "editor" },
   { id: "smart", group: "View", title: "Smart Mix & health report", keys: "Ctrl+M", run: () => toggleBottom("smart"), when: hasProject, checked: () => S().bottom === "smart" },
@@ -396,7 +407,7 @@ export const commands: Command[] = [
   { id: "vocalPop", group: "Smart", title: "Vocal chain on selected track: modern pop", when: hasProject, run: () => vocalChain(undefined, "pop") },
   { id: "vocalWarm", group: "Smart", title: "Vocal chain on selected track: warm", when: hasProject, run: () => vocalChain(undefined, "warm") },
   { id: "vocalPodcast", group: "Smart", title: "Voice chain on selected track: podcast", when: hasProject, run: () => vocalChain(undefined, "podcast") },
-  { id: "countIn", group: "Transport", title: "Cycle count-in (off, 1 bar, 2 bars)", keys: "Shift+C", when: hasProject, run: () => {
+  { id: "countIn", group: "Transport", title: "Cycle count-in (off, 1 bar, 2 bars)", keys: "Shift+C", when: hasProject, checked: () => (S().project?.countIn ?? "none") !== "none", run: () => {
     const order = ["none", "oneBar", "twoBars"] as const;
     const cur = S().project?.countIn ?? "none";
     const next = order[(order.indexOf(cur as (typeof order)[number]) + 1) % order.length];
