@@ -217,7 +217,9 @@ private:
         const auto mode = str (p, "mode", "open");
         const auto title = str (p, "title", "Choose a file");
         const auto filters = str (p, "filters", "*");
-        auto start = has (p, "dir") ? juce::File (str (p, "dir")) : (app.currentEdit() != nullptr ? app.getProjectDir() : defaultProjectsDir());
+        auto start = has (p, "file") ? juce::File (str (p, "file"))
+                   : has (p, "dir")  ? juce::File (str (p, "dir"))
+                                     : (app.currentEdit() != nullptr ? app.getProjectDir() : defaultProjectsDir());
 
         chooser = std::make_unique<juce::FileChooser> (title, start, filters, true);
 

@@ -33,7 +33,7 @@ To work on one session together:
 3. The host copies the code and sends it.
 4. The other person pastes that whole code and clicks **Join**.
 
-Studio 4000 opens the connection. The code looks like `AB12CD@203.0.113.5:3031`. The other person can be on another network. **End** closes the session. **Leave** drops out and returns to the join screen.
+Studio 4000 opens the connection. The code looks like `AB12CD@192.168.1.20:3031,203.0.113.5:3031`. Paste the whole code. It tries the same network first, then the internet address. **End** closes the session. **Leave** drops out and returns to the join screen.
 
 Voice and screen share are in the same panel. An optional password can lock the room. The host's project is the one everyone hears.
 

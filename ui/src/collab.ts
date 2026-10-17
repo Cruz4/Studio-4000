@@ -56,7 +56,7 @@ export function reportHover(time: number | null) {
 const COLOURS = ["#ff6b8b", "#21e6a5", "#ffc857", "#00d1ff", "#a08bff", "#ff8a3d"];
 
 /** Methods guests may never call on the host. */
-const GUEST_BLOCKED = /^(settings\.|agent\.|devices\.|plugins\.(setPaths|block|unblock)|project\.(new|open|recover|reveal|saveCopy)|plugin\.(openEditor|closeEditor)|app\.describe)/;
+const GUEST_BLOCKED = /^(settings\.|agent\.|devices\.|plugins\.(setPaths|block|unblock)|project\.(new|open|recover|reveal|saveCopy|saveAs)|plugin\.(openEditor|closeEditor)|app\.describe)/;
 /** Methods a guest always runs locally. */
 const GUEST_LOCAL = /^(settings\.|devices\.|agent\.|app\.info$)/;
 
@@ -87,25 +87,111 @@ export function isBuiltInServer(server: string) {
   return /^(wss?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(server.trim()) || server.trim() === "";
 }
 
-/** A pasted code is either the room, or room@address from the host. */
-export function parseJoinCode(raw: string): { room: string; server?: string } {
-  const text = raw.trim();
-  const at = text.lastIndexOf("@");
-  if (at > 0 && at < text.length - 1) {
-    const room = text.slice(0, at).trim().toUpperCase();
-    let host = text.slice(at + 1).trim();
-    if (!/^wss?:\/\//i.test(host)) host = `ws://${host}`;
-    return { room, server: host };
-  }
-  return { room: text.toUpperCase() };
+function asWebSocket(host: string) {
+  const text = host.trim();
+  return /^wss?:\/\//i.test(text) ? text : `ws://${text}`;
 }
 
-export async function startSession(opts: { server: string; room: string; name: string; role: "host" | "guest"; password?: string; turn?: string; invite?: string }) {
+/** A private or local address. Trying one of these from another network fails fast. */
+export function isPrivateAddress(server: string) {
+  const host = server.replace(/^wss?:\/\//i, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
+  return host === "localhost" || /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
+}
+
+/** A pasted code is the room, or room@address, or room@lan,public from the host. */
+export function parseJoinCode(raw: string): { room: string; servers: string[] } {
+  const text = raw.trim();
+  const at = text.indexOf("@");
+  if (at > 0 && at < text.length - 1) {
+    const room = text.slice(0, at).trim().toUpperCase();
+    const servers = text.slice(at + 1).split(",").map(asWebSocket).filter((s) => s !== "ws://");
+    return { room, servers };
+  }
+  return { room: text.toUpperCase(), servers: [] };
+}
+
+interface LiveSocket extends WebSocket { welcome?: { id: string; index: number }; buf?: unknown[] }
+
+function openOne(server: string, join: unknown, timeoutMs: number) {
+  return new Promise<LiveSocket>((resolve, reject) => {
+    let socket: LiveSocket;
+    try { socket = new WebSocket(server); } catch (e) { reject(e instanceof Error ? e : new Error(String(e))); return; }
+    let done = false;
+    let kill = 0;
+    const fail = (err: string) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(kill);
+      socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null;
+      try { socket.close(); } catch { /* already closed */ }
+      reject(new Error(err));
+    };
+    socket.onopen = () => socket.send(JSON.stringify(join));
+    socket.onmessage = (ev) => {
+      let msg: { type?: string; message?: string; id?: string; index?: number };
+      try { msg = JSON.parse(String(ev.data)); } catch { return; }
+      if (msg.type === "error") { fail(msg.message || "The session refused the connection"); return; }
+      if (msg.type !== "welcome") { socket.buf?.push(msg); return; }
+      done = true;
+      window.clearTimeout(kill);
+      socket.welcome = { id: msg.id ?? "", index: msg.index ?? 0 };
+      socket.buf = [];
+      resolve(socket);
+    };
+    socket.onerror = () => { /* onclose reports it */ };
+    socket.onclose = () => fail(`Couldn't reach the session server at ${server}`);
+    kill = window.setTimeout(() => fail(`Couldn't reach the session server at ${server}`), timeoutMs);
+  });
+}
+
+function stayedOpen(socket: LiveSocket, ms: number) {
+  if (ms <= 0) return Promise.resolve(socket.readyState === WebSocket.OPEN);
+  return new Promise<boolean>((resolve) => {
+    const timer = window.setTimeout(() => { socket.removeEventListener("close", onClose); resolve(socket.readyState === WebSocket.OPEN); }, ms);
+    const onClose = () => { window.clearTimeout(timer); resolve(false); };
+    socket.addEventListener("close", onClose);
+  });
+}
+
+/** Tries each address in the code, this network first. A socket that answers and then dies is
+    dropped so the next address can be used, and Join is only shown as connected once it stays up. */
+async function openLiveSocket(servers: string[], join: unknown, stableMs: number) {
+  if (!servers.length) throw new Error("Paste the code the host sent you");
+  const ordered = [...servers].sort((a, b) => Number(isPrivateAddress(b)) - Number(isPrivateAddress(a)));
+  let last = "Couldn't reach the host";
+  for (const server of ordered) {
+    let socket: LiveSocket;
+    try { socket = await openOne(server, join, isPrivateAddress(server) ? 2500 : 7000); }
+    catch (e) {
+      last = (e as Error).message;
+      if (!last.startsWith("Couldn't reach")) throw new Error(last);
+      continue;
+    }
+    if (await stayedOpen(socket, stableMs)) return socket;
+    last = "The session dropped right after connecting. Press Join again.";
+    socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null;
+    try { socket.close(); } catch { /* already closed */ }
+  }
+  throw new Error(last);
+}
+
+function handleSocketMessage(msg: { type?: string; peers?: Parameters<typeof onPeers>[0]; from?: string; data?: unknown; message?: string }) {
+  if (msg.type === "error") {
+    useCollab.setState({ status: "error", error: msg.message || "The session refused the connection" });
+    toast(msg.message || "The session refused the connection", "error");
+    return;
+  }
+  if (msg.type === "peers" && msg.peers) onPeers(msg.peers);
+  if (msg.type === "from" && msg.data != null) onData(msg.from ?? "", msg.data);
+}
+
+export async function startSession(opts: { servers: string[]; room: string; name: string; role: "host" | "guest"; password?: string; turn?: string; invite?: string }) {
   await leaveSession();
   if (opts.turn) {
     try { iceServers = [{ urls: "stun:stun.l.google.com:19302" }, ...JSON.parse(opts.turn)]; } catch { /* keep defaults */ }
   }
-  useCollab.setState({ status: "connecting", error: null, role: opts.role, room: opts.room.toUpperCase(), invite: opts.invite ?? "", server: opts.server, chat: [], notes: "", peers: [], activity: [] });
+  const servers = opts.servers.filter(Boolean);
+  useCollab.setState({ status: "connecting", error: null, role: opts.role, room: opts.room.toUpperCase(), invite: opts.invite ?? "", server: servers[0] ?? "", chat: [], notes: "", peers: [], activity: [] });
 
   doc = new Y.Doc();
   const chat = doc.getArray<ChatLine>("chat");
@@ -114,35 +200,44 @@ export async function startSession(opts: { server: string; room: string; name: s
   notes.observe(() => useCollab.setState({ notes: notes.toString() }));
   doc.on("update", (update: Uint8Array, origin: unknown) => { if (origin !== "remote") send({ kind: "yjs", update: b64(update) }); });
 
-  return new Promise<void>((resolve, reject) => {
-    let socket: WebSocket;
-    try { socket = new WebSocket(opts.server); } catch (e) { useCollab.setState({ status: "error", error: (e as Error).message }); return reject(e); }
-    ws = socket;
-    const fail = (msg: string) => { useCollab.setState({ status: "error", error: msg }); reject(new Error(msg)); };
-    socket.onerror = () => fail(`Couldn't reach the session server at ${opts.server}`);
-    socket.onclose = () => {
-      if (ws === socket) {
-        const was = useCollab.getState().status;
-        teardown();
-        useCollab.setState({ status: was === "live" ? "idle" : "error", error: was === "live" ? null : useCollab.getState().error });
-        if (was === "live") toast("The session ended", "warning");
-      }
-    };
-    socket.onopen = () => socket.send(JSON.stringify({ type: "join", room: opts.room.toUpperCase(), name: opts.name, role: opts.role, password: opts.password ?? "" }));
-    socket.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data);
-      if (msg.type === "error") return fail(msg.message);
-      if (msg.type === "welcome") {
-        const me: Peer = { id: msg.id, name: opts.name, role: opts.role, colour: COLOURS[msg.index % COLOURS.length] };
-        useCollab.setState({ status: "live", me });
-        if (opts.role === "host") becomeHost(); else becomeGuest();
-        unsubs.push(useStore.subscribe((s, prev) => { if (s.selectedTrack !== prev.selectedTrack) sendPresence(); }));
-        resolve();
-      }
-      if (msg.type === "peers") onPeers(msg.peers);
-      if (msg.type === "from") onData(msg.from, msg.data);
-    };
-  });
+  const stableMs = opts.role === "guest" ? 600 : 0;
+  let socket: LiveSocket;
+  try {
+    socket = await openLiveSocket(servers, { type: "join", room: opts.room.toUpperCase(), name: opts.name, role: opts.role, password: opts.password ?? "" }, stableMs);
+  } catch (e) {
+    const message = (e as Error).message;
+    useCollab.setState({ status: "error", error: message });
+    throw e;
+  }
+
+  if (socket.readyState !== WebSocket.OPEN) {
+    const message = "The session dropped right after connecting. Press Join again.";
+    useCollab.setState({ status: "error", error: message });
+    throw new Error(message);
+  }
+
+  ws = socket;
+  socket.onopen = null;
+  socket.onerror = null;
+  socket.onclose = () => {
+    if (ws !== socket) return;
+    const was = useCollab.getState().status;
+    teardown();
+    useCollab.setState({ status: "error", error: was === "live" ? "The session dropped. Press Join again." : useCollab.getState().error });
+    if (was === "live") toast("The session dropped. Press Join again.", "warning");
+  };
+  socket.onmessage = (ev) => {
+    try { handleSocketMessage(JSON.parse(ev.data)); }
+    catch (e) { console.warn(e); }
+  };
+
+  const welcome = socket.welcome ?? { id: "", index: 0 };
+  const me: Peer = { id: welcome.id, name: opts.name, role: opts.role, colour: COLOURS[welcome.index % COLOURS.length] };
+  useCollab.setState({ status: "live", me, server: socket.url });
+  if (opts.role === "host") becomeHost(); else becomeGuest();
+  unsubs.push(useStore.subscribe((s, prev) => { if (s.selectedTrack !== prev.selectedTrack) sendPresence(); }));
+  for (const msg of socket.buf ?? []) handleSocketMessage(msg as { type?: string });
+  socket.buf = [];
 }
 
 export function leaveSession() {
@@ -237,7 +332,7 @@ function onPeers(list: { id: string; name: string; role: "host" | "guest"; index
   if (before.size < peers.length) sendPresence();
   for (const p of peers) {
     if (p.id === me?.id || pcs.has(p.id)) continue;
-    connectPeer(p.id);
+    try { connectPeer(p.id); } catch (e) { console.warn(e); }
     if (!before.has(p.id) && before.size) toast(`${p.name} joined`, "info");
   }
   for (const id of [...pcs.keys()]) {

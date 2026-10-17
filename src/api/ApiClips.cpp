@@ -122,6 +122,13 @@ void registerClipApi (AppEngine& app)
         if (clip == nullptr)
             throw RpcError ("Could not insert the clip");
 
+        // Keep a stereo file stereo. An empty channel mask already means "every channel",
+        // and setting it here stops a later default from folding the file down to one channel.
+        if (af.getNumChannels() >= 2)
+            clip->setActiveChannelConfiguration (te::ChannelConfiguration::stereo());
+        else if (af.getNumChannels() == 1)
+            clip->setActiveChannelConfiguration (te::ChannelConfiguration::mono());
+
         return var (clip->itemID.toString());
     });
 

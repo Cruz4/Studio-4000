@@ -63,6 +63,16 @@ export async function importAudio(trackId?: string, start?: number) {
   }
 }
 
+export async function saveProjectAs() {
+  const project = S().project;
+  if (!project) return;
+  const files = await native.pickFile({ mode: "save", title: "Save project as", filters: "*.s4000", file: project.file });
+  if (!files?.[0]) return;
+  const saved = await act("project.saveAs", { file: files[0] });
+  if (saved) toast(`Saved as ${String(saved).split(/[\\/]/).pop()}`, "success");
+  refreshInfo();
+}
+
 export async function openProject() {
   const files = await native.pickFile({ mode: "open", title: "Open project", filters: "*.s4000;*.s3030", dir: S().info?.projectsDir });
   if (files?.[0]) {
@@ -393,6 +403,7 @@ export const commands: Command[] = [
   { id: "report", group: "Help", title: "Report a bug or idea", run: () => native.openUrl(supportMailto(S().info?.version)) },
 
   { id: "save", group: "Project", title: "Save", keys: "Ctrl+S", run: () => act("project.save"), when: hasProject },
+  { id: "saveAs", group: "Project", title: "Save as…", keys: "Ctrl+Shift+S", run: saveProjectAs, when: hasProject },
   { id: "open", group: "Project", title: "Open project…", keys: "Ctrl+O", run: openProject },
   { id: "new", group: "Project", title: "New project…", keys: "Ctrl+N", run: () => useStore.setState({ project: null }) },
   { id: "export", group: "Project", title: "Export mix or stems…", keys: "Ctrl+E", run: () => useStore.setState({ exportOpen: true }), when: hasProject },

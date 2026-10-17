@@ -40,6 +40,7 @@ target_sources(Studio4000 PRIVATE
     src/LimiterPlugin.cpp
     src/SmartMix.cpp
     src/StudioFx.cpp
+    src/SuiteFx.cpp
     src/Instruments.cpp
     src/LiveMidi.cpp
     src/api/ApiProject.cpp

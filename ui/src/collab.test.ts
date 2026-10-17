@@ -1,16 +1,21 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import { applyTextEdit, isBuiltInServer, parseJoinCode, textEdit } from "./collab";
+import { applyTextEdit, isBuiltInServer, isPrivateAddress, parseJoinCode, textEdit } from "./collab";
 
 describe("session codes", () => {
   it("reads a pasted host code", () => {
-    expect(parseJoinCode("ab12cd@192.168.1.20:3031")).toEqual({ room: "AB12CD", server: "ws://192.168.1.20:3031" });
-    expect(parseJoinCode("ROOM@wss://example.com/live")).toEqual({ room: "ROOM", server: "wss://example.com/live" });
-    expect(parseJoinCode("ab12cd")).toEqual({ room: "AB12CD" });
+    expect(parseJoinCode("ab12cd@192.168.1.20:3031")).toEqual({ room: "AB12CD", servers: ["ws://192.168.1.20:3031"] });
+    expect(parseJoinCode("AB12CD@192.168.1.20:3031,203.0.113.5:3031")).toEqual({
+      room: "AB12CD", servers: ["ws://192.168.1.20:3031", "ws://203.0.113.5:3031"],
+    });
+    expect(parseJoinCode("ROOM@wss://example.com/live")).toEqual({ room: "ROOM", servers: ["wss://example.com/live"] });
+    expect(parseJoinCode("ab12cd")).toEqual({ room: "AB12CD", servers: [] });
     expect(isBuiltInServer("")).toBe(true);
     expect(isBuiltInServer("ws://localhost:3031")).toBe(true);
     expect(isBuiltInServer("ws://127.0.0.1:3031")).toBe(true);
     expect(isBuiltInServer("ws://192.168.1.20:3031")).toBe(false);
+    expect(isPrivateAddress("ws://192.168.1.20:3031")).toBe(true);
+    expect(isPrivateAddress("ws://203.0.113.5:3031")).toBe(false);
   });
 });
 

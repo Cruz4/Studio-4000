@@ -2,6 +2,7 @@
 #include "../LimiterPlugin.h"
 #include "../LoudnessMeterPlugin.h"
 #include "../StudioFx.h"
+#include "../SuiteFx.h"
 #include "../Instruments.h"
 
 namespace s3
@@ -57,6 +58,9 @@ namespace
 
             for (auto& fx : studioEffectCatalogue())
                 l.push_back ({ fx[0], fx[1], fx[2] });
+
+            for (auto& synth : suiteSynthCatalogue())
+                l.push_back ({ synth[0], synth[1], synth[2], true });
 
            #if TRACKTION_AIR_WINDOWS
             #define S3_AIRWINDOWS(cls) l.push_back ({ te::cls::xmlTypeName, String ("AW ") + te::cls::getPluginName(), \

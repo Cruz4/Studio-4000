@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import type { Clip } from "../types";
 import { cachedPeaks, clipGainDbAt, loadPeaks, type Peaks } from "../util";
 
+/** Per-channel min/max when the file is stereo. Older mixed pairs still draw as one shape. */
+function peakLayout(peaks: Peaks) {
+  const declared = Math.max(1, Math.min(2, peaks.channels || 1));
+  const expect = Math.max(1, Math.round(peaks.length * peaks.binsPerSecond));
+  const stereoBins = Math.floor(peaks.data.length / 4);
+  const monoBins = Math.floor(peaks.data.length / 2);
+  if (declared > 1 && Math.abs(stereoBins - expect) <= Math.abs(monoBins - expect))
+    return { channels: 2, stride: 4, bins: stereoBins };
+  return { channels: 1, stride: 2, bins: monoBins };
+}
+
 /** Draws the part of an audio clip that is visible in the scroll viewport. */
 export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft }: {
   clip: Clip; pxPerSec: number; colour: string; viewLeft: number; viewWidth: number; clipLeft: number;
@@ -46,38 +57,49 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
 
     const gain = Math.pow(10, (clip.gainDb ?? 0) / 20);
     const envelope = clip.gainPoints;
-    const mid = h / 2;
-    const scale = (h / 2 - 1) / 127 * Math.min(gain, 4);
-    const bins = peaks.data.length / 2;
+    const layout = peakLayout(peaks);
+    const { channels, stride, bins } = layout;
+    const gap = channels > 1 ? 2 : 0;
+    const bandH = (h - gap * (channels - 1)) / channels;
     const origin = peaks.start ?? 0;
     const fadeIn = (clip.fadeIn ?? 0) * pxPerSec, fadeOut = (clip.fadeOut ?? 0) * pxPerSec;
 
-    g.fillStyle = colour;
-    g.beginPath();
-    for (let x = 0; x < drawW; x++) {
-      const px = visStart + x;
-      let t0s = clip.offset + (px / pxPerSec) * speed;
-      let t1s = clip.offset + ((px + 1) / pxPerSec) * speed;
-      if (clip.reversed && clip.sourceLength) { const a = clip.sourceLength - t1s, b = clip.sourceLength - t0s; t0s = a; t1s = b; }
-      let b0 = Math.floor((t0s - origin) * peaks.binsPerSecond);
-      let b1 = Math.max(b0 + 1, Math.floor((t1s - origin) * peaks.binsPerSecond));
-      if (b0 >= bins || b1 <= 0) continue;
-      b0 = Math.max(0, b0); b1 = Math.min(bins, b1);
-      let lo = 0, hi = 0;
-      for (let b = b0; b < b1; b++) {
-        const l = peaks.data[b * 2], u = peaks.data[b * 2 + 1];
-        if (l < lo) lo = l;
-        if (u > hi) hi = u;
+    for (let ch = 0; ch < channels; ch++) {
+      const top = ch * (bandH + gap);
+      const mid = top + bandH / 2;
+      const scale = (bandH / 2 - 1) / 127 * Math.min(gain, 4);
+      g.fillStyle = colour;
+      g.beginPath();
+      for (let x = 0; x < drawW; x++) {
+        const px = visStart + x;
+        let t0s = clip.offset + (px / pxPerSec) * speed;
+        let t1s = clip.offset + ((px + 1) / pxPerSec) * speed;
+        if (clip.reversed && clip.sourceLength) { const a = clip.sourceLength - t1s, b = clip.sourceLength - t0s; t0s = a; t1s = b; }
+        let b0 = Math.floor((t0s - origin) * peaks.binsPerSecond);
+        let b1 = Math.max(b0 + 1, Math.floor((t1s - origin) * peaks.binsPerSecond));
+        if (b0 >= bins || b1 <= 0) continue;
+        b0 = Math.max(0, b0); b1 = Math.min(bins, b1);
+        let lo = 0, hi = 0;
+        for (let b = b0; b < b1; b++) {
+          const l = peaks.data[b * stride + ch * 2], u = peaks.data[b * stride + ch * 2 + 1];
+          if (l < lo) lo = l;
+          if (u > hi) hi = u;
+        }
+        let env = Math.pow(10, clipGainDbAt(envelope, px / pxPerSec) / 20);
+        if (fadeIn > 0 && px < fadeIn) env *= px / fadeIn;
+        if (fadeOut > 0 && px > width - fadeOut) env *= (width - px) / fadeOut;
+        const y0 = mid - hi * scale * env, y1 = mid - lo * scale * env;
+        g.rect(x, y0, 1, Math.max(1, y1 - y0));
       }
-      let env = Math.pow(10, clipGainDbAt(envelope, px / pxPerSec) / 20);
-      if (fadeIn > 0 && px < fadeIn) env *= px / fadeIn;
-      if (fadeOut > 0 && px > width - fadeOut) env *= (width - px) / fadeOut;
-      const y0 = mid - hi * scale * env, y1 = mid - lo * scale * env;
-      g.rect(x, y0, 1, Math.max(1, y1 - y0));
+      g.fill();
+      g.fillStyle = "rgba(255,255,255,0.28)";
+      g.fillRect(0, mid, drawW, 1);
+      if (channels > 1) {
+        g.font = "9px sans-serif";
+        g.fillStyle = "rgba(255,255,255,0.7)";
+        g.fillText(ch === 0 ? "L" : "R", 4, top + 10);
+      }
     }
-    g.fill();
-    g.fillStyle = "rgba(255,255,255,0.12)";
-    g.fillRect(0, mid, drawW, 1);
   }, [peaks, drawW, visStart, pxPerSec, clip.offset, clip.speed, clip.gainDb, clip.gainPoints, clip.reversed, clip.fadeIn, clip.fadeOut, clip.sourceLength, width, colour]);
 
   if (!clip.file) return null;

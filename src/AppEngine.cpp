@@ -387,6 +387,59 @@ void AppEngine::save()
     emit ("saved", Obj().set ("file", editFile.getFullPathName()));
 }
 
+void AppEngine::saveAs (const juce::File& requested)
+{
+    if (editPtr == nullptr)
+        throw RpcError ("No project is open");
+
+    auto file = requested.getFileExtension().isEmpty() ? requested.withFileExtension (projectFileExtension)
+                                                       : requested;
+
+    if (! file.hasFileExtension (projectFileExtension))
+        file = file.withFileExtension (projectFileExtension);
+
+    auto parent = file.getParentDirectory();
+
+    if (! parent.createDirectory())
+        throw RpcError ("Could not create " + parent.getFullPathName());
+
+    auto from = getProjectDir();
+
+    if (from != parent)
+    {
+        for (auto* sub : { "Audio", "Imported", "Bounces" })
+        {
+            auto src = from.getChildFile (sub);
+            auto dst = parent.getChildFile (sub);
+
+            if (! src.isDirectory() || src == dst || dst.isAChildOf (src))
+                continue;
+
+            if (! dst.exists() && ! src.copyDirectoryTo (dst))
+                throw RpcError ("Could not copy " + String (sub) + " into the new folder");
+        }
+    }
+
+    editFile = file;
+    editPtr->editFileRetriever = [file] { return file; };
+    ensureProjectStructure();
+    save();
+
+    props->setValue ("lastProject", file.getFullPathName());
+
+    auto recents = juce::StringArray::fromLines (props->getValue ("recentProjects"));
+    recents.removeString (file.getFullPathName());
+    recents.insert (0, file.getFullPathName());
+    recents.removeEmptyStrings();
+
+    while (recents.size() > 12)
+        recents.remove (recents.size() - 1);
+
+    props->setValue ("recentProjects", recents.joinIntoString ("\n"));
+    props->saveIfNeeded();
+    pushSnapshotNow();
+}
+
 juce::File AppEngine::findRecoveryFile() const
 {
     if (editPtr == nullptr)

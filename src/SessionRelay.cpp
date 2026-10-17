@@ -438,11 +438,15 @@ struct SessionRelay::Impl
     struct Conn : std::enable_shared_from_this<Conn>
     {
         std::unique_ptr<juce::StreamingSocket> socket;
-        juce::CriticalSection write;
+        /** Outbound frames. JUCE takes one lock for the whole time a thread is waiting to read, and a
+            second thread's write then fails outright. Only this connection's thread touches the socket;
+            everyone else leaves bytes here. */
+        juce::CriticalSection outLock;
+        std::vector<juce::MemoryBlock> outbox;
         std::atomic<bool> open { true };
         juce::String id;
         juce::String room;
-        bool joined = false;
+        std::atomic<bool> joined { false };
 
         bool sendFrame (uint8_t opcode, const void* data, size_t len)
         {
@@ -470,15 +474,29 @@ struct SessionRelay::Impl
             if (len > 0)
                 frame.write (data, len);
 
-            const juce::ScopedLock sl (write);
+            juce::MemoryBlock bytes (frame.getData(), frame.getDataSize());
+            const juce::ScopedLock sl (outLock);
             if (! open.load())
                 return false;
 
-            auto ok = writeAll (*socket, frame.getData(), (int) frame.getDataSize());
-            if (! ok)
-                open.store (false);
+            outbox.push_back (std::move (bytes));
+            return true;
+        }
 
-            return ok;
+        /** Writes queued frames. Call this only from the thread that reads the socket. */
+        bool flush()
+        {
+            std::vector<juce::MemoryBlock> batch;
+            {
+                const juce::ScopedLock sl (outLock);
+                batch.swap (outbox);
+            }
+
+            for (auto& bytes : batch)
+                if (socket == nullptr || ! writeAll (*socket, bytes.getData(), (int) bytes.getSize()))
+                    return false;
+
+            return true;
         }
 
         bool sendText (const juce::String& text)
@@ -528,7 +546,7 @@ struct SessionRelay::Impl
 
     void forget (const std::shared_ptr<Conn>& conn)
     {
-        if (! conn->joined)
+        if (! conn->joined.load())
             return;
 
         std::vector<std::shared_ptr<Conn>> drop;
@@ -546,7 +564,7 @@ struct SessionRelay::Impl
 
             auto wasHost = peer->second.host;
             room.peers.erase (peer);
-            conn->joined = false;
+            conn->joined.store (false);
 
             if (wasHost || room.peers.empty())
             {
@@ -593,6 +611,7 @@ struct SessionRelay::Impl
 
         juce::String welcome;
         juce::String fail;
+        std::vector<std::shared_ptr<Conn>> retired;
         {
             const juce::ScopedLock sl (lock);
             auto& room = rooms[code];
@@ -619,7 +638,26 @@ struct SessionRelay::Impl
                     fail = "No live session with that code. Check it with the host.";
                 else if (room.password.isNotEmpty() && ! sameSecret (room.password, password))
                     fail = "Wrong session password";
-                else if ((int) room.peers.size() >= maxPeers)
+            }
+
+            // A second Join from the same person replaces the connection that just dropped.
+            if (fail.isEmpty() && ! hosting)
+            {
+                for (auto it = room.peers.begin(); it != room.peers.end();)
+                {
+                    if (! it->second.host && it->second.name == name)
+                    {
+                        it->second.conn->joined.store (false);
+                        retired.push_back (it->second.conn);
+                        it = room.peers.erase (it);
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+                }
+
+                if ((int) room.peers.size() >= maxPeers)
                     fail = "The session is full";
             }
 
@@ -633,13 +671,16 @@ struct SessionRelay::Impl
                 peer.conn = conn;
                 conn->id = peer.id;
                 conn->room = code;
-                conn->joined = true;
+                conn->joined.store (true);
                 welcome = juce::JSON::toString (Obj().set ("type", "welcome").set ("id", peer.id).set ("index", peer.index), true);
                 room.peers[peer.id] = peer;
             }
             else if (room.peers.empty())
                 rooms.erase (code);
         }
+
+        for (auto& old : retired)
+            old->shutdown();
 
         if (fail.isNotEmpty())
         {
@@ -702,7 +743,7 @@ struct SessionRelay::Impl
         if (! msg.isObject())
             return;
 
-        if (! conn->joined)
+        if (! conn->joined.load())
         {
             if (msg["type"].toString() == "join")
                 join (conn, msg);
@@ -784,10 +825,16 @@ void SessionRelay::publish()
         }
     }
 
-    if (shown.isEmpty() && globalV4 (lan))
-        shown = lan + ":" + juce::String (port);
-    if (shown.isEmpty())
-        shown = lan + ":" + juce::String (port);
+    juce::StringArray ends;
+
+    if (lan.isNotEmpty() && lan != "127.0.0.1")
+        ends.addIfNotAlreadyThere (lan + ":" + juce::String (port));
+    if (shown.isNotEmpty())
+        ends.addIfNotAlreadyThere (shown);
+    if (ends.isEmpty())
+        ends.add (lan + ":" + juce::String (port));
+
+    shown = ends.joinIntoString (",");
 
     {
         const juce::ScopedLock sl (shareLock);
@@ -964,15 +1011,33 @@ void SessionRelay::run()
 
             juce::MemoryBlock message;
             auto opcode = 0;
+            auto lastPing = juce::Time::getMillisecondCounter();
 
             while (upgraded && conn->open.load() && ! threadShouldExit())
             {
-                if (conn->socket->waitUntilReady (true, 20000) != 1)
+                if (! conn->flush())
+                    break;
+
+                auto ready = conn->socket->waitUntilReady (true, 50);
+
+                if (! conn->open.load() || threadShouldExit())
+                    break;
+
+                if (ready == 0)
                 {
-                    if (! conn->sendFrame (0x9, nullptr, 0))
-                        break;
+                    auto now = juce::Time::getMillisecondCounter();
+                    if (now - lastPing > 20000)
+                    {
+                        lastPing = now;
+                        conn->sendFrame (0x9, nullptr, 0);
+                    }
                     continue;
                 }
+
+                if (ready != 1)
+                    break;
+
+                lastPing = juce::Time::getMillisecondCounter();
 
                 uint8_t hdr[2];
                 if (! readExact (*conn->socket, hdr, 2, 5000))

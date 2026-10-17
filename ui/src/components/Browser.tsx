@@ -6,7 +6,7 @@ import type { CatalogueEntry } from "../types";
 import { cx } from "../util";
 import { Icon, Spinner, Tabs } from "./ui";
 
-const GROUP_ORDER = ["Pitch", "EQ", "Dynamics", "Saturation", "Reverb", "Delay", "Modulation", "Stereo",
+const GROUP_ORDER = ["Pitch", "EQ", "Dynamics", "Filter", "Saturation", "Reverb", "Delay", "Modulation", "Stereo", "Utility",
   "Drums & Percussion", "Bass", "Keys", "Pads & Strings", "Leads & Plucks", "Instrument"];
 
 export function Browser() {

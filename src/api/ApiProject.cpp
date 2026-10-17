@@ -245,9 +245,10 @@ namespace
 
         const auto startSample = (juce::int64) std::llround (start * reader->sampleRate);
         const int samplesPerBin = juce::jmax (1, (int) std::llround (reader->sampleRate / (double) binsPerSecond));
-        const int numChannels = juce::jmin (2, (int) reader->numChannels);
+        const int numChannels = juce::jmax (1, juce::jmin (2, (int) reader->numChannels));
+        const int stride = numChannels * 2;
 
-        juce::MemoryBlock data ((size_t) totalBins * 2);
+        juce::MemoryBlock data ((size_t) totalBins * stride);
         auto* out = static_cast<int8_t*> (data.getData());
 
         constexpr int binsPerChunk = 512;
@@ -261,7 +262,8 @@ namespace
             if (num <= 0)
             {
                 for (int b = bin; b < totalBins; ++b)
-                    out[b * 2] = out[b * 2 + 1] = 0;
+                    for (int i = 0; i < stride; ++i)
+                        out[b * stride + i] = 0;
 
                 break;
             }
@@ -270,12 +272,12 @@ namespace
 
             for (int b = 0; b < binsPerChunk && bin + b < totalBins; ++b)
             {
-                float lo = 0.0f, hi = 0.0f;
                 const int s0 = b * samplesPerBin;
                 const int s1 = juce::jmin (num, s0 + samplesPerBin);
 
                 for (int c = 0; c < numChannels; ++c)
                 {
+                    float lo = 0.0f, hi = 0.0f;
                     auto* d = buffer.getReadPointer (c);
 
                     for (int s = s0; s < s1; ++s)
@@ -283,10 +285,11 @@ namespace
                         lo = juce::jmin (lo, d[s]);
                         hi = juce::jmax (hi, d[s]);
                     }
-                }
 
-                out[(bin + b) * 2]     = (int8_t) juce::jlimit (-127, 127, (int) std::round (lo * 127.0f));
-                out[(bin + b) * 2 + 1] = (int8_t) juce::jlimit (-127, 127, (int) std::round (hi * 127.0f));
+                    const int at = (bin + b) * stride + c * 2;
+                    out[at]     = (int8_t) juce::jlimit (-127, 127, (int) std::round (lo * 127.0f));
+                    out[at + 1] = (int8_t) juce::jlimit (-127, 127, (int) std::round (hi * 127.0f));
+                }
             }
         }
 
@@ -363,6 +366,18 @@ void registerProjectApi (AppEngine& app)
     {
         app.save();
         return var (true);
+    });
+
+    rpc.add ("project.saveAs", K::read, "Saves the project to a chosen file and keeps working in that file", "{file}",
+             [&app] (const var& p)
+    {
+        auto file = juce::File (reqStr (p, "file"));
+
+        if (file.getFullPathName().isEmpty())
+            throw RpcError ("Choose where to save the project");
+
+        app.saveAs (file);
+        return var (app.getEditFile().getFullPathName());
     });
 
     rpc.add ("project.recover", K::read, "Restores the newer autosave of the open project", "{}", [&app] (const var&)

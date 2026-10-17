@@ -329,6 +329,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .io-chip svg { flex: none; opacity: .85; }
 .io-chip.off { color: var(--faint); border-style: dashed; }
 .lane { position: relative; flex: none; }
+.master-row .track-head { cursor: default; background: linear-gradient(90deg, rgba(124, 92, 255, .22), rgba(0, 209, 255, .08)), var(--bg2); }
+.lane.master-lane { background: linear-gradient(90deg, rgba(124, 92, 255, .18), rgba(0, 209, 255, .06) 240px), var(--bg3); box-shadow: inset 0 0 0 1px rgba(124, 92, 255, .28); }
 .lane.drop { background: rgba(124, 92, 255, .08); outline: 1px dashed rgba(124, 92, 255, .6); outline-offset: -2px; }
 .clip { position: absolute; top: 4px; bottom: 4px; border-radius: 7px; overflow: hidden; cursor: grab; box-shadow: 0 1px 0 rgba(255, 255, 255, .1) inset; }
 .clip .clip-label { position: absolute; left: 0; right: 0; top: 0; height: 17px; padding: 1px 7px; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, .92); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; z-index: 2; }

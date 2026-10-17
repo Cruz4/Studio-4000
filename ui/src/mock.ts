@@ -135,6 +135,18 @@ export function createMock(emit: Emit) {
     "project.new": (p) => { project = demoProject(p.name || "Untitled Session"); if (p.template === "blank") { project.tracks = [track("Audio 1", "audio", "#7c5cff")]; } changed(); return project.file; },
     "project.open": () => { project = demoProject(); changed(); return true; },
     "project.save": () => { if (project) project.modified = false; emit("saved", {}); return true; },
+    "project.saveAs": (p) => {
+      if (!project) return false;
+      const file = String(p.file || "");
+      const base = file.split(/[\\/]/).pop() || project.name;
+      project.name = base.replace(/\.s4000$/i, "");
+      project.file = file;
+      project.dir = file.replace(/[\\/][^\\/]+$/, "");
+      project.modified = false;
+      emit("saved", { file });
+      changed();
+      return file;
+    },
     "transport.play": () => { playing = true; return true; },
     "transport.stop": () => { if (!playing) t = 0; playing = false; recording = false; return true; },
     "transport.toggle": () => { playing = !playing; return playing; },
@@ -214,7 +226,15 @@ export function createMock(emit: Emit) {
       ...[["s4000tune", "Pitch Correction", "Pitch"], ["s4000gate", "Noise Gate", "Dynamics"], ["s4000deesser", "De-esser", "Dynamics"],
         ["s4000transient", "Transient Shaper", "Dynamics"], ["s4000saturator", "Saturator", "Saturation"], ["s4000crusher", "Bit Crusher", "Saturation"],
         ["s4000delay", "Stereo Delay", "Delay"], ["s4000doubler", "Vocal Doubler", "Stereo"], ["s4000width", "Stereo Width", "Stereo"],
-        ["s4000tremolo", "Tremolo / Auto-pan", "Modulation"]].map(([id, name, category]) => ({ id, name, vendor: "Studio 4000", category, synth: false, format: "Built-in" })),
+        ["s4000tremolo", "Tremolo / Auto-pan", "Modulation"],
+        ["s4000autofilter", "Auto Filter", "Filter"], ["s4000autopan", "Auto Pan", "Modulation"],
+        ["s4000channel", "Channel Strip", "Dynamics"], ["s4000channel2", "Channel Strip 2", "Dynamics"],
+        ["s4000djeq", "DJ EQ", "EQ"], ["s4000dualfilter", "Dual Filter", "Filter"], ["s4000expander", "Expander", "Dynamics"],
+        ["s4000flanger", "Flanger", "Modulation"], ["s4000monodelay", "Mono Delay", "Delay"], ["s4000overdrive", "Overdrive", "Saturation"],
+        ["s4000ringmod", "Ring Modulator", "Modulation"], ["s4000siggen", "Signal Generator", "Utility"],
+        ["s4000tilteq", "Tilt EQ", "EQ"], ["s4000utility", "Utility", "Utility"], ["s4000resofilter", "Resonant Filter", "Filter"],
+      ].map(([id, name, category]) => ({ id, name, vendor: "Studio 4000", category, synth: false, format: "Built-in" })),
+      ...[["s4000fm", "FM Synth", "Keys"], ["s4000poly", "Analog Poly", "Keys"]].map(([id, name, category]) => ({ id, name, vendor: "Studio 4000", category, synth: true, format: "Built-in" })),
       ...[["kit:drums", "Drum Kit", "Drums & Percussion"], ["kit:808", "808 Bass", "Bass"], ["4osc:synth-bass", "Synth Bass", "Bass"], ["kit:piano", "Studio Piano", "Keys"],
         ["4osc:e-piano", "Electric Piano", "Keys"], ["4osc:organ", "Organ", "Keys"], ["4osc:warm-pad", "Warm Pad", "Pads & Strings"], ["4osc:strings", "Synth Strings", "Pads & Strings"],
         ["4osc:bright-lead", "Bright Lead", "Leads & Plucks"], ["4osc:pluck", "Pluck", "Leads & Plucks"]].map(([id, name, category]) => ({ id, name, vendor: "Studio 4000", category, synth: true, format: "Built-in" })),
@@ -320,12 +340,14 @@ export function createMock(emit: Emit) {
       let bins = Math.ceil(length * bpsAsk);
       const bps = bins > 12000 ? 12000 / length : bpsAsk;
       bins = Math.max(1, Math.min(12000, Math.ceil(length * bps)));
-      const bytes = new Int8Array(bins * 2);
+      const bytes = new Int8Array(bins * 4);
       for (let i = 0; i < bins; i++) {
         const time = start + i / bps;
-        const env = 0.22 + 0.62 * Math.abs(Math.sin(time * 17.3) * Math.sin(time * 2.1));
-        const v = Math.round(env * 127);
-        bytes[i * 2] = -v; bytes[i * 2 + 1] = v;
+        const left = 0.2 + 0.7 * Math.abs(Math.sin(time * 17.3));
+        const right = 0.12 + 0.4 * Math.abs(Math.sin(time * 9.1 + 1.4));
+        const lv = Math.round(left * 127), rv = Math.round(right * 127);
+        bytes[i * 4] = -lv; bytes[i * 4 + 1] = Math.round(lv * 0.72);
+        bytes[i * 4 + 2] = -Math.round(rv * 0.55); bytes[i * 4 + 3] = rv;
       }
       let s = ""; bytes.forEach((b) => (s += String.fromCharCode(b & 255)));
       return { file: p.file, binsPerSecond: bps, start, length, sampleRate: 48000, channels: 2, data: btoa(s) };

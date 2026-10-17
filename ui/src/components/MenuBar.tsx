@@ -8,7 +8,7 @@ import { closeMenu, openMenu, useMenuOwner, type MenuItem } from "./ContextMenu"
 import { Icon, ThemeToggle } from "./ui";
 
 const MENUS: { label: string; items: string[] }[] = [
-  { label: "File", items: ["new", "open", "save", "-", "import", "export", "archive", "reveal", "-", "audioSetup", "scan", "settings", "-", "quit"] },
+  { label: "File", items: ["new", "open", "save", "saveAs", "-", "import", "export", "archive", "reveal", "-", "audioSetup", "scan", "settings", "-", "quit"] },
   { label: "Edit", items: ["undo", "redo", "history", "-", "cut", "copy", "paste", "split", "duplicate", "delete", "selectAll", "-", "crossfade", "normalize", "muteClip"] },
   { label: "Track", items: ["addAudio", "addInst", "addBus", "addGroup", "-", "arm", "muteTrack", "soloTrack", "trackFx", "automation", "-", "vocalPop", "vocalWarm", "vocalPodcast"] },
   { label: "Clip", items: ["newMidiClip", "split", "duplicate", "delete", "muteClip", "-", "normalize", "crossfade", "quantize", "-", "loopSel", "editor"] },

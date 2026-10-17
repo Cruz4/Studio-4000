@@ -23,6 +23,23 @@ const PRIMARY: Record<string, string[]> = {
   s4000tremolo: ["rate", "depth"],
   chorus: ["speedHz", "depthMs", "width", "mixProportion"],
   reverb: ["room size", "damping", "wet level", "dry level"],
+  s4000autofilter: ["cutoff", "range", "resonance", "mix"],
+  s4000autopan: ["rate", "depth", "shape"],
+  s4000channel: ["input", "low", "mid", "high", "pan", "output"],
+  s4000channel2: ["compThreshold", "compRatio", "gateThreshold", "output"],
+  s4000djeq: ["low", "mid", "high"],
+  s4000dualfilter: ["aCutoff", "aResonance", "bCutoff", "bResonance", "mix"],
+  s4000expander: ["threshold", "ratio", "attack", "release"],
+  s4000flanger: ["rate", "depth", "feedback", "mix"],
+  s4000monodelay: ["time", "feedback", "tone", "mix"],
+  s4000overdrive: ["drive", "tone", "output", "mix"],
+  s4000ringmod: ["frequency", "mix"],
+  s4000siggen: ["wave", "frequency", "level", "mix"],
+  s4000tilteq: ["tilt", "pivot", "output"],
+  s4000utility: ["gain", "pan", "width", "mono"],
+  s4000resofilter: ["cutoff", "resonance", "mode", "mix"],
+  s4000fm: ["ratio", "index", "attack", "decay", "level"],
+  s4000poly: ["cutoff", "resonance", "detune", "attack", "release", "level"],
 };
 
 function prefer(params: Param[]) {

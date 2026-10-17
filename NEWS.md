@@ -1,3 +1,9 @@
+Joining a live session stays connected. The host's code tries this network first, then the internet address, and Join again replaces a connection that dropped.
+
+Studio 4000 includes its own auto filter, auto pan, channel strips, DJ EQ, dual filter, expander, resonant filter, flanger, mono delay, overdrive, ring modulator, signal generator, tilt EQ, utility, FM synth, and analog poly synth.
+
+File → Save as writes the session to a folder you choose and copies its audio there. A stereo file stays stereo, and the clip draws the left channel above the right. The master sits at the bottom of the track list, with its effects, level, and speaker output.
+
 A blank bus can take a vocal or any other track. Point the track's output at the bus and it plays through that bus, with or without an effect on it.
 
 Zooming in on the tracks keeps the timeline filled instead of leaving a blank page on the right. Double-clicking an effect opens a window tall enough to show the whole editor.

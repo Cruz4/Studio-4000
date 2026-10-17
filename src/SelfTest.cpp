@@ -1,6 +1,7 @@
 #include "SelfTest.h"
 #include "LoudnessMeterPlugin.h"
 #include "StudioFx.h"
+#include "SuiteFx.h"
 #include "Instruments.h"
 
 namespace s3
@@ -70,6 +71,186 @@ namespace
 
         return a.getIntegratedLufs();
     }
+
+    bool sockWrite (juce::StreamingSocket& socket, const void* data, int n)
+    {
+        auto* p = static_cast<const char*> (data);
+        int sent = 0;
+
+        while (sent < n)
+        {
+            if (socket.waitUntilReady (false, 5000) != 1)
+                return false;
+
+            auto wrote = socket.write (p + sent, n - sent);
+            if (wrote <= 0)
+                return false;
+
+            sent += wrote;
+        }
+
+        return true;
+    }
+
+    bool sockRead (juce::StreamingSocket& socket, void* dest, int n, int timeoutMs)
+    {
+        auto* p = static_cast<char*> (dest);
+        int got = 0;
+        auto deadline = juce::Time::getMillisecondCounter() + (juce::uint32) timeoutMs;
+
+        while (got < n)
+        {
+            auto now = juce::Time::getMillisecondCounter();
+            if (now >= deadline)
+                return false;
+
+            if (socket.waitUntilReady (true, (int) (deadline - now)) != 1)
+                return false;
+
+            auto r = socket.read (p + got, n - got, false);
+            if (r <= 0)
+                return false;
+
+            got += r;
+        }
+
+        return true;
+    }
+
+    /** A minimal masked WebSocket client, enough to act as a host and a guest against the in-app relay. */
+    struct WsClient
+    {
+        std::unique_ptr<juce::StreamingSocket> socket;
+
+        bool connect (int port)
+        {
+            socket = std::make_unique<juce::StreamingSocket>();
+            if (! socket->connect ("127.0.0.1", port, 3000))
+                return false;
+
+            auto req = "GET / HTTP/1.1\r\nHost: 127.0.0.1:" + juce::String (port)
+                     + "\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                       "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n";
+
+            if (! sockWrite (*socket, req.toRawUTF8(), req.getNumBytesAsUTF8()))
+                return false;
+
+            juce::String header;
+            char ch = 0;
+
+            while (header.length() < 4096 && sockRead (*socket, &ch, 1, 3000))
+            {
+                header += ch;
+                if (header.endsWith ("\r\n\r\n"))
+                    return header.contains ("101");
+            }
+
+            return false;
+        }
+
+        bool sendText (const juce::String& text)
+        {
+            auto len = text.getNumBytesAsUTF8();
+            juce::MemoryOutputStream frame;
+            frame.writeByte ((char) 0x81);
+            const uint8_t mask[4] = { 0x11, 0x22, 0x33, 0x44 };
+
+            if (len < 126)
+                frame.writeByte ((char) (0x80 | (int) len));
+            else if (len <= 65535)
+            {
+                frame.writeByte ((char) (0x80 | 126));
+                frame.writeByte ((char) ((len >> 8) & 0xff));
+                frame.writeByte ((char) (len & 0xff));
+            }
+            else
+            {
+                frame.writeByte ((char) (0x80 | 127));
+                for (int i = 7; i >= 0; --i)
+                    frame.writeByte ((char) ((len >> (i * 8)) & 0xff));
+            }
+
+            frame.write (mask, 4);
+            auto* raw = text.toRawUTF8();
+
+            for (size_t i = 0; i < len; ++i)
+                frame.writeByte ((char) (raw[i] ^ mask[i % 4]));
+
+            return sockWrite (*socket, frame.getData(), (int) frame.getDataSize());
+        }
+
+        juce::String readText (int timeoutMs)
+        {
+            auto deadline = juce::Time::getMillisecondCounter() + (juce::uint32) timeoutMs;
+
+            while (juce::Time::getMillisecondCounter() < deadline)
+            {
+                auto left = (int) (deadline - juce::Time::getMillisecondCounter());
+                uint8_t hdr[2];
+                if (! sockRead (*socket, hdr, 2, left))
+                    return {};
+
+                auto op = hdr[0] & 0x0f;
+                uint64_t len = hdr[1] & 0x7f;
+
+                if (len == 126)
+                {
+                    uint8_t ext[2];
+                    if (! sockRead (*socket, ext, 2, 3000))
+                        return {};
+                    len = ((uint64_t) ext[0] << 8) | ext[1];
+                }
+                else if (len == 127)
+                {
+                    uint8_t ext[8];
+                    if (! sockRead (*socket, ext, 8, 3000))
+                        return {};
+                    len = 0;
+                    for (auto b : ext)
+                        len = (len << 8) | b;
+                }
+
+                if (len > 2 * 1024 * 1024)
+                    return {};
+
+                juce::MemoryBlock payload ((size_t) len, true);
+                if (len > 0 && ! sockRead (*socket, payload.getData(), (int) len, 8000))
+                    return {};
+
+                if (op == 0x8)
+                    return {};
+
+                if (op == 0x1)
+                    return juce::String::fromUTF8 ((const char*) payload.getData(), (int) payload.getSize());
+            }
+
+            return {};
+        }
+
+        var readType (const juce::String& type, int timeoutMs)
+        {
+            auto deadline = juce::Time::getMillisecondCounter() + (juce::uint32) timeoutMs;
+
+            while (juce::Time::getMillisecondCounter() < deadline)
+            {
+                auto text = readText ((int) (deadline - juce::Time::getMillisecondCounter()));
+                if (text.isEmpty())
+                    return {};
+
+                auto msg = juce::JSON::parse (text);
+                if (msg["type"].toString() == type)
+                    return msg;
+            }
+
+            return {};
+        }
+
+        void close()
+        {
+            if (socket != nullptr)
+                socket->close();
+        }
+    };
 }
 
 SelfTest::SelfTest (AppEngine& a, const String& commandLine, std::function<void (int)> onFinished)
@@ -418,6 +599,49 @@ bool SelfTest::runStep()
                 check ("built-in instruments load", failed.isEmpty(),
                        failed.isEmpty() ? String (good) + " instruments" : "failed: " + failed);
             }
+
+            {
+                constexpr double rate = 48000.0;
+                auto& cache = app.currentEdit()->getPluginCache();
+                String failed;
+                int good = 0;
+
+                for (auto& entry : suiteSynthCatalogue())
+                {
+                    auto plugin = cache.createNewPlugin (entry[0], {});
+                    juce::AudioBuffer<float> buffer (2, (int) rate);
+                    buffer.clear();
+                    te::MidiMessageArray midi;
+                    auto note = juce::MidiMessage::noteOn (1, 60, (juce::uint8) 100);
+                    note.setTimeStamp (0.0);
+                    midi.addMidiMessage (note, 0);
+
+                    if (plugin != nullptr)
+                    {
+                        plugin->initialise ({ {}, rate, 512 });
+                        te::PluginRenderContext context (&buffer, 0, buffer.getNumSamples(), &midi, 0.0,
+                                                         te::timeRangeFromSeconds (juce::Range<double> (0.0, 1.0)),
+                                                         true, false, true, false);
+                        plugin->applyToBuffer (context);
+                    }
+
+                    double energy = 0.0;
+
+                    for (int i = 0; i < buffer.getNumSamples(); ++i)
+                    {
+                        const auto v = buffer.getSample (0, i);
+                        energy += (double) v * v;
+                    }
+
+                    if (plugin != nullptr && plugin->isSynth() && std::isfinite (energy) && energy > 1.0)
+                        ++good;
+                    else
+                        failed << entry[1] << " energy " << String (energy, 3) << " ";
+                }
+
+                check ("FM and analog synths play a held note", failed.isEmpty(),
+                       failed.isEmpty() ? String (good) + " synths" : "failed: " + failed);
+            }
             return true;
         }
 
@@ -622,6 +846,54 @@ bool SelfTest::runStep()
             check ("assistant context available", context.toString().contains ("Lead Vocal"));
             auto tools = call ("ai.tools");
             check ("assistant tools described", tools.getArray() != nullptr && tools.getArray()->size() > 20);
+            return true;
+        }
+
+        case 9:
+        {
+            auto relay = call ("collab.relay");
+            auto port = (int) relay["port"];
+            check ("session connection is open", (bool) relay["running"] && port > 0, relay["local"].toString());
+
+            WsClient host, guest;
+            auto up = port > 0 && host.connect (port) && guest.connect (port);
+            check ("host and guest reach the session", up);
+
+            if (up)
+            {
+                auto blob = juce::String::repeatedString ("A", 100000);
+                host.sendText (juce::JSON::toString (Obj().set ("type", "join").set ("room", "SELF01").set ("name", "Host").set ("role", "host").set ("password", ""), true));
+                auto hostWelcome = host.readType ("welcome", 4000);
+                guest.sendText (juce::JSON::toString (Obj().set ("type", "join").set ("room", "SELF01").set ("name", "Guest").set ("role", "guest").set ("password", ""), true));
+                auto guestWelcome = guest.readType ("welcome", 4000);
+                check ("guest is welcomed into the host's room", hostWelcome.isObject() && guestWelcome.isObject());
+
+                guest.sendText (juce::JSON::toString (Obj().set ("type", "to").set ("target", "*").set ("data", Obj().set ("kind", "blob").set ("n", "G" + blob)), true));
+                auto atHost = host.readType ("from", 8000);
+                host.sendText (juce::JSON::toString (Obj().set ("type", "to").set ("target", "*").set ("data", Obj().set ("kind", "blob").set ("n", "H" + blob)), true));
+                auto atGuest = guest.readType ("from", 8000);
+                auto hostBlob = atHost["data"]["n"].toString();
+                auto guestBlob = atGuest["data"]["n"].toString();
+                check ("a large message survives the round trip",
+                       hostBlob.startsWith ("G") && hostBlob.length() > 100000 && guestBlob.startsWith ("H") && guestBlob.length() > 100000,
+                       String (hostBlob.length()) + " / " + String (guestBlob.length()));
+
+                guest.close();
+                WsClient again;
+                auto rejoined = again.connect (port)
+                    && again.sendText (juce::JSON::toString (Obj().set ("type", "join").set ("room", "SELF01").set ("name", "Guest").set ("role", "guest").set ("password", ""), true));
+                auto second = rejoined ? again.readType ("welcome", 4000) : var();
+                auto refused = rejoined ? juce::String() : juce::String ("could not connect");
+                if (second.isVoid() && rejoined)
+                {
+                    // readType only returns the matching type; an error frame means the room died.
+                    refused = "the room refused the second join";
+                }
+                check ("the same guest can join again", second.isObject() && second["type"].toString() == "welcome", refused);
+                again.close();
+                host.close();
+            }
+
             return true;
         }
 

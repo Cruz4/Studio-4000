@@ -45,23 +45,23 @@ function JoinForm() {
   }, []);
 
   const go = async (role: "host" | "guest") => {
-    const parsed = role === "host" ? { room: randomRoom() } : parseJoinCode(code);
+    const parsed = role === "host" ? { room: randomRoom(), servers: [] as string[] } : parseJoinCode(code);
     if (!/^[A-Z0-9]{4,16}$/.test(parsed.room)) return toast(role === "host" ? "Couldn't start the session" : "Paste the code the host sent you", "warning");
     setBusy(true);
     localRpc("settings.set", { key: "collabName", value: name });
     if (!isBuiltInServer(server)) localRpc("settings.set", { key: "collabServer", value: server });
     localRpc("settings.set", { key: "collabTurn", value: turn });
-    const builtIn = !parsed.server && isBuiltInServer(server);
+    const builtIn = parsed.servers.length === 0 && isBuiltInServer(server);
     try {
-      let target = parsed.server ?? server.trim();
+      let targets = parsed.servers.length ? parsed.servers : [server.trim()].filter(Boolean);
       let invite = "";
       if (builtIn) {
         const relay = await localRpc<{ running: boolean; local: string; share: string }>("collab.relay");
         if (!relay?.running || !relay.local) throw new Error("Couldn't open the session on this computer. Try Host again.");
-        target = relay.local;
+        targets = [relay.local];
         if (role === "host" && relay.share) invite = `${parsed.room}@${relay.share}`;
       }
-      await startSession({ server: target, room: parsed.room, name: name || "Musician", role, password, turn, invite });
+      await startSession({ servers: targets, room: parsed.room, name: name || "Musician", role, password, turn, invite });
       toast(role === "host" ? "Session is live. Copy the code and send it." : "Joined the session", "success");
     } catch (e) {
       let msg = (e as Error).message;
@@ -85,7 +85,7 @@ function JoinForm() {
       </button>
       <div className="row"><div className="grow" style={{ height: 1, background: "var(--line)" }} /><span className="small faint">or join one</span><div className="grow" style={{ height: 1, background: "var(--line)" }} /></div>
       <div className="row">
-        <input className="input sm grow mono" placeholder="Paste the host's code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={80} />
+        <input className="input sm grow mono" placeholder="Paste the host's code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={200} />
         <button className="btn" disabled={busy || !code.trim()} onClick={() => go("guest")}>Join</button>
       </div>
       <details>
@@ -130,7 +130,7 @@ function Live() {
             <input className="input sm mono grow" readOnly value={st.invite} onFocus={(e) => e.target.select()} />
             <button className="btn sm" onClick={() => { navigator.clipboard?.writeText(st.invite); toast("Code copied", "success"); }}><Icon name="copy" size={12} /> Copy</button>
           </div>
-          <span className="small faint">They paste this into Join.</span>
+          <span className="small faint">They paste this whole code into Join. It tries this network and the internet address.</span>
         </div>
       )}
       <div className="row">

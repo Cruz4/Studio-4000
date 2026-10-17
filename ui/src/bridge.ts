@@ -106,7 +106,7 @@ export function emit(type: string, payload: unknown) {
 }
 
 export const native = {
-  pickFile: (opts: { mode?: "open" | "save" | "folder"; title?: string; filters?: string; multiple?: boolean; dir?: string }) =>
+  pickFile: (opts: { mode?: "open" | "save" | "folder"; title?: string; filters?: string; multiple?: boolean; dir?: string; file?: string }) =>
     nativeCall("pickFile", opts) as Promise<string[]>,
   http: (req: { url: string; method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) =>
     nativeCall("http", req) as Promise<{ status: number; body: string; error?: string }>,

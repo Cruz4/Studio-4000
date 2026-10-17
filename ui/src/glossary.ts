@@ -27,7 +27,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Collaborate",
     group: "Working together",
     where: "The people button on the right of the top bar, or Ctrl+Shift+C",
-    how: "That button opens the live session panel. Open a project first. Press Host this session. Studio 4000 opens the connection and shows a code. Copy that code and send it. The other person opens Studio 4000, presses the same people button, pastes the code, and presses Join. The code looks like AB12CD@203.0.113.5:3031. They can be anywhere. End closes the session for everyone. Leave drops you out and returns to the join screen. Voice and screen share are in that panel after you are connected. A room password is optional under Connection settings.",
+    how: "That button opens the live session panel. Open a project first. Press Host this session. Studio 4000 opens the connection and shows a code. Copy that code and send it. The other person opens Studio 4000, presses the same people button, pastes the code, and presses Join. The code looks like AB12CD@192.168.1.20:3031,203.0.113.5:3031. Paste the whole code. It tries the same network first, then the internet address, so they can be in the room or anywhere. End closes the session for everyone. Leave drops you out and returns to the join screen. Voice and screen share are in that panel after you are connected. A room password is optional under Connection settings.",
     also: ["collab", "collab button", "collaborate", "collaboration", "people", "room", "session", "host", "join", "voice", "screen share", "live session"],
   },
   {
@@ -167,14 +167,14 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Import audio",
     group: "Clips",
     where: "Import above the clips, Ctrl+I, or drop a file on a lane",
-    how: "WAV, AIFF, FLAC, OGG, and MP3 land on the selected audio track at the playhead. Drop a file on a lane to put it there. Right-click an audio lane and choose Import audio here.",
+    how: "WAV, AIFF, FLAC, OGG, and MP3 land on the selected audio track at the playhead. A stereo file stays stereo, and its waveform shows the left channel above the right. Drop a file on a lane to put it there. Right-click an audio lane and choose Import audio here.",
     also: ["drag audio", "wav", "import"],
   },
   {
     title: "Tracks",
     group: "Tracks",
     where: "The names on the left of the arrangement",
-    how: "Click a name to select that track. Ctrl+click or Shift+click selects several. Drag a name to reorder. The bar under the name is the track level. Drag the divider under a track to change its height. Double-click the divider to reset it. Drag the right edge of the name column to make the headers wider.",
+    how: "Click a name to select that track. Ctrl+click or Shift+click selects several. Drag a name to reorder. The bar under the name is the track level. Master sits at the bottom of the list: it is the mix output, and clips cannot be placed on it. Drag the divider under a track to change its height. Double-click the divider to reset it. Drag the right edge of the name column to make the headers wider.",
     also: ["track list", "select track", "reorder"],
   },
   {
@@ -279,7 +279,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Save, open, and export",
     group: "Files and settings",
     where: "The File menu, and the export button on the right of the top bar",
-    how: "Ctrl+N starts a session, Ctrl+O opens one, Ctrl+S saves. Projects are .s4000 files. Ctrl+E exports the mix or stems. Archive project zips the session with its audio. Show project folder opens the folder on disk.",
+    how: "Ctrl+N starts a session, Ctrl+O opens one, Ctrl+S saves. File → Save as, or Ctrl+Shift+S, opens a window where you name the session and choose the folder. Projects are .s4000 files. Ctrl+E exports the mix or stems. Archive project zips the session with its audio. Show project folder opens the folder on disk.",
     also: ["save", "open", "export", "stems", "bounce", "archive"],
   },
   {

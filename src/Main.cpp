@@ -25,6 +25,7 @@ public:
 
         if (isSelfTest (commandLine))
         {
+            relay = std::make_unique<SessionRelay> (engine->rpc);
             selfTest = std::make_unique<SelfTest> (*engine, commandLine, [this] (int result)
             {
                 setApplicationReturnValue (result);

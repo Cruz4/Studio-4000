@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { rpc } from "../bridge";
 import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
@@ -7,7 +7,7 @@ import { useMeterCanvas } from "../meters";
 import { act, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
 import { createTrackItems, openTrackMenu, toggleAutomation } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
-import { HEADER_W_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
+import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
 import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap } from "../util";
 import { askText } from "./Ask";
@@ -577,6 +577,81 @@ function AutomationRow({ track, laneKey, pps, width, project }: { track: Track; 
   );
 }
 
+/* ------------------------------------------------------------------ master row */
+
+/** The mix output. It sits on the track list and does not accept clips. */
+function MasterRow({ laneW }: { laneW: number }) {
+  const project = useStore((s) => s.project)!;
+  const devices = useStore((s) => s.devices);
+  const [vol, setVol] = useState<number | null>(null);
+  const db = vol ?? project.master.volumeDb ?? 0;
+  const h = TRACK_H_DEFAULT;
+  const outs = devices?.outputs ?? [];
+  const masterOut = devices?.masterOutput ?? outs[0] ?? "Stereo out";
+
+  useEffect(() => { loadDevices().catch(() => {}); }, []);
+
+  const refuseClip = (e: ReactDragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "none";
+  };
+
+  return (
+    <div className="track-row master-row" style={{ height: h, width: "100%" }}
+      title="Master. The mix leaves through here. Clips can't be placed on it."
+      onDragOver={refuseClip}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMenu(e, [{ label: "Add an effect", icon: "plus", run: () => useStore.setState({ picker: { trackId: "master" } }) }]);
+      }}>
+      <div className="track-head compact" style={{ height: h }}>
+        <div className="colour" style={{ background: "linear-gradient(180deg, #7c5cff, #00d1ff)" }} />
+        <div className="track-head-scroll">
+          <div className="row name-line" style={{ gap: 6, paddingRight: 6 }}>
+            <span className="name">Master</span>
+            <span className="kind">MASTER</span>
+          </div>
+          <div className="io-row">
+            {outs.length > 1 ? (
+              <button className="io-chip" title="Speakers the master plays through"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const r = e.currentTarget.getBoundingClientRect();
+                  openMenu({ clientX: r.left, clientY: r.bottom + 4, preventDefault() {}, stopPropagation() {} },
+                    outs.map((o) => ({ label: o, icon: o === masterOut ? "check" : undefined, run: () => { void act("devices.setMasterOutput", { name: o }).then(() => loadDevices()); } })));
+                }}>
+                <Icon name="speaker" size={11} /><span className="ellipsis">{masterOut}</span>
+              </button>
+            ) : (
+              <span className="io-chip" title="Speakers the master plays through"><Icon name="speaker" size={11} /><span className="ellipsis">{masterOut}</span></span>
+            )}
+          </div>
+          <div className="track-fx">
+            <FxToggle trackId="master" plugins={project.master.plugins} />
+            <div className="track-fx-list">
+              {project.master.plugins.map((p, i) => <InsertSlot key={p.id} p={p} index={i} compact />)}
+              {!project.master.plugins.length && <span className="faint small ellipsis">No effects</span>}
+            </div>
+            <button className="toggle" title="Add an effect on the master" onClick={() => useStore.setState({ picker: { trackId: "master" } })}><Icon name="plus" size={11} /></button>
+          </div>
+          <div className="row" style={{ gap: 6, paddingRight: 10 }} title={`Master volume ${formatDb(db)} dB. Double-click for 0 dB`}>
+            <input type="range" className="slider grow" min={0} max={1} step={0.001} value={dbToFader(db)}
+              onChange={(e) => { const v = faderToDb(+e.target.value); setVol(v); act("master.set", { volumeDb: v }); }}
+              onPointerUp={() => setVol(null)}
+              onDoubleClick={() => act("master.set", { volumeDb: 0 })} />
+            <DbField className="mono small dim" style={{ width: 46, textAlign: "right" }} db={db} min={-100} max={15} onChange={(v) => { setVol(null); act("master.set", { volumeDb: v }); }} />
+          </div>
+          <TrackMeter id="master" />
+        </div>
+      </div>
+      <div className="lane master-lane" style={{ flex: "1 0 auto", width: laneW, minWidth: laneW, height: h }} />
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ main view */
 
 export function Arrange() {
@@ -1036,6 +1111,8 @@ export function Arrange() {
               </div>
             );
           })}
+
+          <MasterRow laneW={laneW} />
 
           <div className={cx("track-row", dropLane === "new" && "drop")} style={{ height: 120, borderBottom: "none" }}
             onDragOver={(e) => dragOver(e, "new")} onDrop={(e) => onDrop(e)}>

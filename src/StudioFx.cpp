@@ -1,4 +1,5 @@
 #include "StudioFx.h"
+#include "SuiteFx.h"
 
 namespace s3
 {
@@ -1274,11 +1275,12 @@ void registerStudioEffects (te::PluginManager& pm)
     pm.createBuiltInType<DeEsserPlugin>();
     pm.createBuiltInType<EqPlugin>();
     pm.createBuiltInType<CompressorFx>();
+    registerSuite (pm);
 }
 
 std::vector<std::array<const char*, 3>> studioEffectCatalogue()
 {
-    return {
+    std::vector<std::array<const char*, 3>> list {
         { EqPlugin::xmlTypeName,                EqPlugin::getPluginName(),              "EQ" },
         { CompressorFx::xmlTypeName,            CompressorFx::getPluginName(),          "Dynamics" },
         { TunePlugin::xmlTypeName,              TunePlugin::getPluginName(),            "Pitch" },
@@ -1292,5 +1294,10 @@ std::vector<std::array<const char*, 3>> studioEffectCatalogue()
         { StereoWidthPlugin::xmlTypeName,       StereoWidthPlugin::getPluginName(),     "Stereo" },
         { TremoloPlugin::xmlTypeName,           TremoloPlugin::getPluginName(),         "Modulation" },
     };
+
+    for (auto& extra : suiteEffectCatalogue())
+        list.push_back (extra);
+
+    return list;
 }
 }
