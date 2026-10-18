@@ -29,11 +29,14 @@ interface CollabState {
   activity: { name: string; method: string; time: number }[];
   /** Where each other person is looking: timeline position under their pointer and their selected track. */
   presence: Record<string, { hover: number | null; track: string | null }>;
+  /** Guest: hear a local click (in time) instead of the late full mix. */
+  listenMode: "click" | "mix";
 }
 
 export const useCollab = create<CollabState>(() => ({
   status: "idle", error: null, role: null, room: "", invite: "", server: "", me: null, peers: [], allowGuestEdits: true,
   micOn: false, sharing: false, streams: {}, localScreen: null, chat: [], notes: "", activity: [], presence: {},
+  listenMode: "click",
 }));
 
 let myHover: number | null = null;

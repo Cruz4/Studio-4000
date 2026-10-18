@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { localRpc, rpc } from "../bridge";
 import { downloadFile, isBuiltInServer, leaveSession, parseJoinCode, randomRoom, sendChat, setNotes, startSession, toggleMic, toggleScreen, useCollab } from "../collab";
+import { setListenMode } from "../cueListen";
 import { toast, useStore } from "../store";
 import { cx } from "../util";
 import { Icon, Spinner, Tabs } from "./ui";
@@ -18,8 +19,9 @@ function Video({ stream, label, muted }: { stream: MediaStream; label: string; m
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLAudioElement>(null);
+  const muteMix = useCollab((s) => s.role === "guest" && s.listenMode === "click");
   useEffect(() => { if (ref.current) ref.current.srcObject = stream; }, [stream]);
-  return <audio ref={ref} autoPlay />;
+  return <audio ref={ref} autoPlay muted={muteMix} />;
 }
 
 function Avatar({ name, colour }: { name: string; colour: string }) {
@@ -142,7 +144,27 @@ function Live() {
           <input type="checkbox" checked={st.allowGuestEdits} onChange={(e) => useCollab.setState({ allowGuestEdits: e.target.checked })} /> Guests can edit (otherwise view and listen only)
         </label>
       )}
-      {st.role === "guest" && <span className="small faint">You're seeing the host's session. Your edits go to their project, and their engine plays the audio.</span>}
+      {st.role === "guest" && (
+        <div className="card col" style={{ padding: 8, gap: 6 }}>
+          <span className="small">What you hear</span>
+          <div className="row">
+            <button className={cx("btn sm grow", st.listenMode === "click" && "on")} onClick={() => setListenMode("click")}
+              title="Click is generated on this computer from the host playhead, so it isn't late. Screen-share mix is muted.">
+              Click + cue
+            </button>
+            <button className={cx("btn sm grow", st.listenMode === "mix" && "on")} onClick={() => setListenMode("mix")}
+              title="Hear the host's shared mix. It arrives late over the network.">
+              Full mix (late)
+            </button>
+          </div>
+          <span className="small faint">
+            {st.listenMode === "click"
+              ? "You hear the click here, in time. Tracks the host marked C (cue) are the ones they should keep in their headphone send. The full mix over screen share is muted because it arrives late."
+              : "You're hearing the shared mix. It will sit behind the click. Switch back to Click + cue when you record."}
+          </span>
+        </div>
+      )}
+      {st.role === "host" && <span className="small faint">Mark tracks with C for the guest cue. Guests hear a local click plus those tracks — not your full mix arriving late.</span>}
 
       <div className="col" style={{ gap: 6 }}>
         {st.peers.map((p) => (
@@ -156,7 +178,7 @@ function Live() {
       </div>
 
       {st.localScreen && <Video stream={st.localScreen} label="Your screen" muted />}
-      {videos.map(([id, s]) => <Video key={id} stream={s} label={nameOf(id)} />)}
+      {videos.map(([id, s]) => <Video key={id} stream={s} label={nameOf(id)} muted={st.role === "guest" && st.listenMode === "click"} />)}
       {Object.entries(st.streams).map(([id, s]) => <RemoteAudio key={id} stream={s} />)}
 
       <Tabs value={tab} onChange={setTab} items={[{ id: "chat", label: "Chat" }, { id: "notes", label: "Notes" }, { id: "files", label: "Files" }, { id: "activity", label: "Activity" }]} />

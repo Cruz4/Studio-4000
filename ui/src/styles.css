@@ -111,6 +111,7 @@ input, textarea, select, button { font: inherit; color: inherit; }
 .toggle.arm.on { background: var(--rec); color: #fff; box-shadow: 0 0 10px rgba(255, 59, 92, .6); }
 .toggle.mon.on { background: var(--cyan); color: #001c24; }
 .toggle.mon.live { box-shadow: 0 0 0 1px var(--cyan) inset, 0 0 9px rgba(0, 229, 255, .55); }
+.toggle.cue.on { background: var(--cyan); color: #001c24; }
 .toggle.on { background: var(--violet); color: #fff; }
 .toggle.fx { font-size: 10px; letter-spacing: .04em; flex: none; }
 .toggle.fx.on { background: var(--violet); color: #fff; box-shadow: 0 0 8px rgba(124, 92, 255, .55); }

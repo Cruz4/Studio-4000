@@ -1,5 +1,6 @@
 // Bring-your-own-model assistant. Reads run immediately; every edit is proposed as a plan the user approves.
 import { native, rpc } from "./bridge";
+import { useStore } from "./store";
 import type { PlanCall } from "./types";
 
 export type Provider = "openai" | "anthropic" | "compatible";
@@ -98,21 +99,43 @@ async function systemPrompt(takeOver: boolean) {
   const all = await methods();
   const edits = all.filter((m) => m.write || m.name.startsWith("smart.")).map((m) => `- ${m.name} ${m.params}: ${m.description}`).join("\n");
   const context = await rpc<string>("ai.context").catch(() => "No project is open.");
-  return `You are the production and mixing assistant inside Studio 4000, a music recording app. You help musicians record, arrange, mix and master.
+  const focus = describeFocus();
+  return `You are a first-class editor inside Studio 4000 — not a chatbot on the side. You edit the session the way a producer would: inspect, decide, propose concrete calls, wait for approval.
 
 How you work:
-- Inspect first with the read tools (project.get, plugins.list, plugin.params, smart.analyze, smart.* plans).
-- To change anything, call propose_plan with concrete method calls. The user approves before it runs. Never say a change was made until you're told the plan was applied.
-- Prefer the smart.* planners for gain staging, ducking and mastering, then pass their calls into propose_plan (you may combine and adjust them).
-- Volumes are in dB (track.set volumeDb, master.set volumeDb), pan is -1..1. Plug-in parameters use plugin.setParam with norm 0..1 unless you know the real value range from plugin.params.
-- Built-in plug-in ids come from plugins.list (e.g. "4bandEq", "compressor", "reverb", "delay", "s4000limiter"). Use exact ids.
-- Be brief and practical. Explain the musical reason for each change in plain words. Never paste JSON, parameter lists, or tool results into the chat.
-${takeOver ? "- TAKE-OVER MODE: you are driving this session. Analyse, then propose one complete, well-ordered plan. After it's applied you'll be told the results; re-check with smart.analyze and propose a follow-up only if it clearly helps. Stop when the mix is in good shape and summarise what you did.\n" : ""}
+- Read first (project.get, plugin.params, smart.analyze). Then propose_plan. Nothing changes until the musician approves.
+- Prefer smart.* for gain staging, ducking, vocal chains and mastering; you may combine and adjust those calls.
+- Recording: arm with track.arm, click with transport.setClick, punch/loop with transport.setLoop + transport.setPunch. MIDI records like a vocal: loop + record stacks takes. midi.capture drops notes they already played. clip.toMidi turns a hummed/sung audio clip into notes. clip.bounce prints MIDI through the instrument as audio.
+- Guest sessions: track.setCue marks the headphone mix (click + those tracks). Do not tell them to share the full mix — it arrives late.
+- Volumes are dB, pan is -1..1. Plug-in params use plugin.setParam; get ranges from plugin.params. Built-in ids come from plugins.list (s4000eq, s4000comp, s4000tune, 4osc, …).
+- Be brief. Say the musical why in one line. Never paste JSON or raw tool dumps.
+${takeOver ? "- TAKE-OVER: one complete ordered plan, then re-check. Stop when the session is in good shape.\n" : ""}
+What they have selected right now:
+${focus}
+
 Edit methods for propose_plan:
 ${edits}
 
 Current project:
 ${context}`;
+}
+
+function describeFocus() {
+  try {
+    const s = useStore.getState();
+    const p = s.project;
+    if (!p) return "No project open.";
+    const tracks = p.tracks.filter((t) => s.selectedTracks.includes(t.id) || t.id === s.selectedTrack);
+    const clips = p.tracks.flatMap((t) => t.clips.filter((c) => s.selectedClips.includes(c.id)));
+    const bits: string[] = [];
+    bits.push(`Playhead ${s.transport.playing ? "playing" : "stopped"} (use project.get for exact time).`);
+    if (tracks.length) bits.push(`Selected track(s): ${tracks.map((t) => `${t.name} [${t.id}] ${t.kind}${t.armed ? " armed" : ""}${t.cue ? " cue" : ""}`).join("; ")}`);
+    if (clips.length) bits.push(`Selected clip(s): ${clips.map((c) => `${c.name} [${c.id}] ${c.kind} ${c.start.toFixed(2)}-${c.end.toFixed(2)}s`).join("; ")}`);
+    if (s.editorClip) bits.push(`Editor is open on clip ${s.editorClip}.`);
+    return bits.join("\n") || "Nothing selected.";
+  } catch {
+    return "Selection unknown.";
+  }
 }
 
 function truncate(s: string, n = 14000) {
@@ -186,10 +209,76 @@ export interface AgentEvents {
   onStatus: (s: string | null) => void;
 }
 
+/** Smart Mix on this computer when no model key is connected. */
+async function runLocalAssistant(history: Msg[], ev: AgentEvents) {
+  const asked = [...history].reverse().find((m) => m.role === "user")?.content.toLowerCase() ?? "";
+  ev.onStatus("Working from Smart Mix (no model key)…");
+  try {
+    const s = useStore.getState();
+    const track = s.project?.tracks.find((t) => t.id === s.selectedTrack);
+    const clip = s.project?.tracks.flatMap((t) => t.clips).find((c) => s.selectedClips.includes(c.id));
+    if (/audio to midi|hum|sung|melody from/.test(asked) && clip?.kind === "audio") {
+      ev.onPlan({ summary: "Turn the selected audio into MIDI notes", steps: ["Detect pitch", "Drop notes on an instrument track"], calls: [{ method: "clip.toMidi", params: { id: clip.id } }] });
+      ev.onMessage({ role: "assistant", content: "No model key is connected, so I'm using the built-in pitch reader. Approve to turn that clip into MIDI." });
+      ev.onStatus(null);
+      return;
+    }
+    if (/print|bounce|midi to audio|freeze/.test(asked) && clip?.kind === "midi") {
+      ev.onPlan({ summary: "Print the selected MIDI through the instrument as audio", steps: ["Render the instrument", "Drop a new audio clip"], calls: [{ method: "clip.bounce", params: { id: clip.id } }] });
+      ev.onMessage({ role: "assistant", content: "I'll print that MIDI as audio so you can fade and comp it like a vocal." });
+      ev.onStatus(null);
+      return;
+    }
+    if (/capture midi|catch|already played/.test(asked)) {
+      ev.onPlan({ summary: "Capture the notes you just played", steps: ["Write the last notes onto an instrument track"], calls: [{ method: "midi.capture", params: { trackId: track?.kind === "instrument" ? track.id : undefined, seconds: 30 } }] });
+      ev.onMessage({ role: "assistant", content: "I'll drop the notes you already played onto the timeline." });
+      ev.onStatus(null);
+      return;
+    }
+    if (/vocal chain|tune|comp the vocal/.test(asked) && track) {
+      const plan = await rpc<ProposedPlan>("smart.vocalChain", { trackId: track.id, style: /warm/.test(asked) ? "warm" : /podcast/.test(asked) ? "podcast" : "pop" });
+      ev.onPlan(plan);
+      ev.onMessage({ role: "assistant", content: "No model key — this is the built-in vocal chain. Approve to add it." });
+      ev.onStatus(null);
+      return;
+    }
+    if (/duck/.test(asked)) {
+      const plan = await rpc<ProposedPlan>("smart.duck", {});
+      ev.onPlan(plan);
+      ev.onMessage({ role: "assistant", content: "Built-in ducking plan. Approve to write the automation." });
+      ev.onStatus(null);
+      return;
+    }
+    if (/master|spotify|loud/.test(asked)) {
+      const plan = await rpc<ProposedPlan>("smart.master", {});
+      ev.onPlan(plan);
+      ev.onMessage({ role: "assistant", content: "Built-in master toward a streaming target. Approve to apply." });
+      ev.onStatus(null);
+      return;
+    }
+    const report = await rpc<{ issues?: { message: string }[]; master?: { lufs?: number } }>("smart.analyze", { master: true });
+    const issues = report.issues ?? [];
+    const mix = await rpc<ProposedPlan>("smart.mix", {});
+    ev.onPlan(mix);
+    ev.onMessage({
+      role: "assistant",
+      content: `No model key is connected, so I'm using Smart Mix on this computer.${
+        issues.length ? ` I see: ${issues.slice(0, 4).map((i) => i.message).join(" ")}` : ""
+      } Approve the plan, or add a key in Settings → AI for a smarter editor.`,
+    });
+  } catch (e) {
+    ev.onMessage({ role: "assistant", content: `I can still help without a key once a project is open. ${(e as Error).message}` });
+  }
+  ev.onStatus(null);
+}
+
 /** Runs model turns until it answers in text or proposes a plan. */
 export async function runAgent(cfg: AiConfig, history: Msg[], takeOver: boolean, ev: AgentEvents, signal: { cancelled: boolean }) {
   const key = await getKey(cfg.provider);
-  if (PROVIDERS[cfg.provider].needsKey && !key) throw new Error("Add an API key in the assistant settings first.");
+  if (PROVIDERS[cfg.provider].needsKey && !key) {
+    await runLocalAssistant(history, ev);
+    return history;
+  }
   const tools = await toolset();
   const system = await systemPrompt(takeOver);
   const msgs = [...history];

@@ -360,6 +360,33 @@ export const commands: Command[] = [
   { id: "crossfade", group: "Edit", title: "Crossfade overlapping clips", keys: "X", run: crossfadeSelection, when: hasProject },
   { id: "quantize", group: "Edit", title: "Quantize selected MIDI to 1/16", keys: "Q", when: hasProject,
     run: () => act("batch.run", { label: "Quantize", calls: selectedClips().filter((c) => c.kind === "midi").map((c) => ({ method: "midi.quantize", params: { clipId: c.id, grid: 0.25 } })) }) },
+  { id: "toMidi", group: "MIDI", title: "Audio to MIDI (hummed or sung clip → notes)", keys: "Ctrl+Shift+M", when: hasProject,
+    run: async () => {
+      const clips = selectedClips().filter((c) => c.kind === "audio");
+      if (!clips.length) { toast("Select an audio clip first (a hummed or sung take works best)"); return; }
+      for (const c of clips) {
+        const r = await act("clip.toMidi", { id: c.id });
+        if (r?.clipId) { useStore.setState({ editorClip: r.clipId, bottom: "editor", selectedClips: [r.clipId] }); toast("Notes from the audio. Edit them like any MIDI take.", "success"); }
+      }
+    } },
+  { id: "bounceMidi", group: "MIDI", title: "Print MIDI to audio", keys: "Ctrl+Shift+B", when: hasProject,
+    run: async () => {
+      const clips = selectedClips().filter((c) => c.kind === "midi");
+      if (!clips.length) { toast("Select a MIDI clip to print it as audio"); return; }
+      for (const c of clips) {
+        const r = await act("clip.bounce", { id: c.id });
+        if (r?.clipId) { useStore.setState({ selectedClips: [r.clipId], editorClip: r.clipId, bottom: "editor" }); toast("Printed to audio. Comp and fade it like a vocal.", "success"); }
+      }
+    } },
+  { id: "captureMidi", group: "MIDI", title: "Capture MIDI you already played", keys: "Ctrl+Shift+L", when: hasProject,
+    run: async () => {
+      const t = selectedTrack();
+      const r = await act("midi.capture", { trackId: t?.kind === "instrument" ? t.id : undefined, seconds: 30 });
+      if (r?.clipId) { useStore.setState({ editorClip: r.clipId, bottom: "editor", selectedClips: [r.clipId] }); toast("Caught the notes you just played.", "success"); }
+    } },
+  { id: "toggleCue", group: "Track", title: "Cue this track for guests (click + cue, not the late mix)", when: hasProject,
+    run: () => { const t = selectedTrack(); if (t) act("track.setCue", { id: t.id, cue: !t.cue }); },
+    checked: () => !!selectedTrack()?.cue },
 
   { id: "addAudio", group: "Track", title: "New stereo audio track", keys: "Ctrl+T", run: () => addTrack("audio", {}, 2), when: hasProject },
   { id: "addAudioMono", group: "Track", title: "New mono audio track", run: () => addTrack("audio", {}, 1), when: hasProject },

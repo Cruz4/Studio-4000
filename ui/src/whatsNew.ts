@@ -8,6 +8,19 @@ export interface WhatsNewGroup {
 
 export const WHATS_NEW: WhatsNewGroup[] = [
   {
+    title: "Record and convert",
+    color: "#21e6a5",
+    items: [
+      "Audio to MIDI turns a hummed or sung clip into notes.",
+      "Print to audio plays MIDI through the instrument as a new clip.",
+      "Capture MIDI keeps notes you already played.",
+      "Loop + Record stacks MIDI takes the same way as a vocal.",
+      "Guests hear Click + cue: a local click, not the late full mix.",
+      "The C button on a track adds it to that cue.",
+      "The assistant edits the session. Smart Mix still works without a key.",
+    ],
+  },
+  {
     title: "Clips",
     color: "#ffc857",
     items: [

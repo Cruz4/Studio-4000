@@ -116,6 +116,8 @@ export interface Track {
   monitor?: "auto" | "on" | "off";
   /** The track's input is passing through its effects right now (monitor on, or armed with monitor auto). */
   live?: boolean;
+  /** Guest cue mix includes this track (with the click), not the late full mix. */
+  cue?: boolean;
   clips: Clip[];
 }
 

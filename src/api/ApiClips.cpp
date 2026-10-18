@@ -1,4 +1,6 @@
 #include "Api.h"
+#include "../Convert.h"
+#include "../LiveMidi.h"
 
 namespace s3
 {
@@ -468,6 +470,141 @@ void registerClipApi (AppEngine& app)
             n->setNoteNumber (juce::jlimit (0, 127, n->getNoteNumber() + shift), &app.edit().getUndoManager());
 
         return var (true);
+    });
+
+    rpc.add ("clip.toMidi", K::write,
+             "Turns a hummed or sung audio clip into MIDI notes on an instrument track (monophonic pitch)",
+             "{id, trackId?}", [&app] (const var& p)
+    {
+        auto& ac = audioClip (app, reqStr (p, "id"));
+        const auto pos = ac.getPosition();
+        const auto speed = ac.getSpeedRatio();
+        const auto fileStart = pos.getOffset().inSeconds() * speed;
+        auto notes = audioToMidiNotes (app.getEngine(), ac.getCurrentSourceFile(), fileStart,
+                                       pos.getLength().inSeconds() * speed, app.edit().tempoSequence,
+                                       pos.getStart().inSeconds());
+
+        if (notes.isEmpty())
+            throw RpcError ("Couldn't hear a clear pitch. Use a single voice or instrument, not a full mix.");
+
+        te::AudioTrack* dest = nullptr;
+
+        if (has (p, "trackId") && str (p, "trackId").isNotEmpty())
+        {
+            dest = &app.audioTrack (str (p, "trackId"));
+
+            if (getTrackKind (*dest) != TrackKind::instrument)
+                throw RpcError ("Audio-to-MIDI needs an instrument track");
+        }
+        else
+        {
+            dest = dynamic_cast<te::AudioTrack*> (createTrack (app, TrackKind::instrument, ac.getName() + " MIDI").get());
+
+            if (dest == nullptr)
+                throw RpcError ("Couldn't make an instrument track for the notes");
+        }
+
+        auto clip = dest->insertMIDIClip (ac.getName() + " MIDI", pos.time, nullptr);
+
+        if (clip == nullptr)
+            throw RpcError ("Couldn't create the MIDI clip");
+
+        applyConvertedNotes (*clip, notes);
+        return Obj().set ("clipId", clip->itemID.toString())
+                    .set ("trackId", dest->itemID.toString())
+                    .set ("notes", notesToVar (notes));
+    });
+
+    rpc.add ("clip.bounce", K::write,
+             "Prints a MIDI clip (or any clip on an instrument track) to a new audio clip: the synth, heard as audio",
+             "{id, trackId?}", [&app] (const var& p)
+    {
+        auto& c = app.clip (reqStr (p, "id"));
+        auto* srcTrack = dynamic_cast<te::AudioTrack*> (c.getTrack());
+
+        if (srcTrack == nullptr)
+            throw RpcError ("That clip isn't on a track that can be printed");
+
+        const auto range = c.getPosition().time;
+        auto wav = bounceTrackToWav (app, *srcTrack, range, c.getName() + " audio");
+        te::AudioTrack* dest = nullptr;
+
+        if (has (p, "trackId") && str (p, "trackId").isNotEmpty())
+        {
+            dest = &app.audioTrack (str (p, "trackId"));
+
+            if (getTrackKind (*dest) != TrackKind::audio)
+                throw RpcError ("Print-to-audio needs an audio track");
+        }
+        else
+        {
+            dest = dynamic_cast<te::AudioTrack*> (createTrack (app, TrackKind::audio, srcTrack->getName() + " audio", srcTrack).get());
+
+            if (dest == nullptr)
+                throw RpcError ("Couldn't make an audio track for the bounce");
+        }
+
+        te::AudioFile af (app.getEngine(), wav);
+
+        if (! af.isValid())
+            throw RpcError ("The printed audio couldn't be read");
+
+        te::ClipPosition pos { range };
+        auto clip = dest->insertWaveClip (wav.getFileNameWithoutExtension(), wav, pos, false);
+
+        if (clip == nullptr)
+            throw RpcError ("Couldn't drop the printed audio on the track");
+
+        return Obj().set ("clipId", clip->itemID.toString())
+                    .set ("trackId", dest->itemID.toString())
+                    .set ("file", wav.getFullPathName());
+    });
+
+    rpc.add ("midi.capture", K::write,
+             "Drops the last notes you played (even before Record) onto an instrument track, like catching a vocal you already sang",
+             "{trackId?, seconds?}", [&app] (const var& p)
+    {
+        auto& edit = app.edit();
+        te::AudioTrack* dest = nullptr;
+
+        if (has (p, "trackId") && str (p, "trackId").isNotEmpty())
+            dest = app.midi().trackFor (str (p, "trackId"));
+
+        if (dest == nullptr)
+            dest = app.midi().trackFor (app.midi().getFocusedTrack());
+
+        if (dest == nullptr)
+        {
+            for (auto* t : te::getAudioTracks (edit))
+                if (getTrackKind (*t) == TrackKind::instrument)
+                {
+                    dest = t;
+                    break;
+                }
+        }
+
+        if (dest == nullptr)
+            dest = dynamic_cast<te::AudioTrack*> (createTrack (app, TrackKind::instrument, "Captured MIDI").get());
+
+        if (dest == nullptr)
+            throw RpcError ("No instrument track to catch the notes");
+
+        const double window = juce::jlimit (1.0, 60.0, num (p, "seconds", 30.0));
+        double start = 0, end = 0;
+        auto notes = app.midi().captureNotes (window, edit.tempoSequence, start, end);
+
+        if (notes.isEmpty())
+            throw RpcError ("Nothing to catch. Play some notes, then capture again.");
+
+        auto clip = dest->insertMIDIClip ("Captured", { seconds (start), seconds (juce::jmax (start + 0.25, end)) }, nullptr);
+
+        if (clip == nullptr)
+            throw RpcError ("Couldn't create the MIDI clip");
+
+        applyConvertedNotes (*clip, notes);
+        return Obj().set ("clipId", clip->itemID.toString())
+                    .set ("trackId", dest->itemID.toString())
+                    .set ("notes", notesToVar (notes));
     });
 }
 }

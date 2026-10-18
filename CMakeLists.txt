@@ -44,6 +44,7 @@ target_sources(Studio4000 PRIVATE
     src/SuiteFx.cpp
     src/Instruments.cpp
     src/LiveMidi.cpp
+    src/Convert.cpp
     src/api/ApiProject.cpp
     src/api/ApiTransport.cpp
     src/api/ApiTracks.cpp

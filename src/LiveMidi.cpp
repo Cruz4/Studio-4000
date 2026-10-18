@@ -2,6 +2,8 @@
 #include "AppEngine.h"
 #include "ProjectState.h"
 
+#include <map>
+
 namespace s3
 {
 LiveMidi::LiveMidi (AppEngine& a) : app (a)
@@ -73,11 +75,136 @@ te::VirtualMidiInputDevice* LiveMidi::allMidiIns() const
     return nullptr;
 }
 
+void LiveMidi::remember (const juce::MidiMessage& m)
+{
+    if (! (m.isNoteOn() || m.isNoteOff() || m.isAllNotesOff()))
+        return;
+
+    Heard h;
+    h.message = m;
+    h.onTimeline = false;
+    h.time = juce::Time::getMillisecondCounterHiRes() * 0.001;
+
+    if (auto* edit = app.currentEdit())
+    {
+        auto& t = edit->getTransport();
+
+        if (t.isPlaying() || t.isRecording())
+        {
+            h.time = t.getPosition().inSeconds();
+            h.onTimeline = true;
+        }
+    }
+
+    heard.push_back (h);
+
+    const double oldest = h.time - keepSeconds;
+
+    while (! heard.empty() && heard.front().time < oldest)
+        heard.pop_front();
+}
+
+juce::Array<ConvertedNote> LiveMidi::captureNotes (double windowSeconds, te::TempoSequence& tempos, double& startOut, double& endOut)
+{
+    juce::Array<ConvertedNote> notes;
+    startOut = 0;
+    endOut = 0;
+
+    if (heard.empty())
+        return notes;
+
+    const Heard last = heard.back();
+    const double from = last.time - windowSeconds;
+    std::vector<Heard> slice;
+
+    for (auto& h : heard)
+        if (h.time >= from)
+            slice.push_back (h);
+
+    if (slice.empty())
+        return notes;
+
+    const bool onTimeline = last.onTimeline;
+    double origin = slice.front().time;
+
+    if (! onTimeline)
+    {
+        origin = slice.front().time;
+        const double playhead = app.currentEdit() != nullptr ? app.edit().getTransport().getPosition().inSeconds() : 0.0;
+        const double span = juce::jmax (0.25, last.time - origin);
+        origin = juce::jmax (0.0, playhead - span);
+    }
+    else
+        origin = slice.front().time;
+
+    startOut = onTimeline ? slice.front().time : origin;
+    endOut = startOut;
+
+    std::map<int, Heard> ons;
+
+    auto absTime = [&] (const Heard& h)
+    {
+        return onTimeline ? h.time : startOut + (h.time - slice.front().time);
+    };
+
+    auto beatOf = [&] (double seconds)
+    {
+        const double absBeat = tempos.toBeats (te::TimePosition::fromSeconds (juce::jmax (0.0, seconds))).inBeats();
+        const double originBeat = tempos.toBeats (te::TimePosition::fromSeconds (startOut)).inBeats();
+        return juce::jmax (0.0, absBeat - originBeat);
+    };
+
+    auto close = [&] (int pitch, const Heard& off)
+    {
+        auto it = ons.find (pitch);
+
+        if (it == ons.end())
+            return;
+
+        ConvertedNote n;
+        n.pitch = pitch;
+        n.beat = beatOf (absTime (it->second));
+        const double offBeat = beatOf (absTime (off));
+        n.length = juce::jmax (1.0 / 64.0, offBeat - n.beat);
+        n.velocity = juce::jlimit (1, 127, (int) it->second.message.getVelocity());
+        notes.add (n);
+        endOut = juce::jmax (endOut, absTime (off));
+        ons.erase (it);
+    };
+
+    for (auto& h : slice)
+    {
+        if (h.message.isNoteOn() && h.message.getVelocity() > 0)
+            ons[h.message.getNoteNumber()] = h;
+        else if (h.message.isNoteOff() || (h.message.isNoteOn() && h.message.getVelocity() == 0))
+            close (h.message.getNoteNumber(), h);
+        else if (h.message.isAllNotesOff())
+        {
+            const auto left = ons;
+            for (auto& [pitch, on] : left)
+            { juce::ignoreUnused (on); close (pitch, h); }
+        }
+    }
+
+    Heard tail = last;
+    tail.time = last.time + 0.15;
+
+    const auto leftover = ons;
+    for (auto& [pitch, on] : leftover)
+    { juce::ignoreUnused (on); close (pitch, tail); }
+
+    if (endOut <= startOut)
+        endOut = startOut + 0.5;
+
+    return notes;
+}
+
 String LiveMidi::play (const juce::MidiMessage& m, const String& trackId)
 {
     if (app.currentEdit() == nullptr)
         return {};
 
+    remember (m);
     app.edit().getTransport().ensureContextAllocated();
 
     if (anyArmedInstrumentTrack())
@@ -152,6 +279,13 @@ void LiveMidi::handleAsyncUpdate()
 {
     std::vector<juce::MidiMessage> messages;
     fifo.read (fifo.getNumReady()).forEach ([&] (int index) { messages.push_back (pending[(size_t) index]); });
+
+    for (auto& m : messages)
+    {
+        auto copy = m;
+        copy.setTimeStamp (0);
+        remember (copy);
+    }
 
     // Armed tracks already hear their input device directly.
     if (app.currentEdit() == nullptr || anyArmedInstrumentTrack())

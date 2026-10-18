@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { isNative, native } from "./bridge";
 import { showBrowser, toggleBottom } from "./commands";
 import { useCollab } from "./collab";
+import { startCueListen } from "./cueListen";
 import { useStore, type BottomTab, type BrowserTab } from "./store";
 import { cx } from "./util";
 import { About } from "./components/About";
@@ -136,8 +137,8 @@ function ContextTip() {
     if (!p.tracks.length) return "Ctrl+T adds a track, or drop audio files straight onto the timeline";
     if (p.tracks.some((t) => t.armed)) return `Armed. R records${p.countIn === "none" ? "; Shift+C adds a count-in" : ""}; L loops a range for multiple takes`;
     if (sel.length >= 2 && sel.every((c) => c.kind === "audio")) return "X crossfades overlapping clips · Ctrl+D duplicates · right-click for more";
-    if (sel.length === 1 && sel[0].kind === "audio") return "Drag the top corners to fade · Ctrl+Alt+drag slips the audio · S splits at the playhead";
-    if (sel.length === 1 && sel[0].kind === "midi") return "Double-click to edit notes · Q quantizes to 1/16";
+    if (sel.length === 1 && sel[0].kind === "audio") return "Audio to MIDI turns a hummed clip into notes. Drag the top corners to fade · S splits at the playhead";
+    if (sel.length === 1 && sel[0].kind === "midi") return "Print to audio turns this MIDI into a clip you can edit like a vocal. Loop + R stacks takes. Q quantizes.";
     if (track?.kind === "audio" && !track.clips.length) return "Shift+R arms this track, then R records. Right-click the header for instant vocal chains";
     if (track?.kind === "audio" && track.plugins.length === 0 && /vox|vocal|voice|lead/i.test(track.name)) return "Right-click the track header → Vocal chain for a finished vocal sound in one step";
     if (clips.length >= 3 && !p.master.plugins.length) return "Ctrl+M opens Smart Mix: level-match tracks and master to a loudness target";
@@ -183,6 +184,8 @@ export function App() {
     if (window.matchMedia("(max-width: 860px), (max-height: 520px) and (orientation: landscape)").matches)
       useStore.setState({ browserOpen: false });
   }, []);
+
+  useEffect(() => { startCueListen(); }, []);
 
   return (
     <>

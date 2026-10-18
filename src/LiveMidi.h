@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "Convert.h"
+#include <deque>
 
 namespace s3
 {
@@ -10,6 +12,8 @@ class AppEngine;
 
     Armed instrument tracks hear and record their input device as usual. When nothing is armed, notes are
     played into the selected instrument track so it can be auditioned without arming.
+
+    Every note is also kept for a short time so Capture MIDI can drop a take you already played.
 */
 class LiveMidi : private te::PhysicalMidiInputDevice::Listener,
                  private juce::ChangeListener,
@@ -28,6 +32,11 @@ public:
 
     void editChanged();
 
+    te::AudioTrack* trackFor (const String& trackId) const;
+
+    /** Notes from the last `windowSeconds` of playing, placed on the timeline. */
+    juce::Array<ConvertedNote> captureNotes (double windowSeconds, te::TempoSequence&, double& startOut, double& endOut);
+
 private:
     AppEngine& app;
     String focusedTrackId;
@@ -35,7 +44,16 @@ private:
     juce::AbstractFifo fifo { 512 };
     std::array<juce::MidiMessage, 512> pending;
 
-    te::AudioTrack* trackFor (const String& trackId) const;
+    struct Heard
+    {
+        juce::MidiMessage message;
+        double time = 0;          // transport seconds while playing, otherwise wall-clock seconds
+        bool onTimeline = false;
+    };
+    std::deque<Heard> heard;
+    static constexpr double keepSeconds = 45.0;
+
+    void remember (const juce::MidiMessage&);
     bool anyArmedInstrumentTrack() const;
     te::VirtualMidiInputDevice* allMidiIns() const;
 

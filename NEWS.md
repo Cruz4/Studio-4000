@@ -1,3 +1,5 @@
+The assistant edits the session, not just chats: it sees what you selected, can print MIDI to audio, turn a hummed clip into notes, and still runs Smart Mix if no model key is connected. Guests hear a click generated on their computer (Click + cue), not the late full mix. Mark tracks with C for that cue. MIDI records in takes like a vocal; Capture MIDI keeps notes you already played. Audio to MIDI and Print to audio go both ways.
+
 Hold IN or OUT and drag up or down. The fade follows your hand the whole way, from a rise that comes in almost at once to one that stays quiet until the end, and it stays on the shape you leave.
 
 IN and OUT sit under the clip name, after the L and at the right end, so the name stays whole. Drag a fade sideways to change its length, or up and down to make it steeper, straight, or lighter. The track name row shows pan as a knob with a C, L, or R readout.

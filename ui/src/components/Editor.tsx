@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { splitClipAt } from "../commands";
+import { runCommand, splitClipAt } from "../commands";
 import { audioEditorBindings, midiEditorBindings, type EditorMode } from "../gamepad/editorPad";
 import { useGamepadSurface } from "../gamepad/surfaces";
 import { noteOff, noteOn } from "../keys";
@@ -130,6 +130,7 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
       <div className="col grow" style={{ minWidth: 0, minHeight: 0, gap: 0 }}>
         <div className="row" style={{ padding: "6px 10px", gap: 6, borderBottom: "1px solid var(--line)" }}>
           <span className="small faint">Waveform</span>
+          <button className="btn sm" title="Turn this hummed or sung clip into MIDI notes" onClick={() => runCommand("toMidi")}>Audio to MIDI</button>
           <div className="grow" />
           <button className="btn sm ghost icon" title="Zoom out" onClick={() => setZoom((z) => clamp(z / 1.4, 1, 32))}><Icon name="zoomOut" size={13} /></button>
           <button className="btn sm ghost icon" title="Zoom in" onClick={() => setZoom((z) => clamp(z * 1.4, 1, 32))}><Icon name="zoomIn" size={13} /></button>
@@ -352,9 +353,13 @@ function PianoRoll({ clip, project }: { clip: Clip; project: Project }) {
         <select className="input sm" value={grid} onChange={(e) => setGrid(+e.target.value)}>
           {GRIDS.map((g) => <option key={g.l} value={g.v}>{g.l}</option>)}
         </select>
+        <button className="btn sm" title="Print this MIDI through the instrument as an audio clip" onClick={() => runCommand("bounceMidi")}>Print to audio</button>
         <button className="btn sm" title="Quantize note starts to the grid" onClick={() => act("midi.quantize", { clipId: clip.id, grid })}>Quantize</button>
         <button className="btn sm" title="Transpose down an octave" onClick={() => act("midi.transpose", { clipId: clip.id, semitones: -12 })}>−8va</button>
         <button className="btn sm" title="Transpose up an octave" onClick={() => act("midi.transpose", { clipId: clip.id, semitones: 12 })}>+8va</button>
+        {clip.takes && clip.takes.count > 1 && Array.from({ length: clip.takes.count }, (_, i) => (
+          <button key={i} className={cx("btn sm", clip.takes!.current === i && "on")} onClick={() => act("clip.set", { id: clip.id, take: i })}>Take {i + 1}</button>
+        ))}
         <button className="btn sm ghost icon" title="Zoom out" onClick={() => setPpb((p) => clamp(p / 1.3, 12, 400))}><Icon name="zoomOut" size={13} /></button>
         <button className="btn sm ghost icon" title="Zoom in" onClick={() => setPpb((p) => clamp(p * 1.3, 12, 400))}><Icon name="zoomIn" size={13} /></button>
         <button className="btn sm ghost" title="Fit the clip" onClick={() => {

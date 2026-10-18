@@ -75,7 +75,11 @@ On the EQ, the white line is the curve you are shaping. The filled colour is the
 
 **Ctrl+M** opens Smart Mix. It measures the session on this computer. Preview can gain-stage tracks, balance them by role, duck music under a voice, and master toward a loudness target. Apply is one undo step.
 
-The assistant (**Ctrl+J**) stays off until you connect a model under Settings → AI with a key from your own account. That key stays on this computer. Studio 4000 does not charge for the assistant. If a provider bills anyone, it is that account, and only after you connect one.
+The assistant (**Ctrl+J**) is an editor for the session: it can arm tracks, print MIDI to audio, turn a hummed clip into notes, and propose mix changes. Every edit is a plan you approve, and that plan is one undo step. Without a model key it still runs Smart Mix and the converters on this computer. Connect your own key under Settings → AI for a smarter editor. Studio 4000 does not charge for that key.
+
+MIDI records like a vocal: arm an instrument track, loop a range, and Record stacks takes you can cycle in the editor. **Capture MIDI** (Ctrl+Shift+L) keeps the last notes you played if you forgot to record. **Audio to MIDI** (Ctrl+Shift+M) turns a hummed or sung clip into notes. **Print to audio** (Ctrl+Shift+B) plays the instrument and drops a new audio clip.
+
+In a live session, guests should use **Click + cue**. The click is generated on their computer from your playhead, so it is not late. Mark tracks with **C** for the cue they should hear. The full mix over screen share arrives late — leave it muted while they record.
 
 Settings → Agent link can show a config block for an MCP client on this computer. The link listens on localhost and needs the token stored in your user profile.
 

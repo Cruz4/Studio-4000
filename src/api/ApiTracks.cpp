@@ -524,6 +524,15 @@ void registerTrackApi (AppEngine& app)
         return var (true);
     });
 
+    rpc.add ("track.setCue", K::write,
+             "Marks this track as part of the guest cue mix (click + these tracks, not the late full mix)",
+             "{id, cue}", [&app] (const var& p)
+    {
+        auto& t = app.audioTrack (reqStr (p, "id"));
+        t.state.setProperty ("s4cue", flag (p, "cue"), &app.edit().getUndoManager());
+        return var (true);
+    });
+
     rpc.add ("master.set", K::write, "Master fader", "{volumeDb?, pan?}", [&app] (const var& p)
     {
         if (auto vp = app.edit().getMasterVolumePlugin())

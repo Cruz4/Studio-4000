@@ -244,7 +244,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Clip editor",
     group: "Editing audio and MIDI",
     where: "Double-click a clip, the piano button in the top bar, or the E key",
-    how: "Audio opens for gain, fades, pitch, and takes. MIDI opens the piano roll. Drag notes, and use the arrows to nudge the notes you selected. Q quantizes selected MIDI to 1/16.",
+    how: "Audio opens for gain, fades, pitch, and takes. MIDI opens the piano roll. Drag notes, and use the arrows to nudge the notes you selected. Q quantizes selected MIDI to 1/16. Audio to MIDI (Ctrl+Shift+M) turns a hummed or sung clip into notes. Print to audio (Ctrl+Shift+B) turns MIDI into a clip you can fade and comp like a vocal.",
     also: ["editor", "piano roll", "waveform editor"],
   },
   {
@@ -258,8 +258,22 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "New MIDI clip",
     group: "Editing audio and MIDI",
     where: "Double-click an empty instrument lane, or right-click it",
-    how: "Choose New MIDI clip here. The clip opens in the piano roll. Add an instrument track first with Ctrl+Shift+T if you do not have one.",
-    also: ["midi clip", "piano clip"],
+    how: "Choose New MIDI clip here. The clip opens in the piano roll. Add an instrument track first with Ctrl+Shift+T if you do not have one. Loop + Record stacks MIDI takes the same way as a vocal. Capture MIDI (Ctrl+Shift+L) drops notes you already played, even if you forgot to hit Record.",
+    also: ["midi clip", "piano clip", "capture midi", "retrospective"],
+  },
+  {
+    title: "Audio to MIDI / Print to audio",
+    group: "Editing audio and MIDI",
+    where: "Right-click a clip, Clip menu, or the editor",
+    how: "Audio to MIDI reads a single hummed or sung take and writes notes onto an instrument track. It is monophonic — one pitch at a time, not a chord mix. Print to audio plays the instrument and drops a new audio clip, so you can fade, comp, and mix it like a vocal.",
+    also: ["midi to audio", "bounce", "print", "hum to midi"],
+  },
+  {
+    title: "Guest cue mix",
+    group: "Recording",
+    where: "The C button on a track, and Click + cue in a live session",
+    how: "Guests hear a click generated on their computer, locked to your playhead, so it is not late. Mark tracks with C for the cue they should follow. Full mix over screen share arrives late — leave Click + cue on while they record.",
+    also: ["latency", "click", "headphones", "cue"],
   },
   {
     title: "Automation",

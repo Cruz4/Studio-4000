@@ -23,7 +23,7 @@ function track(name: string, kind: Track["kind"], colour: string, clips: Clip[] 
   return {
     id: nid(), name, kind, colour, channels: 2, mute: false, solo: false, parent: null, automationMode: "read", automation: [],
     plugins: [], fxMix: 100, sends: [], volumeDb: 0, pan: 0, volumePluginId: nid(), output: "master", input: kind === "instrument" ? "MIDI Keyboard" : "Input 1 + 2",
-    armed: false, monitor: "auto", live: false, clips,
+    armed: false, monitor: "auto", live: false, cue: false, clips,
   };
 }
 
@@ -235,6 +235,28 @@ export function createMock(emit: Emit) {
     },
     "clip.addMidi": (p) => { const c: Clip = { id: nid(), name: "MIDI", kind: "midi", start: p.start, end: p.end, offset: 0, colour: "#00d1ff", muted: false, speed: 1, looping: false, notes: [] };
       findTrack(p.trackId)!.clips.push(c); changed(); return c.id; },
+    "clip.toMidi": (p) => {
+      const src = findClip(p.id)!;
+      let dest = p.trackId ? findTrack(p.trackId) : project!.tracks.find((t) => t.kind === "instrument");
+      if (!dest) { handlers["track.add"]({ kind: "instrument", name: `${src.name} MIDI` }); dest = project!.tracks[project!.tracks.length - 1]; }
+      const c: Clip = { id: nid(), name: `${src.name} MIDI`, kind: "midi", start: src.start, end: src.end, offset: 0, colour: "#00d1ff", muted: false, speed: 1, looping: false, notes: [[69, src.start, src.end - src.start, 100, 0, 1]] };
+      dest!.clips.push(c); changed(); return { clipId: c.id, trackId: dest!.id, notes: [[69, 0, 1, 100]] };
+    },
+    "clip.bounce": (p) => {
+      const src = findClip(p.id)!;
+      const host = project!.tracks.find((t) => t.clips.some((c) => c.id === p.id));
+      const dest = { ...track(`${host?.name ?? src.name} audio`, "audio", "#21e6a5"), clips: [] as Clip[] };
+      project!.tracks.push(dest);
+      const c = audioClip(src.name + " audio", src.start, src.end - src.start, dest.colour);
+      dest.clips.push(c); changed(); return { clipId: c.id, trackId: dest.id, file: c.file };
+    },
+    "midi.capture": (p) => {
+      let dest = p.trackId ? findTrack(p.trackId) : project!.tracks.find((t) => t.kind === "instrument");
+      if (!dest) { handlers["track.add"]({ kind: "instrument", name: "Captured MIDI" }); dest = project!.tracks[project!.tracks.length - 1]; }
+      const c: Clip = { id: nid(), name: "Captured", kind: "midi", start: 0, end: 2, offset: 0, colour: "#00d1ff", muted: false, speed: 1, looping: false, notes: [[64, 0, 1, 100, 0, 1]] };
+      dest!.clips.push(c); changed(); return { clipId: c.id, trackId: dest!.id, notes: [[64, 0, 1, 100]] };
+    },
+    "track.setCue": (p) => { findTrack(p.id)!.cue = !!p.cue; changed(); return true; },
     "midi.setNotes": (p) => { const c = findClip(p.clipId)!; const spb = 60 / project!.bpm;
       c.notes = p.notes.map((n: number[]) => [n[0], c.start + n[1] * spb, n[2] * spb, n[3] ?? 100, n[1], n[2]]); changed(); return true; },
     "plugins.list": () => ({ plugins: [

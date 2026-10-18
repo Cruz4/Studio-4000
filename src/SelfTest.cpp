@@ -802,6 +802,49 @@ bool SelfTest::runStep()
             check ("instrument track with MIDI notes", found);
 
             {
+                auto printed = call ("clip.bounce", Obj().set ("id", midi.toString()));
+                check ("MIDI prints to an audio clip", printed["clipId"].toString().isNotEmpty()
+                       && juce::File (printed["file"].toString()).existsAsFile(), printed["file"].toString());
+                ids["printedClip"] = printed["clipId"].toString();
+                ids["printedTrack"] = printed["trackId"].toString();
+            }
+
+            {
+                juce::AudioBuffer<float> a440 (1, 48000);
+                for (int i = 0; i < a440.getNumSamples(); ++i)
+                    a440.setSample (0, i, 0.35f * std::sin (2.0 * juce::MathConstants<double>::pi * 440.0 * i / 48000.0));
+                auto toneFile = workDir.getChildFile ("a440.wav");
+                if (auto* wav = app.getEngine().getAudioFileFormatManager().getWavFormat())
+                    if (auto out = toneFile.createOutputStream())
+                        if (auto w = std::unique_ptr<juce::AudioFormatWriter> (wav->createWriterFor (out.release(), 48000.0, 1, 16, {}, 0)))
+                            w->writeFromAudioSampleBuffer (a440, 0, a440.getNumSamples());
+                auto hum = call ("clip.importAudio", Obj().set ("trackId", ids["Lead Vocal"]).set ("file", toneFile.getFullPathName()).set ("start", 20.0));
+                auto toMidi = call ("clip.toMidi", Obj().set ("id", hum.toString()));
+                int pitch = -1;
+                if (auto* n = toMidi["notes"].getArray(); n != nullptr && ! n->isEmpty())
+                    pitch = (int) (*n)[0][0];
+                check ("audio turns into MIDI near A4", pitch >= 67 && pitch <= 71, "pitch " + String (pitch));
+            }
+
+            {
+                call ("midi.live", Obj().set ("note", 64).set ("velocity", 100).set ("trackId", ids["Synth"]));
+                call ("midi.live", Obj().set ("note", 64).set ("on", false).set ("trackId", ids["Synth"]));
+                auto caught = call ("midi.capture", Obj().set ("trackId", ids["Synth"]).set ("seconds", 10));
+                check ("capture MIDI keeps notes you already played", caught["clipId"].toString().isNotEmpty(),
+                       caught["clipId"].toString());
+            }
+
+            call ("track.setCue", Obj().set ("id", ids["Beat"]).set ("cue", true));
+            {
+                auto snapCue = app.rpc.invoke ("project.get", {}, "selftest");
+                bool cueOn = false;
+                for (auto& t : *snapCue["tracks"].getArray())
+                    if (t["id"].toString() == ids["Beat"])
+                        cueOn = (bool) t["cue"];
+                check ("a track can join the guest cue mix", cueOn);
+            }
+
+            {
                 auto played = call ("midi.live", Obj().set ("note", 60).set ("velocity", 100).set ("trackId", ids["Synth"]));
                 call ("midi.live", Obj().set ("note", 60).set ("on", false).set ("trackId", ids["Synth"]));
                 check ("live MIDI plays the chosen instrument track", played.toString() == ids["Synth"], played.toString());

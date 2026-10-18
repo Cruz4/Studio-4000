@@ -18,11 +18,13 @@ const useChat = create<Chat>(() => ({ messages: [], plan: null, status: null, ta
 let cancel = { cancelled: false };
 
 const QUICK = [
-  "What's wrong with my mix?",
+  "What's wrong with my mix, and fix the worst of it",
   "Make the lead vocal sit on top of the beat",
-  "Master this for Spotify",
+  "Turn the selected audio into MIDI",
+  "Print the selected MIDI to audio",
+  "Capture the MIDI I just played",
   "Set up a vocal chain on the selected track",
-  "Clean up this podcast: level the voices and duck the music",
+  "Master this for Spotify",
 ];
 
 const TAKE_OVER_PROMPT = "Take over the mix. Analyse the whole session, then propose a complete plan: gain staging, EQ and compression where it helps, reverb/delay sends for depth, balance, and mastering to -14 LUFS with a -1 dB ceiling. Explain each move briefly.";
@@ -58,6 +60,7 @@ export function Assistant() {
   const chat = useChat();
   const [cfg, setCfg] = useState<AiConfig | null>(null);
   const [ready, setReady] = useState(false);
+  const [hasModel, setHasModel] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [input, setInput] = useState("");
   const [showTools, setShowTools] = useState(false);
@@ -68,7 +71,8 @@ export function Assistant() {
     const conf = c ?? (await loadConfig());
     setCfg(conf);
     const k = await getKey(conf.provider);
-    setReady(!PROVIDERS[conf.provider].needsKey || !!k);
+    setReady(true);
+    setHasModel(!PROVIDERS[conf.provider].needsKey || !!k);
   };
   useEffect(() => { check(); }, []);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [chat.messages.length, chat.plan, chat.status]);
@@ -129,12 +133,14 @@ export function Assistant() {
   return (
     <>
       <div className="side-body">
-        {(!ready || showSetup) && <Setup cfg={cfg} onSaved={(c) => { setShowSetup(false); check(c); }} />}
+        {showSetup && <Setup cfg={cfg} onSaved={(c) => { setShowSetup(false); check(c); }} />}
         {ready && !chat.messages.length && (
           <div className="col" style={{ gap: 10 }}>
             <div className="card col" style={{ padding: 12, background: "linear-gradient(135deg, rgba(124,92,255,.15), rgba(0,209,255,.08))" }}>
-              <b><Icon name="bot" size={14} /> Your session assistant</b>
-              <span className="small dim">Ask about your mix, or let it take over. It can read the whole session and propose changes. You approve every edit, and each plan is one undo step.</span>
+              <b><Icon name="bot" size={14} /> Session editor</b>
+              <span className="small dim">{hasModel
+                ? "I can read the session, record setup, MIDI, and the mix. Every edit is a plan you approve — one undo step."
+                : "No model key yet. I still run Smart Mix, audio↔MIDI, and capture on this computer. Connect a key for a smarter editor."}</span>
               <button className="btn accent" disabled={!project} onClick={() => send(TAKE_OVER_PROMPT, true)}><Icon name="wand" size={14} /> Take over the mix</button>
             </div>
             <div className="section-title">Try</div>

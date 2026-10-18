@@ -10,9 +10,9 @@ import { Icon, ThemeToggle } from "./ui";
 const MENUS: { label: string; items: string[] }[] = [
   { label: "File", items: ["new", "open", "save", "saveAs", "-", "import", "export", "archive", "reveal", "-", "audioSetup", "scan", "settings", "-", "quit"] },
   { label: "Edit", items: ["undo", "redo", "history", "-", "cut", "copy", "paste", "split", "duplicate", "delete", "selectAll", "-", "crossfade", "normalize", "muteClip"] },
-  { label: "Track", items: ["addAudio", "addAudioMono", "addInst", "addGroup", "addGroupMono", "addBus", "-", "arm", "muteTrack", "soloTrack", "trackFx", "automation", "-", "vocalPop", "vocalWarm", "vocalPodcast"] },
-  { label: "Clip", items: ["newMidiClip", "split", "duplicate", "delete", "muteClip", "-", "normalize", "crossfade", "quantize", "-", "loopSel", "editor"] },
-  { label: "MIDI", items: ["typing", "keyboard", "octaveDown", "octaveUp", "panic", "-", "newMidiClip", "quantize", "-", "instruments"] },
+  { label: "Track", items: ["addAudio", "addAudioMono", "addInst", "addGroup", "addGroupMono", "addBus", "-", "arm", "toggleCue", "muteTrack", "soloTrack", "trackFx", "automation", "-", "vocalPop", "vocalWarm", "vocalPodcast"] },
+  { label: "Clip", items: ["newMidiClip", "split", "duplicate", "delete", "muteClip", "-", "normalize", "crossfade", "quantize", "toMidi", "bounceMidi", "-", "loopSel", "editor"] },
+  { label: "MIDI", items: ["typing", "keyboard", "octaveDown", "octaveUp", "panic", "-", "newMidiClip", "quantize", "captureMidi", "toMidi", "bounceMidi", "-", "instruments"] },
   { label: "Transport", items: ["play", "record", "stop", "home", "end", "prevBar", "nextBar", "-", "loop", "punch", "click", "countIn", "marker"] },
   { label: "View", items: ["mixerView", "browser", "mixer", "editor", "smart", "assistant", "collab", "-", "zoomIn", "zoomOut", "zoomFit", "fullscreen"] },
   { label: "Help", items: ["guide", "shortcuts", "controller", "palette", "-", "effects", "-", "checkUpdate", "whatsNew", "-", "report", "coffee"] },

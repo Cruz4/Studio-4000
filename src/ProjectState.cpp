@@ -739,7 +739,8 @@ var describeTrack (AppEngine& app, te::Track& t)
         if (auto own = at->state.getProperty ("s4monitor").toString(); own.isNotEmpty())
             monitor = own;
 
-        o.set ("input", inputName).set ("armed", armed).set ("monitor", monitor).set ("live", live);
+        o.set ("input", inputName).set ("armed", armed).set ("monitor", monitor).set ("live", live)
+         .set ("cue", (bool) at->state.getProperty ("s4cue"));
 
         juce::Array<var> clips;
 

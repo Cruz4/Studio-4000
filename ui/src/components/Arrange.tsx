@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { rpc } from "../bridge";
 import { reportHover, useCollab } from "../collab";
-import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
+import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, runCommand, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
 import { act, armLoopRange, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
@@ -456,11 +456,15 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
           { label: "Paste", icon: "copy", keys: "Ctrl+V", run: () => pasteClips(here, track.id) },
           { label: "Duplicate", icon: "copy", keys: "Ctrl+D", run: () => each("clip.duplicate", (id) => ({ id }), "Duplicate") },
           ...(clip.kind === "audio" ? [
+            { label: "Audio to MIDI", icon: "piano", keys: "Ctrl+Shift+M", run: () => runCommand("toMidi") },
             { label: "Crossfade overlaps", icon: "layers", keys: "X", run: crossfadeSelection },
             { label: "Normalize to −1 dB", icon: "wave", run: () => each("clip.normalize", (id) => ({ id, peakDb: -1 }), "Normalize") },
             { label: clip.reversed ? "Play forwards" : "Reverse", icon: "rewind", run: () => act("clip.set", { id: clip.id, reversed: !clip.reversed }) },
           ] : []),
-          ...(clip.kind === "midi" ? [{ label: "Quantize to 1/16", icon: "magnet", keys: "Q", run: () => each("midi.quantize", (id) => ({ clipId: id, grid: 0.25 }), "Quantize") }] : []),
+          ...(clip.kind === "midi" ? [
+            { label: "Print to audio", icon: "wave", keys: "Ctrl+Shift+B", run: () => runCommand("bounceMidi") },
+            { label: "Quantize to 1/16", icon: "magnet", keys: "Q", run: () => each("midi.quantize", (id) => ({ clipId: id, grid: 0.25 }), "Quantize") },
+          ] : []),
           { label: clip.muted ? "Unmute" : "Mute", icon: "power", keys: "Shift+M", run: () => each("clip.set", (id) => ({ id, muted: !clip.muted }), "Mute clips") },
           { colours: { value: clip.colour, run: (c) => each("clip.set", (id) => ({ id, colour: c }), "Clip colour") } },
           { separator: true },
@@ -644,6 +648,8 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
           {track.monitor === "off" ? "–" : track.monitor === "on" ? "I" : "A"}
         </button>
       )}
+      <button className={cx("toggle cue", track.cue && "on")} title={track.cue ? "In the guest cue mix (click + this track). Click to remove." : "Add to the guest cue mix. Guests hear click + cued tracks, not the late full mix."}
+        onClick={() => act("track.setCue", { id: track.id, cue: !track.cue })}>C</button>
       <button className={cx("toggle", autoOpen && "on")} title="Automation lane (A)" onClick={() => toggleAutomation(track)}><Icon name="automation" size={12} /></button>
     </>
   );

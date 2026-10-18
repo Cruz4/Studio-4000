@@ -61,6 +61,8 @@ namespace
             { "plugin.setSidechain", "Sidechain" }, { "clip.move", "Move clip" }, { "clip.delete", "Delete clip" },
             { "clip.split", "Split" }, { "clip.duplicate", "Duplicate" }, { "clip.trim", "Trim" }, { "clip.slip", "Slip" },
             { "clip.importAudio", "Import audio" }, { "clip.addMidi", "New MIDI clip" }, { "clip.normalize", "Normalize" },
+            { "clip.toMidi", "Audio to MIDI" }, { "clip.bounce", "Print to audio" }, { "midi.capture", "Capture MIDI" },
+            { "track.setCue", "Cue mix" },
             { "clip.setGainPoints", "Clip gain" }, { "clip.setPanPoints", "Clip pan" },
             { "master.set", "Master volume" }, { "send.add", "Add send" }, { "send.set", "Send level" }, { "send.remove", "Remove send" },
             { "marker.add", "Add marker" }, { "marker.set", "Edit marker" }, { "project.setTempo", "Tempo" },

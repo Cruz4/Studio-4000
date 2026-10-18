@@ -1,7 +1,7 @@
 import { askText } from "./components/Ask";
 import { openMenu, type MenuItem } from "./components/ContextMenu";
 import { rpc } from "./bridge";
-import { addMidiClip, addTrack, importAudio, vocalChain } from "./commands";
+import { addMidiClip, addTrack, importAudio, runCommand, vocalChain } from "./commands";
 import { act, useStore } from "./store";
 import type { Track } from "./types";
 
@@ -58,6 +58,8 @@ export function trackMenu(track: Track, chains: { name: string }[] = []): MenuIt
     ...(track.kind === "instrument" ? [{ label: "New MIDI clip at playhead", icon: "piano", run: () => addMidiClip(track.id) }] : []),
     { label: "Duplicate track", icon: "copy", run: () => act("track.duplicate", { id: track.id }) },
     { label: autoOpen ? "Hide automation" : "Show automation", icon: "automation", run: () => toggleAutomation(track) },
+    { label: track.cue ? "Remove from guest cue mix" : "Add to guest cue mix", icon: "headphones", run: () => act("track.setCue", { id: track.id, cue: !track.cue }) },
+    ...(track.kind === "instrument" ? [{ label: "Capture MIDI you already played", icon: "piano" as const, run: () => runCommand("captureMidi") }] : []),
     ...(track.kind === "audio" ? [
       { label: "Vocal chain: modern pop", icon: "wand", run: () => vocalChain(track.id, "pop") },
       { label: "Vocal chain: warm", icon: "wand", run: () => vocalChain(track.id, "warm") },
