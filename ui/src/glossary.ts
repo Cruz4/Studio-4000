@@ -125,14 +125,14 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Trim a clip",
     group: "Clips",
     where: "The left and right edges of a clip",
-    how: "Hover either edge and the pointer becomes the horizontal trim arrows, whichever tool is selected. Drag that edge to shorten or lengthen the clip. The audio stays put while the edge moves. The IN box sits under the name, just after the L. OUT sits at the same height on the right. Drag sideways to change the length, or up and down to make the fade steeper, straighter, or lighter. You can grab the fade line itself the same way.",
+    how: "Hover either edge and the pointer becomes the horizontal trim arrows, whichever tool is selected. Drag that edge to shorten or lengthen the clip. The audio stays put while the edge moves. The IN box sits under the name, just after the L. OUT sits at the same height on the right. Drag sideways to change the length. Drag up or down and the curve follows, from a steep rise to one that stays quiet much longer. You can grab the fade line itself the same way.",
     also: ["crop", "resize clip", "edge", "fade"],
   },
   {
     title: "Clip fades and crossfade",
     group: "Clips",
     where: "The IN and OUT boxes on an audio clip, or the X key",
-    how: "IN sits under the clip name, just after the L. OUT sits at that same height on the right, so neither covers the name. Drag sideways to change how long the fade is. Drag up or down, or grab the fade line, to bend it: up is steeper, the middle is straight, and down stays quieter for longer. The same boxes are on the clip in the Editor. Drag one audio clip over another on the same track and they crossfade across the overlap. Right-click a clip and choose Crossfade overlaps, or press X, to do the same to the clips you have selected.",
+    how: "IN sits under the clip name, just after the L. OUT sits at that same height on the right, so neither covers the name. Drag sideways to change how long the fade is. Drag up or down, or grab the fade line, and the curve follows your hand the whole way: up gets steeper, the middle stays straight, and down stays quiet much longer. It stays on the shape you leave it. The same boxes are on the clip in the Editor. Drag one audio clip over another on the same track and they crossfade across the overlap. Right-click a clip and choose Crossfade overlaps, or press X, to do the same to the clips you have selected.",
     also: ["fade in", "fade out", "crossfade"],
   },
   {

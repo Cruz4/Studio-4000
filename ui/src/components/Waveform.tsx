@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Clip } from "../types";
-import { cachedPeaks, clipGainDbAt, fadeGain, loadPeaks, type Peaks } from "../util";
+import { cachedPeaks, clipGainDbAt, fadeSample, loadPeaks, type Peaks } from "../util";
 
 /** Per-channel min/max when the file is stereo. Older mixed pairs still draw as one shape. A mono track draws the left channel only. */
 function peakLayout(peaks: Peaks, mono = false) {
@@ -86,8 +86,8 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
           if (u > hi) hi = u;
         }
         let env = Math.pow(10, clipGainDbAt(envelope, px / pxPerSec) / 20);
-        if (fadeIn > 0 && px < fadeIn) env *= fadeGain(clip.fadeInType, px / fadeIn);
-        if (fadeOut > 0 && px > width - fadeOut) env *= fadeGain(clip.fadeOutType, (width - px) / fadeOut);
+        if (fadeIn > 0 && px < fadeIn) env *= fadeSample(px / fadeIn, clip.fadeInBend, clip.fadeInType);
+        if (fadeOut > 0 && px > width - fadeOut) env *= fadeSample((width - px) / fadeOut, clip.fadeOutBend, clip.fadeOutType);
         const y0 = mid - hi * scale * env, y1 = mid - lo * scale * env;
         g.rect(x, y0, 1, Math.max(1, y1 - y0));
       }
@@ -100,7 +100,7 @@ export function Waveform({ clip, pxPerSec, colour, viewLeft, viewWidth, clipLeft
         g.fillText(ch === 0 ? "L" : "R", 4, top + 10);
       }
     }
-  }, [peaks, drawW, visStart, pxPerSec, clip.offset, clip.speed, clip.gainDb, clip.gainPoints, clip.reversed, clip.fadeIn, clip.fadeOut, clip.fadeInType, clip.fadeOutType, clip.sourceLength, width, colour, mono]);
+  }, [peaks, drawW, visStart, pxPerSec, clip.offset, clip.speed, clip.gainDb, clip.gainPoints, clip.reversed, clip.fadeIn, clip.fadeOut, clip.fadeInType, clip.fadeOutType, clip.fadeInBend, clip.fadeOutBend, clip.sourceLength, width, colour, mono]);
 
   if (!clip.file) return null;
   return <canvas ref={ref} style={{ left: visStart, width: drawW }} />;

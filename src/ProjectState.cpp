@@ -111,6 +111,22 @@ var describePlugin (te::Plugin& p, int maxParams)
 namespace
 {
     const juce::Identifier clipGainTag { "s3clipGain" };
+    const juce::Identifier fadeShapeTag { "s4000FadeShape" };
+    const juce::Identifier fadeInBendId { "s4000FadeInBend" };
+    const juce::Identifier fadeOutBendId { "s4000FadeOutBend" };
+    const juce::Identifier fadeInLenId { "s4000FadeIn" };
+    const juce::Identifier fadeOutLenId { "s4000FadeOut" };
+
+    double rememberedFade (te::AudioClipBase& ac, bool fadeIn)
+    {
+        const double native = (fadeIn ? ac.getFadeIn() : ac.getFadeOut()).inSeconds();
+
+        if (native > 0.0005)
+            return native;
+
+        const auto& id = fadeIn ? fadeInLenId : fadeOutLenId;
+        return ac.state.hasProperty (id) ? (double) ac.state[id] : 0.0;
+    }
 
     te::VolumeAndPanPlugin* clipGainPlugin (te::AudioClipBase& ac, bool create)
     {
@@ -235,6 +251,141 @@ namespace
 
         return out;
     }
+
+    te::VolumeAndPanPlugin* fadeShapePlugin (te::AudioClipBase& ac, bool create)
+    {
+        auto* list = ac.getPluginList();
+
+        if (list == nullptr)
+            return nullptr;
+
+        for (auto* plugin : list->getPlugins())
+            if (auto* vol = dynamic_cast<te::VolumeAndPanPlugin*> (plugin))
+                if (vol->state[fadeShapeTag])
+                    return vol;
+
+        if (! create)
+            return nullptr;
+
+        auto created = list->insertPlugin (te::VolumeAndPanPlugin::create(), 0);
+        auto* vol = dynamic_cast<te::VolumeAndPanPlugin*> (created.get());
+
+        if (vol == nullptr)
+            return nullptr;
+
+        vol->state.setProperty (fadeShapeTag, true, ac.getUndoManager());
+        vol->setVolumeDb (0.0f);
+        return vol;
+    }
+
+    void clearFadeShape (te::AudioClipBase& ac)
+    {
+        auto* vol = fadeShapePlugin (ac, false);
+
+        if (vol == nullptr)
+            return;
+
+        if (auto* curves = ac.getAutomationCurveList (false))
+            if (vol->volParam != nullptr)
+            {
+                const te::AutomatableParameterID want { vol->itemID, vol->volParam->paramID };
+
+                for (int i = (int) curves->getItems().size(); --i >= 0;)
+                    if (auto item = curves->getItems()[(size_t) i])
+                        if (item->getDestID() == want)
+                            curves->removeCurve (i);
+            }
+
+        vol->deleteFromParent();
+    }
+
+    float bendExponent (float bend)
+    {
+        return std::pow (10.0f, juce::jlimit (-1.0f, 1.0f, bend) * 0.95f);
+    }
+
+    void writeFadeShape (te::AudioClipBase& ac, double fadeIn, double fadeOut, bool freeIn, bool freeOut)
+    {
+        const double length = ac.getPosition().getLength().inSeconds();
+
+        if (length < 0.01)
+        {
+            clearFadeShape (ac);
+            return;
+        }
+
+        fadeIn = juce::jlimit (0.0, length, fadeIn);
+        fadeOut = juce::jlimit (0.0, length, fadeOut);
+
+        auto* vol = fadeShapePlugin (ac, true);
+        auto* curve = vol != nullptr && vol->volParam != nullptr ? clipParamCurve (ac, *vol, *vol->volParam, true) : nullptr;
+
+        if (vol == nullptr || curve == nullptr || vol->volParam == nullptr)
+            return;
+
+        const float inBend = freeIn ? juce::jlimit (-1.0f, 1.0f, (float) (double) ac.state[fadeInBendId]) : 0.0f;
+        const float outBend = freeOut ? juce::jlimit (-1.0f, 1.0f, (float) (double) ac.state[fadeOutBendId]) : 0.0f;
+        const float inExp = bendExponent (inBend);
+        const float outExp = bendExponent (outBend);
+
+        const auto gainAt = [&] (double local)
+        {
+            float gain = 1.0f;
+
+            if (freeIn && fadeIn > 0.0005 && local < fadeIn)
+                gain *= std::pow (juce::jlimit (0.0f, 1.0f, (float) (local / fadeIn)), inExp);
+
+            if (freeOut && fadeOut > 0.0005 && local > length - fadeOut)
+                gain *= std::pow (juce::jlimit (0.0f, 1.0f, (float) ((length - local) / fadeOut)), outExp);
+
+            return gain;
+        };
+
+        struct Sample { double time = 0; float gain = 1; };
+        juce::Array<Sample> samples;
+
+        const auto push = [&] (double time, float gain)
+        {
+            time = juce::jlimit (0.0, length, time);
+
+            if (samples.size() > 0 && std::abs (samples.getLast().time - time) < 0.0004)
+                samples.getReference (samples.size() - 1).gain = gain;
+            else
+                samples.add ({ time, gain });
+        };
+
+        const auto span = [&] (double a, double b)
+        {
+            constexpr int n = 24;
+
+            for (int i = 0; i <= n; ++i)
+            {
+                const double time = a + (b - a) * ((double) i / n);
+                push (time, gainAt (time));
+            }
+        };
+
+        if (freeIn && fadeIn > 0.0005) span (0.0, fadeIn);
+        else                            push (0.0, 1.0f);
+
+        if (freeOut && fadeOut > 0.0005) span (juce::jmax (0.0, length - fadeOut), length);
+        else                             push (length, 1.0f);
+
+        auto* um = ac.getUndoManager();
+        curve->clear (um);
+
+        const double clipStart = ac.getPosition().getStart().inSeconds();
+        const double content = ac.getContentStartBeat().inBeats();
+        auto& ts = ac.edit.tempoSequence;
+
+        for (const auto& sample : samples)
+        {
+            const float db = sample.gain <= 0.0001f ? -100.0f : juce::jlimit (-100.0f, 0.0f, 20.0f * std::log10 (sample.gain));
+            const float fader = vol->volParam->valueRange.snapToLegalValue (te::decibelsToVolumeFaderPosition (db));
+            const double beats = ts.toBeats (te::TimePosition::fromSeconds (clipStart + sample.time)).inBeats() - content;
+            curve->addPoint (te::BeatPosition::fromBeats (juce::jmax (0.0, beats)), fader, 0.0f, um);
+        }
+    }
 }
 
 void setClipGainPoints (te::AudioClipBase& ac, const juce::Array<juce::var>& points)
@@ -328,6 +479,50 @@ void setClipPanPoints (te::AudioClipBase& ac, const juce::Array<juce::var>& poin
     }
 }
 
+void syncClipFadeShape (te::AudioClipBase& ac)
+{
+    auto* um = ac.getUndoManager();
+    const bool freeIn = ac.state.hasProperty (fadeInBendId);
+    const bool freeOut = ac.state.hasProperty (fadeOutBendId);
+
+    const auto capture = [&] (bool fadeIn)
+    {
+        const bool free = fadeIn ? freeIn : freeOut;
+        const auto& lenId = fadeIn ? fadeInLenId : fadeOutLenId;
+        const double native = (fadeIn ? ac.getFadeIn() : ac.getFadeOut()).inSeconds();
+        double len = native > 0.0005 ? native : (ac.state.hasProperty (lenId) ? (double) ac.state[lenId] : 0.0);
+        len = juce::jmax (0.0, len);
+
+        if (free)
+        {
+            ac.state.setProperty (lenId, len, um);
+
+            if (native > 0.0005)
+            {
+                if (fadeIn) ac.setFadeIn ({});
+                else        ac.setFadeOut ({});
+            }
+        }
+        else if (ac.state.hasProperty (lenId))
+        {
+            if (fadeIn) ac.setFadeIn (duration (len));
+            else        ac.setFadeOut (duration (len));
+
+            ac.state.removeProperty (lenId, um);
+        }
+
+        return len;
+    };
+
+    const double inLen = capture (true);
+    const double outLen = capture (false);
+
+    if ((freeIn && inLen > 0.0005) || (freeOut && outLen > 0.0005))
+        writeFadeShape (ac, inLen, outLen, freeIn, freeOut);
+    else
+        clearFadeShape (ac);
+}
+
 var describeClip (te::Clip& c)
 {
     auto& edit = c.edit;
@@ -367,11 +562,18 @@ var describeClip (te::Clip& c)
          .set ("gainPoints", clipGainPointVars (*ac))
          .set ("panPoints", clipPanPointVars (*ac))
          .set ("pan", ac->getPan())
-         .set ("fadeIn", ac->getFadeIn().inSeconds())
-         .set ("fadeOut", ac->getFadeOut().inSeconds())
+         .set ("fadeIn", rememberedFade (*ac, true))
+         .set ("fadeOut", rememberedFade (*ac, false))
          .set ("fadeInType", fadeTypeName (ac->getFadeInType()))
-         .set ("fadeOutType", fadeTypeName (ac->getFadeOutType()))
-         .set ("pitch", ac->getPitchChange())
+         .set ("fadeOutType", fadeTypeName (ac->getFadeOutType()));
+
+        if (ac->state.hasProperty (fadeInBendId))
+            o.set ("fadeInBend", (double) ac->state[fadeInBendId]);
+
+        if (ac->state.hasProperty (fadeOutBendId))
+            o.set ("fadeOutBend", (double) ac->state[fadeOutBendId]);
+
+        o.set ("pitch", ac->getPitchChange())
          .set ("reversed", ac->getIsReversed())
          .set ("autoTempo", ac->getAutoTempo());
 

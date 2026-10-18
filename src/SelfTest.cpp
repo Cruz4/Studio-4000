@@ -504,6 +504,16 @@ bool SelfTest::runStep()
             auto right = call ("clip.split", Obj().set ("id", ids["musicClip"]).set ("time", 6.0));
             check ("clip split", right.toString().isNotEmpty());
             call ("clip.set", Obj().set ("id", ids["musicClip"]).set ("fadeIn", 0.5).set ("gainDb", -2.0));
+            call ("clip.set", Obj().set ("id", ids["musicClip"]).set ("fadeInBend", -0.75));
+
+            if (auto* faded = dynamic_cast<te::AudioClipBase*> (&app.clip (ids["musicClip"])))
+            {
+                auto described = describeClip (*faded);
+                check ("a fade curve can bend without losing its length",
+                       std::abs (faded->getFadeIn().inSeconds()) < 0.001
+                       && std::abs ((double) described["fadeIn"] - 0.5) < 0.02
+                       && std::abs ((double) described["fadeInBend"] + 0.75) < 0.02);
+            }
             auto dup = call ("clip.duplicate", Obj().set ("id", right.toString()));
             check ("clip duplicated", dup.toString().isNotEmpty());
             call ("clip.delete", Obj().set ("id", dup.toString()));

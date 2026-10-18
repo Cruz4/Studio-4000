@@ -9,7 +9,7 @@ import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleA
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
-import { bendOfFade, clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fadeInPaths, fadeOfBend, fadeOutPaths, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
+import { bendOfFade, clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fadeInPaths, fadeOutPaths, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
 import { askText } from "./Ask";
 import { ClipGain } from "./ClipGain";
 import { ClipPan, panText } from "./ClipPan";
@@ -404,16 +404,15 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   };
   const offsetDelta = offset - clip.offset;
   const gainSource = liveGain ?? clip.gainPoints;
-  const inBend = affected && preview?.mode === "fi" ? (preview.fadeBend ?? 0) : bendOfFade(clip.fadeInType);
-  const outBend = affected && preview?.mode === "fo" ? (preview.fadeBend ?? 0) : bendOfFade(clip.fadeOutType);
+  const inBend = affected && preview?.mode === "fi" ? preview.fadeBend : clip.fadeInBend;
+  const outBend = affected && preview?.mode === "fo" ? preview.fadeBend : clip.fadeOutBend;
   const drawClip = {
     ...clip, start, end, offset, fadeIn, fadeOut, gainDb,
-    fadeInType: affected && preview?.mode === "fi" ? fadeOfBend(inBend) : clip.fadeInType,
-    fadeOutType: affected && preview?.mode === "fo" ? fadeOfBend(outBend) : clip.fadeOutType,
+    fadeInBend: inBend, fadeOutBend: outBend,
     gainPoints: gainSource?.map(([t, db]) => [t - offsetDelta, db] as [number, number]),
   };
-  const inFade = fadeInPaths((fadeIn / Math.max(0.001, end - start)) * 100, inBend);
-  const outFade = fadeOutPaths((1 - fadeOut / Math.max(0.001, end - start)) * 100, outBend);
+  const inFade = fadeInPaths((fadeIn / Math.max(0.001, end - start)) * 100, inBend, clip.fadeInType);
+  const outFade = fadeOutPaths((1 - fadeOut / Math.max(0.001, end - start)) * 100, outBend, clip.fadeOutType);
   const notes = clip.notes ?? [];
   const pitches = notes.map((n) => n[0]);
   const lo = Math.min(...pitches, 60) - 2, hi = Math.max(...pitches, 72) + 2;
@@ -555,8 +554,8 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
       <div className="edge l" title="Trim the start" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "l"); }} />
       <div className="edge r" title="Trim the end" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "r"); }} />
       {clip.kind === "audio" && <>
-        <div className="fade-h in" title="Fade in. Drag right to change the length. Drag up or down to make it steeper, straighter, or lighter." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }}>IN</div>
-        <div className="fade-h out" title="Fade out. Drag left to change the length. Drag up or down to make it steeper, straighter, or lighter." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }}>OUT</div>
+        <div className="fade-h in" title="Fade in. Drag right to change the length. Drag up or down and the curve follows: up is steeper, down stays quieter longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }}>IN</div>
+        <div className="fade-h out" title="Fade out. Drag left to change the length. Drag up or down and the curve follows: up is steeper, down stays quieter longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }}>OUT</div>
       </>}
     </div>
   );
@@ -1097,7 +1096,7 @@ export function Arrange() {
         }
       }
       const fadeBend = mode === "fi" || mode === "fo"
-        ? clamp(bendOfFade(mode === "fi" ? clip.fadeInType : clip.fadeOutType) - _dy / 70, -1, 1)
+        ? clamp((mode === "fi" ? (clip.fadeInBend ?? bendOfFade(clip.fadeInType)) : (clip.fadeOutBend ?? bendOfFade(clip.fadeOutType))) - _dy / 46, -1, 1)
         : undefined;
       last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.altKey, fadeBend };
       setPreview(last);
@@ -1122,8 +1121,8 @@ export function Arrange() {
           else calls.push({ method: "clip.move", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
         } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: edge.start } });
         else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: edge.end } });
-        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: edge.fadeIn, fadeInType: fadeOfBend(last.fadeBend ?? bendOfFade(c.fadeInType)) } });
-        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut, fadeOutType: fadeOfBend(last.fadeBend ?? bendOfFade(c.fadeOutType)) } });
+        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: edge.fadeIn, fadeInBend: last.fadeBend ?? c.fadeInBend ?? bendOfFade(c.fadeInType) } });
+        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut, fadeOutBend: last.fadeBend ?? c.fadeOutBend ?? bendOfFade(c.fadeOutType) } });
         else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: edge.offset } });
       }
       if (!last.copy && (last.mode === "move" || last.mode === "l" || last.mode === "r")) {

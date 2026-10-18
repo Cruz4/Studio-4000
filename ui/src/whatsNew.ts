@@ -14,7 +14,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
       "Double-click any clip and the Editor opens.",
       "Hover either end and the pointer becomes trim arrows.",
       "IN sits under the name, after the L. OUT lines up on the right.",
-      "Drag a fade sideways for length. Up is steeper, down is lighter.",
+      "Hold IN or OUT and the fade follows your drag, from steep to quiet.",
       "Clips that overlap crossfade.",
       "A yellow gain line and a blue pan line, on the clip and in the Editor.",
       "The track name row has a pan knob. Double-click it for center.",

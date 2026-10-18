@@ -286,7 +286,7 @@ void registerClipApi (AppEngine& app)
     });
 
     rpc.add ("clip.set", K::write, "Changes clip properties",
-             "{id, name?, colour?, muted?, gainDb?, pan?, fadeIn?, fadeOut?, fadeInType?, fadeOutType?, pitch?, reversed?, autoTempo?, take?}",
+             "{id, name?, colour?, muted?, gainDb?, pan?, fadeIn?, fadeOut?, fadeInType?, fadeOutType?, fadeInBend?, fadeOutBend?, pitch?, reversed?, autoTempo?, take?}",
              [&app] (const var& p)
     {
         auto& c = app.clip (reqStr (p, "id"));
@@ -302,8 +302,13 @@ void registerClipApi (AppEngine& app)
             if (has (p, "pan"))         ac->setPan (juce::jlimit (-1.0f, 1.0f, (float) num (p, "pan")));
             if (has (p, "fadeIn"))      ac->setFadeIn (duration (num (p, "fadeIn")));
             if (has (p, "fadeOut"))     ac->setFadeOut (duration (num (p, "fadeOut")));
-            if (has (p, "fadeInType"))  ac->setFadeInType (fadeType (str (p, "fadeInType")));
-            if (has (p, "fadeOutType")) ac->setFadeOutType (fadeType (str (p, "fadeOutType")));
+            if (has (p, "fadeInBend"))  ac->state.setProperty ("s4000FadeInBend", juce::jlimit (-1.0, 1.0, num (p, "fadeInBend")), ac->getUndoManager());
+            if (has (p, "fadeOutBend")) ac->state.setProperty ("s4000FadeOutBend", juce::jlimit (-1.0, 1.0, num (p, "fadeOutBend")), ac->getUndoManager());
+            if (has (p, "fadeInType"))  { ac->state.removeProperty ("s4000FadeInBend", ac->getUndoManager()); ac->setFadeInType (fadeType (str (p, "fadeInType"))); }
+            if (has (p, "fadeOutType")) { ac->state.removeProperty ("s4000FadeOutBend", ac->getUndoManager()); ac->setFadeOutType (fadeType (str (p, "fadeOutType"))); }
+
+            if (has (p, "fadeIn") || has (p, "fadeOut") || has (p, "fadeInBend") || has (p, "fadeOutBend") || has (p, "fadeInType") || has (p, "fadeOutType"))
+                syncClipFadeShape (*ac);
             if (has (p, "reversed"))    ac->setIsReversed (flag (p, "reversed"));
 
             if (has (p, "pitch"))

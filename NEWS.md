@@ -1,3 +1,5 @@
+Hold IN or OUT and drag up or down. The fade follows your hand the whole way, from a rise that comes in almost at once to one that stays quiet until the end, and it stays on the shape you leave.
+
 IN and OUT sit under the clip name, after the L and at the right end, so the name stays whole. Drag a fade sideways to change its length, or up and down to make it steeper, straight, or lighter. The track name row shows pan as a knob with a C, L, or R readout.
 
 The start page on a phone can be tapped and scrolled. The session types, How things work, Join, audio setup, and Recent are all on that page. Desktop mode is unchanged.

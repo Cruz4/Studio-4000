@@ -155,36 +155,49 @@ export function bendOfFade(type?: string) {
   return 0;
 }
 
-export function fadeOfBend(bend: number): "linear" | "convex" | "concave" {
-  if (bend <= -0.34) return "convex";
-  if (bend >= 0.34) return "concave";
-  return "linear";
-}
-
-/** Gain along a fade. 0 is silence at the start of a fade-in, 1 is full. */
-export function fadeGain(type: string | undefined, alpha: number) {
+/** Gain along a fade. 0 is silence at the edge, 1 is full.
+ *  A bend follows the drag continuously: −1 rises almost at once, 1 stays quiet until the end.
+ *  With no bend, the named preset is used. */
+export function fadeSample(alpha: number, bend?: number, type?: string) {
   const a = Math.max(0, Math.min(1, alpha));
+  if (typeof bend === "number") {
+    const exponent = Math.pow(10, Math.max(-1, Math.min(1, bend)) * 0.95);
+    return Math.pow(a, exponent);
+  }
   if (type === "convex") return Math.sin(a * Math.PI / 2);
   if (type === "concave") return 1 - Math.cos(a * Math.PI / 2);
   if (type === "scurve") return (1 - a) * (1 - Math.cos(a * Math.PI / 2)) + a * Math.sin(a * Math.PI / 2);
   return a;
 }
 
-function fadeY(bend: number) {
-  return 50 + Math.max(-1, Math.min(1, bend)) * 42;
+function fadeLine(points: string[]) {
+  return `M${points.join(" L")}`;
+}
+
+function sampleFade(x0: number, x1: number, risingFromLeft: boolean, bend?: number, type?: string) {
+  const steps = 32;
+  const points: string[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    const x = x0 + (x1 - x0) * u;
+    const along = risingFromLeft ? u : 1 - u;
+    const y = 100 * (1 - fadeSample(along, bend, type));
+    points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  }
+  return points;
 }
 
 /** Shade and the curve you can grab, in a 0–100 box. y 0 is full level, y 100 is silence. */
-export function fadeInPaths(endPercent: number, bend: number) {
+export function fadeInPaths(endPercent: number, bend?: number, type?: string) {
   const x = Math.max(0.8, Math.min(100, endPercent));
-  const y = fadeY(bend);
-  return { shade: `M0,0 L0,100 Q${x * 0.5},${y} ${x},0 Z`, edge: `M0,100 Q${x * 0.5},${y} ${x},0` };
+  const points = sampleFade(0, x, true, bend, type);
+  return { shade: `M0,0 L${points.join(" L")} Z`, edge: fadeLine(points) };
 }
 
-export function fadeOutPaths(startPercent: number, bend: number) {
+export function fadeOutPaths(startPercent: number, bend?: number, type?: string) {
   const x = Math.max(0, Math.min(99.2, startPercent));
-  const y = fadeY(bend);
-  return { shade: `M100,0 L100,100 Q${(x + 100) / 2},${y} ${x},0 Z`, edge: `M${x},0 Q${(x + 100) / 2},${y} 100,100` };
+  const points = sampleFade(x, 100, false, bend, type);
+  return { shade: `M100,0 L${points.join(" L")} Z`, edge: fadeLine(points) };
 }
 
 /** Overlapping audio clips crossfade across the overlap when a drag changes that overlap. */

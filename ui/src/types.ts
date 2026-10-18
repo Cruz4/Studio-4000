@@ -61,6 +61,9 @@ export interface Clip {
   /** linear, convex (steep), concave (stays quiet longer), or scurve. */
   fadeInType?: string;
   fadeOutType?: string;
+  /** −1 rises almost at once, 0 is straight, 1 stays quiet until the end. */
+  fadeInBend?: number;
+  fadeOutBend?: number;
   pitch?: number;
   reversed?: boolean;
   autoTempo?: boolean;

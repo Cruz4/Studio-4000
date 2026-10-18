@@ -203,7 +203,14 @@ export function createMock(emit: Emit) {
     "clip.duplicate": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => x.clips.includes(c))!; const len = c.end - c.start;
       const at = p.start ?? c.end;
       const d = { ...structuredClone(c), id: nid(), start: at, end: at + len, notes: c.notes?.map((n): Note => [n[0], n[1] + at - c.start, n[2], n[3], n[4], n[5]]) }; tr.clips.push(d); changed(); return d.id; },
-    "clip.set": (p) => { Object.assign(findClip(p.id)!, { ...p, id: p.id }); changed(); return true; },
+    "clip.set": (p) => {
+      const clip = findClip(p.id)!;
+      Object.assign(clip, { ...p, id: p.id });
+      if ("fadeInType" in p) delete clip.fadeInBend;
+      if ("fadeOutType" in p) delete clip.fadeOutBend;
+      changed();
+      return true;
+    },
     "clip.setGainPoints": (p) => {
       const c = findClip(p.id);
       if (!c || c.kind !== "audio") return false;
