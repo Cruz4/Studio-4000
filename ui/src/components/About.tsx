@@ -15,9 +15,9 @@ export function About() {
   const label = versionLabel(info);
   return (
     <Modal
-      title="What's new"
+      title={<span className="whats-title">What's new</span>}
       onClose={closeNotes}
-      width={860}
+      width={560}
       footer={(
         <div className="whats-foot">
           <span className="pill whats-ver">{label || "v0.1.0"}</span>
@@ -25,21 +25,15 @@ export function About() {
         </div>
       )}
     >
-      <div className="whats-grid">
-        {[["Sessions", "Help"], ["Effects"], ["Arrange", "Look", "Phone"]].map((titles) => (
-          <div key={titles.join()} className="whats-col">
-            {titles.map((title) => {
-              const group = WHATS_NEW.find((g) => g.title === title)!;
-              return (
-                <section key={group.title} className="whats-card" style={{ ["--accent" as string]: group.color }}>
-                  <span className="whats-tag">{group.title}</span>
-                  <ul>
-                    {group.items.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
+      <div className="whats">
+        <p className="whats-lead">Trim from any edge. Fade when clips overlap. Pan on the clip and the track.</p>
+        {WHATS_NEW.map((group) => (
+          <section key={group.title} className="whats-row" style={{ ["--accent" as string]: group.color }}>
+            <h4>{group.title}</h4>
+            <ul>
+              {group.items.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
         ))}
       </div>
     </Modal>

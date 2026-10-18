@@ -8,60 +8,63 @@ export interface WhatsNewGroup {
 
 export const WHATS_NEW: WhatsNewGroup[] = [
   {
-    title: "Sessions",
-    color: "#00d1ff",
+    title: "Clips",
+    color: "#ffc857",
     items: [
-      "People button hosts. One code.",
-      "Paste the code. Join from any network.",
-      "End closes it. Leave goes back to join.",
+      "Double-click any clip and the Editor opens.",
+      "Hover either end and the pointer becomes trim arrows.",
+      "IN and OUT boxes fade the clip, here and in the Editor.",
+      "Clips that overlap crossfade. Drag the boxes to reshape it.",
+      "A yellow gain line and a blue pan line, on the clip and in the Editor.",
+      "The track name row has a pan bar. Double-click for center.",
+      "Snap on: a clip catches the next clip's start or end, and any marker.",
+      "Ctrl locks the time on a vertical drag. Alt-drag drops a copy.",
+      "Drag either end of the purple bar to change the loop.",
+      "Delete clears that bar if you moved it last. Right-click it too.",
+    ],
+  },
+  {
+    title: "Tracks",
+    color: "#7ee7ff",
+    items: [
+      "A new audio track or bus can be stereo or mono.",
+      "Track effects and clip effects each have their own dry/wet.",
+      "Drag the bottom-left of a clip to change its volume.",
+    ],
+  },
+  {
+    title: "Export",
+    color: "#c4b5ff",
+    items: [
+      "Export asks where to save, then writes the file.",
+      "Choose WAV, MP3, or MP3 and WAV together.",
+    ],
+  },
+  {
+    title: "Sessions",
+    color: "#ff8ab8",
+    items: [
+      "People hosts a session and hands you one code.",
+      "Paste the code to join from any network.",
+      "End closes it for everyone. Leave returns to join.",
     ],
   },
   {
     title: "Effects",
-    color: "#21e6a5",
+    color: "#3ee0a0",
     items: [
-      "Few knobs, the full editor, or a window.",
-      "Green power light on the card and the window.",
-      "Each knob keeps its color in every view.",
-      "Select several to copy, paste, delete, or reorder.",
-      "Drag a name onto a track to copy it.",
-      "Save a chain. Load it on a track or a clip.",
-      "Clip effects sit beside the track chain.",
-    ],
-  },
-  {
-    title: "Arrange",
-    color: "#ffc857",
-    items: [
-      "Gain line: click, drag, double-click to remove.",
-      "Ruler clock. Marks follow your zoom.",
-      "MIDI notes stay in the clip while it moves.",
-      "Dragged clips match the track height.",
-      "New clips have no automatic fade.",
-      "Old 5 ms edge fades clear on open.",
-    ],
-  },
-  {
-    title: "Look",
-    color: "#a08bff",
-    items: [
-      "Darker silver, with near-black section lines.",
-      "Level bars match dark, in a color that shows.",
-    ],
-  },
-  {
-    title: "Help",
-    color: "#ff6b9a",
-    items: [
-      "Search How Studio 4000 works.",
+      "Parametric EQ shows the live spectrum while audio plays.",
+      "Classic EQ is Tracktion's 4-band. It draws the curve.",
+      "Few knobs, the full editor, or its own window.",
+      "Save a chain and load it on a track or a clip.",
     ],
   },
   {
     title: "Phone",
-    color: "#4dd4ff",
+    color: "#9ad7ff",
     items: [
-      "The site fits a phone. Nothing is clipped off the edge.",
-      "Menus, transport, tracks, mixer, and effects stay in reach.",
+      "The public page fits a phone, with every control in reach.",
+      "The start page scrolls, and the cards take a tap.",
       "Sound and recording still need the Windows app.",
     ],
   },

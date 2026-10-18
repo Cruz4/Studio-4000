@@ -6,6 +6,8 @@ import { noteOff, noteOn } from "../keys";
 import { act, onTick, useStore } from "../store";
 import type { Clip, Project, Track } from "../types";
 import { clamp, cx, formatDb, noteName, secondsPerBeat } from "../util";
+import { ClipGain } from "./ClipGain";
+import { ClipPan } from "./ClipPan";
 import { openMenu } from "./ContextMenu";
 import { Icon, startDrag } from "./ui";
 import { Waveform } from "./Waveform";
@@ -42,13 +44,15 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const [w, setW] = useState(600);
   const [zoom, setZoom] = useState(1);
   const [scroll, setScroll] = useState(0);
+  const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
+  const [liveFade, setLiveFade] = useState<{ fadeIn: number; fadeOut: number } | null>(null);
   useGamepadSurface({
     id: "editor-audio",
     region: "editor",
     active: () => true,
     bindings: () => audioEditorBindings(clip),
   });
-  useEffect(() => { setZoom(1); setScroll(0); }, [clip.id]);
+  useEffect(() => { setZoom(1); setScroll(0); setLiveGain(null); setLiveFade(null); }, [clip.id]);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(() => scroller.current && setW(scroller.current.clientWidth));
     if (scroller.current) ro.observe(scroller.current);
@@ -148,7 +152,37 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
               ]);
             }}>
             <div className="clip-label">{clip.name} · gain {formatDb(clip.gainDb ?? 0)} dB</div>
-            <Waveform clip={clip} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={scroll} viewWidth={w} clipLeft={0} />
+            <Waveform clip={{ ...clip, gainPoints: (liveGain ?? clip.gainPoints) }} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={scroll} viewWidth={w} clipLeft={0} />
+            <ClipGain id={clip.id} points={clip.gainPoints} duration={len} offsetDelta={0} onDraft={setLiveGain} />
+            <ClipPan id={clip.id} points={clip.panPoints} duration={len} offsetDelta={0} onDraft={() => {}} />
+            <svg className="fades" preserveAspectRatio="none" viewBox="0 0 100 100">
+              {(liveFade?.fadeIn ?? clip.fadeIn ?? 0) > 0 && <path d={`M0,0 L0,100 Q${((liveFade?.fadeIn ?? clip.fadeIn ?? 0) / len) * 50},10 ${((liveFade?.fadeIn ?? clip.fadeIn ?? 0) / len) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
+              {(liveFade?.fadeOut ?? clip.fadeOut ?? 0) > 0 && <path d={`M100,0 L100,100 Q${100 - ((liveFade?.fadeOut ?? clip.fadeOut ?? 0) / len) * 50},10 ${100 - ((liveFade?.fadeOut ?? clip.fadeOut ?? 0) / len) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
+            </svg>
+            <div className="fade-h in" title="Fade in. Drag right to make it longer."
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                const startIn = clip.fadeIn ?? 0;
+                const startOut = clip.fadeOut ?? 0;
+                let next = startIn;
+                startDrag(e, (dx) => {
+                  next = clamp(startIn + dx / pps, 0, len);
+                  setLiveFade({ fadeIn: next, fadeOut: startOut });
+                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeIn: next }); });
+              }}>IN</div>
+            <div className="fade-h out" title="Fade out. Drag left to make it longer."
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                const startIn = clip.fadeIn ?? 0;
+                const startOut = clip.fadeOut ?? 0;
+                let next = startOut;
+                startDrag(e, (dx) => {
+                  next = clamp(startOut - dx / pps, 0, len);
+                  setLiveFade({ fadeIn: startIn, fadeOut: next });
+                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeOut: next }); });
+              }}>OUT</div>
             <div ref={playhead} className="playhead" />
           </div>
         </div>

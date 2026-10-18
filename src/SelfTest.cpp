@@ -467,6 +467,40 @@ bool SelfTest::runStep()
 
         case 2:
         {
+            juce::Array<var> panPts;
+            panPts.add (juce::Array<var> { 0.25, -0.5 });
+            panPts.add (juce::Array<var> { 1.5, 0.75 });
+            call ("clip.setPanPoints", Obj().set ("id", ids["musicClip"]).set ("points", panPts));
+            juce::Array<var> gainPts;
+            gainPts.add (juce::Array<var> { 0.0, -6.0 });
+            call ("clip.setGainPoints", Obj().set ("id", ids["musicClip"]).set ("points", gainPts));
+            call ("clip.setGainPoints", Obj().set ("id", ids["musicClip"]).set ("points", juce::Array<var>()));
+
+            double firstPan = 99;
+            int panCount = -1, gainCount = -1;
+            auto panned = call ("project.get");
+
+            if (auto* tracks = panned["tracks"].getArray())
+                for (auto& t : *tracks)
+                    if (auto* clips = t["clips"].getArray())
+                        for (auto& c : *clips)
+                            if (c["id"].toString() == ids["musicClip"])
+                            {
+                                if (auto* pts = c["panPoints"].getArray())
+                                {
+                                    panCount = pts->size();
+                                    if (panCount > 0)
+                                        firstPan = (double) pts->getReference (0)[1];
+                                }
+
+                                if (auto* pts = c["gainPoints"].getArray())
+                                    gainCount = pts->size();
+                            }
+
+            check ("a clip can draw a pan line", panCount == 2 && std::abs (firstPan + 0.5) < 0.02, String (panCount) + " " + String (firstPan));
+            check ("clearing clip gain keeps the pan line", gainCount == 0 && panCount == 2);
+            call ("clip.setPanPoints", Obj().set ("id", ids["musicClip"]).set ("points", juce::Array<var>()));
+
             auto right = call ("clip.split", Obj().set ("id", ids["musicClip"]).set ("time", 6.0));
             check ("clip split", right.toString().isNotEmpty());
             call ("clip.set", Obj().set ("id", ids["musicClip"]).set ("fadeIn", 0.5).set ("gainDb", -2.0));
@@ -798,6 +832,10 @@ bool SelfTest::runStep()
                     check ("volume automation written", t["automation"].getArray() != nullptr && t["automation"].getArray()->size() == 1);
 
             call ("marker.add", Obj().set ("time", 4.8).set ("name", "Chorus"));
+            call ("transport.setLoop", Obj().set ("start", 0.0).set ("end", 4.8).set ("enabled", true));
+            call ("transport.setLoop", Obj().set ("start", 0.0).set ("end", 0.0));
+            snap = app.rpc.invoke ("project.get", {}, "selftest");
+            check ("clearing the loop removes the range", (double) snap["loop"][1] - (double) snap["loop"][0] < 0.05 && ! (bool) snap["looping"]);
             call ("transport.setLoop", Obj().set ("start", 0.0).set ("end", 4.8).set ("enabled", true));
             call ("transport.setClick", Obj().set ("enabled", true));
             call ("track.arm", Obj().set ("id", ids["Lead Vocal"]).set ("armed", true));

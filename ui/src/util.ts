@@ -107,6 +107,83 @@ export function snap(t: number, grid: Grid, p: Project | null, bypass = false) {
   return Math.max(0, Math.round(t / g) * g);
 }
 
+/** How close a drag has to pass a grid line or a clip edge before it catches, in seconds. */
+function snapReach(grid: Grid, p: Project | null, pxPerSec: number) {
+  const g = gridSeconds(grid, p);
+  return Math.max(g > 0 ? g * 0.45 : 0, 8 / Math.max(1, pxPerSec));
+}
+
+/**
+ * Snaps one edge to the grid, and to other clips' starts and ends when the pointer passes them.
+ * Snap off, or Alt, leaves the time where it is.
+ */
+export function snapEdge(t: number, grid: Grid, p: Project | null, edges: number[], bypass = false, pxPerSec = 80) {
+  const raw = Math.max(0, t);
+  if (bypass || grid === "off" || !p) return raw;
+  const reach = snapReach(grid, p, pxPerSec);
+  let best = snap(raw, grid, p);
+  let dist = Math.abs(best - raw);
+  for (const edge of edges) {
+    const d = Math.abs(edge - raw);
+    if (d <= reach && d < dist) { dist = d; best = Math.max(0, edge); }
+  }
+  return best;
+}
+
+/** Snaps a whole clip so its start or its end lands on the grid or on another clip. Returns the snapped start. */
+export function snapSpan(start: number, length: number, grid: Grid, p: Project | null, edges: number[], bypass = false, pxPerSec = 80) {
+  const raw = Math.max(0, start);
+  if (bypass || grid === "off" || !p) return raw;
+  const reach = snapReach(grid, p, pxPerSec);
+  const end = raw + Math.max(0, length);
+  let best = snap(raw, grid, p);
+  let dist = Math.abs(best - raw);
+  const take = (aligned: number, delta: number) => {
+    if (delta <= reach && delta < dist) { dist = delta; best = Math.max(0, aligned); }
+  };
+  for (const edge of edges) {
+    take(edge, Math.abs(edge - raw));
+    take(edge - length, Math.abs(edge - end));
+  }
+  return best;
+}
+
+/** Overlapping audio clips crossfade across the overlap when a drag changes that overlap. */
+export function crossfadeOverlaps(
+  clips: { id: string; start: number; end: number; fadeIn: number; fadeOut: number; prevStart: number; prevEnd: number }[],
+  touched: Set<string>,
+) {
+  const sorted = [...clips].sort((a, b) => a.start - b.start || a.end - b.end);
+  const out = new Map<string, { fadeIn: number; fadeOut: number }>();
+  const overlapOf = (end: number, start: number) => end - start;
+  for (let i = 0; i < sorted.length; i++) {
+    const clip = sorted[i];
+    let fadeIn = clip.fadeIn;
+    let fadeOut = clip.fadeOut;
+    let changed = false;
+    const room = Math.max(0.02, clip.end - clip.start);
+    const apply = (overlap: number, before: number, otherId: string, which: "in" | "out") => {
+      if (overlap <= 0.008) return;
+      if (!touched.has(clip.id) && !touched.has(otherId)) return;
+      if (Math.abs(overlap - before) <= 0.01) return;
+      const fade = Math.min(overlap, room);
+      if (which === "in") fadeIn = fade;
+      else fadeOut = fade;
+      changed = true;
+    };
+    if (i > 0) {
+      const prev = sorted[i - 1];
+      apply(overlapOf(prev.end, clip.start), overlapOf(prev.prevEnd, clip.prevStart), prev.id, "in");
+    }
+    if (i + 1 < sorted.length) {
+      const next = sorted[i + 1];
+      apply(overlapOf(clip.end, next.start), overlapOf(clip.prevEnd, next.prevStart), next.id, "out");
+    }
+    if (changed) out.set(clip.id, { fadeIn, fadeOut });
+  }
+  return out;
+}
+
 /** Top of the fader. Equal decibel steps travel the same distance above and below 0. */
 export const FADER_MAX_DB = 15;
 const FADER_FLOOR_DB = -60;

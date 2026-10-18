@@ -4,14 +4,15 @@ import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
-import { act, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
+import { act, armLoopRange, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
 import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleAutomation } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
-import { clamp, cx, dbToFader, faderToDb, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap } from "../util";
+import { clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
 import { askText } from "./Ask";
 import { ClipGain } from "./ClipGain";
+import { ClipPan, panText } from "./ClipPan";
 import { openMenu, type MenuItem } from "./ContextMenu";
 import { FxToggle, InsertSlot, SynthSlot } from "./Mixer";
 import { FX_COPY } from "../pluginReorder";
@@ -123,7 +124,7 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
           const a = t;
           let b = t;
           startDrag(e, (_dx, _dy, ev) => { b = snap(timeAt(ev.clientX, el), grid, project, ev.altKey); setLoopPreview([Math.min(a, b), Math.max(a, b)]); },
-            () => { setLoopPreview(null); if (Math.abs(b - a) > 0.05) act("transport.setLoop", { start: Math.min(a, b), end: Math.max(a, b), enabled: true }); });
+            () => { setLoopPreview(null); if (Math.abs(b - a) > 0.05) { armLoopRange(); act("transport.setLoop", { start: Math.min(a, b), end: Math.max(a, b), enabled: true }); } });
         } else {
           act("transport.setPosition", { time: t });
           startDrag(e, (_dx, _dy, ev) => act("transport.setPosition", { time: snap(timeAt(ev.clientX, el), grid, project, ev.altKey) }));
@@ -154,17 +155,50 @@ function LoopBar({ project, pps, viewLeft, grid }: { project: Project; pps: numb
   setLoopPreview = setPreview;
   const [s, e] = preview ?? project.loop;
   if (e - s <= 0.01) return null;
+  const edges = () => clipEdges(project, []);
+  const resize = (ev: React.PointerEvent, side: "l" | "r") => {
+    ev.stopPropagation();
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    armLoopRange();
+    let ns = s;
+    let ne = e;
+    startDrag(ev, (dx, _dy, pe) => {
+      const at = snapEdge((side === "l" ? s : e) + dx / pps, grid, project, edges(), pe.altKey, pps);
+      if (side === "l") ns = clamp(at, 0, e - 0.05);
+      else ne = Math.max(at, s + 0.05);
+      setPreview([ns, ne]);
+    }, () => {
+      setPreview(null);
+      if (ns !== s || ne !== e) act("transport.setLoop", { start: ns, end: ne });
+    });
+  };
   return (
     <div className={cx("loop-bar", project.looping && "on")} style={{ left: s * pps - viewLeft, width: (e - s) * pps }}
-      title="Loop range. Drag to move, double-click to toggle, drag the empty strip to draw a new range"
+      title="Loop range. Drag to move. Drag either end to change the length. Double-click to turn looping on or off"
       onDoubleClick={() => act("transport.setLooping", { enabled: !project.looping })}
+      onContextMenu={(ev) => {
+        ev.stopPropagation();
+        armLoopRange();
+        openMenu(ev, [
+          { label: project.looping ? "Turn looping off" : "Turn looping on", run: () => act("transport.setLooping", { enabled: !project.looping }) },
+          { label: "Clear range", icon: "trash", danger: true, keys: "Del", run: () => { void act("transport.setLoop", { start: 0, end: 0, enabled: false }); } },
+        ]);
+      }}
       onPointerDown={(ev) => {
         ev.stopPropagation();
+        if (ev.button !== 0) return;
+        armLoopRange();
         const len = e - s;
         let ns = s;
-        startDrag(ev, (dx, _dy, pe) => { ns = snap(s + dx / pps, grid, project, pe.altKey); setPreview([ns, ns + len]); },
-          () => { setPreview(null); if (ns !== s) act("transport.setLoop", { start: ns, end: ns + len }); });
-      }} />
+        startDrag(ev, (dx, _dy, pe) => {
+          ns = snapSpan(s + dx / pps, len, grid, project, edges(), pe.altKey, pps);
+          setPreview([ns, ns + len]);
+        }, () => { setPreview(null); if (ns !== s) act("transport.setLoop", { start: ns, end: ns + len }); });
+      }}>
+      <i className="loop-edge l" title="Drag to change the start" onPointerDown={(ev) => resize(ev, "l")} />
+      <i className="loop-edge r" title="Drag to change the end" onPointerDown={(ev) => resize(ev, "r")} />
+    </div>
   );
 }
 
@@ -195,6 +229,91 @@ function shownClip(clip: Clip, preview: DragPreview | null, settled: SettledClip
   const held = settled?.find((item) => item.id === clip.id);
   if (held) return held;
   return { start, end, fadeIn, fadeOut, offset };
+}
+
+/** Audio clips as the drag is showing them, with the positions they had before the drag. */
+function placedAudio(project: Project, preview: DragPreview | null) {
+  const out: { id: string; trackId: string; start: number; end: number; fadeIn: number; fadeOut: number; prevStart: number; prevEnd: number }[] = [];
+  project.tracks.forEach((track, index) => {
+    for (const clip of track.clips) {
+      if (clip.kind !== "audio") continue;
+      const shown = shownClip(clip, preview, null);
+      let trackId = track.id;
+      if (preview && !preview.copy && preview.mode === "move" && preview.ids.includes(clip.id) && preview.trackDelta) {
+        const dest = project.tracks[index + preview.trackDelta];
+        if (dest?.kind === "audio") trackId = dest.id;
+      }
+      out.push({
+        id: clip.id, trackId, start: shown.start, end: shown.end,
+        fadeIn: clip.fadeIn ?? 0, fadeOut: clip.fadeOut ?? 0,
+        prevStart: clip.start, prevEnd: clip.end,
+      });
+    }
+  });
+  return out;
+}
+
+function overlapFades(project: Project, preview: DragPreview) {
+  const byTrack = new Map<string, ReturnType<typeof placedAudio>>();
+  for (const item of placedAudio(project, preview)) {
+    const list = byTrack.get(item.trackId) ?? [];
+    list.push(item);
+    byTrack.set(item.trackId, list);
+  }
+  const fades = new Map<string, { fadeIn: number; fadeOut: number }>();
+  for (const list of byTrack.values())
+    for (const [id, fade] of crossfadeOverlaps(list, new Set(preview.ids))) fades.set(id, fade);
+  return fades;
+}
+
+function clipEdges(project: Project, exclude: string[]) {
+  const edges: number[] = [];
+  for (const track of project.tracks)
+    for (const clip of track.clips)
+      if (!exclude.includes(clip.id)) { edges.push(clip.start); edges.push(clip.end); }
+  for (const marker of project.markers) edges.push(marker.time);
+  return edges;
+}
+
+let lastClipPointer: { id: string; t: number } | null = null;
+let pendingClipClick: { id: string; timer: number; run: () => void } | null = null;
+
+function openClipInEditor(clip: Clip) {
+  const owner = useStore.getState().project?.tracks.find((track) => track.clips.some((item) => item.id === clip.id));
+  if (owner) selectTrack(owner.id);
+  useStore.setState({ editorClip: clip.id, bottom: "editor", selectedClips: [clip.id], selectedPlugin: null });
+}
+
+/** The second press on a clip opens the Editor. A single press can wait, so Erase and Split do not fire first. */
+function wantsEditor(clip: Clip) {
+  const now = performance.now();
+  const again = lastClipPointer?.id === clip.id && now - lastClipPointer.t < 450;
+  lastClipPointer = { id: clip.id, t: now };
+  if (!again) return false;
+  if (pendingClipClick) {
+    window.clearTimeout(pendingClipClick.timer);
+    pendingClipClick = null;
+  }
+  openClipInEditor(clip);
+  return true;
+}
+
+function deferClipClick(clip: Clip, run: () => void) {
+  if (pendingClipClick) {
+    window.clearTimeout(pendingClipClick.timer);
+    const previous = pendingClipClick;
+    pendingClipClick = null;
+    previous.run();
+  }
+  pendingClipClick = {
+    id: clip.id,
+    run,
+    timer: window.setTimeout(() => {
+      const waiting = pendingClipClick?.run;
+      pendingClipClick = null;
+      waiting?.();
+    }, 420),
+  };
 }
 
 const GAIN_MIN = -60;
@@ -260,7 +379,13 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
   const gainDb = useClipGain(clip.id, clip.gainDb ?? 0);
   const shown = shownClip(clip, preview, settled);
-  const { start, end, fadeIn, fadeOut, offset } = shown;
+  const { start, end, fadeIn: storedFadeIn, fadeOut: storedFadeOut, offset } = shown;
+  let fadeIn = storedFadeIn, fadeOut = storedFadeOut;
+  if (clip.kind === "audio" && preview && !preview.copy && (preview.mode === "move" || preview.mode === "l" || preview.mode === "r")) {
+    const project = useStore.getState().project;
+    const fade = project ? overlapFades(project, preview).get(clip.id) : undefined;
+    if (fade) { fadeIn = fade.fadeIn; fadeOut = fade.fadeOut; }
+  }
   const affected = preview != null && preview.ids.includes(clip.id);
   const colour = clip.colour || track.colour;
   const left = start * pps, width = Math.max(2, (end - start) * pps);
@@ -289,20 +414,24 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
     <div className={cx("clip", selected && "selected", clip.muted && "muted")} style={style} data-clip={clip.id} data-track-index={trackIndex}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        if (wantsEditor(clip)) { e.stopPropagation(); return; }
         const selectOnly = () => { selectTrack(track.id); useStore.setState({ selectedClips: [clip.id], selectedPlugin: null }); };
-        if (tool === "erase") { e.stopPropagation(); selectOnly(); act("clip.delete", { id: clip.id }); return; }
+        if (tool === "erase") {
+          e.stopPropagation();
+          deferClipClick(clip, () => { selectOnly(); act("clip.delete", { id: clip.id }); });
+          return;
+        }
         if (tool === "split") {
           e.stopPropagation();
-          selectOnly();
           const t = snap(timeAt(e.clientX), useStore.getState().grid, useStore.getState().project!, e.altKey);
-          splitClipAt(clip.id, t);
+          deferClipClick(clip, () => { selectOnly(); splitClipAt(clip.id, t); });
           return;
         }
         if (tool === "slip") { onDown(e, clip, "slip"); return; }
         if (tool === "time") { e.stopPropagation(); selectOnly(); onTime(e); return; }
         onDown(e, clip, "move");
       }}
-      onDoubleClick={() => { if (tool === "move") useStore.setState({ editorClip: clip.id, bottom: "editor", selectedClips: [clip.id], selectedPlugin: null }); }}
+      onDoubleClick={(e) => { e.stopPropagation(); e.preventDefault(); openClipInEditor(clip); }}
       onContextMenu={(e) => {
         const st = useStore.getState();
         if (!st.selectedClips.includes(clip.id)) { selectTrack(track.id); useStore.setState({ selectedClips: [clip.id], selectedPlugin: null }); }
@@ -332,7 +461,7 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
         ]);
       }}>
       <div className="clip-label" style={{ background: shade(colour, 0.5) }} title="Drag to move"
-        onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); onDown(e, clip, "move"); }}>{clip.name}</div>
+        onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "move"); }}>{clip.name}</div>
       {clip.takes && clip.takes.count > 1 && (
         <span className="takes" title="Takes recorded in a loop. Click to cycle; open the editor to comp"
           onPointerDown={(e) => e.stopPropagation()}
@@ -345,6 +474,9 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
       )}
       {clip.kind === "audio" && (
         <ClipGain id={clip.id} points={clip.gainPoints} duration={end - start} offsetDelta={offsetDelta} onDraft={setLiveGain} />
+      )}
+      {clip.kind === "audio" && (
+        <ClipPan id={clip.id} points={clip.panPoints} duration={end - start} offsetDelta={offsetDelta} onDraft={() => {}} />
       )}
       {clip.kind === "audio" && (
         <div className={cx("clip-gain", gainDrag?.base.has(clip.id) && "active")}
@@ -408,13 +540,11 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
           {fadeOut > 0 && <path d={`M100,0 L100,100 Q${100 - (fadeOut / (end - start)) * 50},10 ${100 - (fadeOut / (end - start)) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
         </svg>
       )}
-      {tool === "move" && <>
-        <div className="edge l" onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "l"); }} />
-        <div className="edge r" onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "r"); }} />
-        {clip.kind === "audio" && <>
-          <div className="fade-h" title="Fade in" style={{ left: Math.max(6, fadeIn * pps) }} onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }} />
-          <div className="fade-h" title="Fade out" style={{ left: Math.min(width - 6, width - fadeOut * pps) }} onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }} />
-        </>}
+      <div className="edge l" title="Trim the start" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "l"); }} />
+      <div className="edge r" title="Trim the end" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "r"); }} />
+      {clip.kind === "audio" && <>
+        <div className="fade-h in" title="Fade in. Drag right to make it longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }}>IN</div>
+        <div className="fade-h out" title="Fade out. Drag left to make it longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }}>OUT</div>
       </>}
     </div>
   );
@@ -481,7 +611,9 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
   const autoOpen = useStore((s) => !!s.automationOpen[track.id]);
   const recordable = track.kind === "audio" || track.kind === "instrument";
   const [vol, setVol] = useState<number | null>(null);
+  const [pan, setPan] = useState<number | null>(null);
   const db = vol ?? track.volumeDb ?? 0;
+  const panValue = pan ?? track.pan ?? 0;
 
   const tight = height < 88;
   const compact = height < 148;
@@ -533,7 +665,12 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
         {!tight && track.kind === "return" && <span className="kind">FX</span>}
         {!tight && track.kind === "instrument" && <span className="kind">INST</span>}
         {!tight && track.kind === "group" && <span className="kind">BUS</span>}
-        <div className="grow" />
+        <div className="grow track-pan" title={`Pan ${panText(panValue)}. Double-click for center.`}>
+          <input type="range" className="slider" min={-1} max={1} step={0.01} value={panValue}
+            onChange={(e) => { const v = Math.round(+e.target.value * 100) / 100; setPan(v); act("track.set", { id: track.id, pan: v }); }}
+            onPointerUp={() => setPan(null)}
+            onDoubleClick={() => { setPan(null); act("track.set", { id: track.id, pan: 0 }); }} />
+        </div>
         {menuButton}
         {tight && controls}
       </div>
@@ -922,9 +1059,15 @@ export function Arrange() {
       const p = st.project!;
       let dt = dx / pps;
       if (mode === "move" || mode === "l" || mode === "r") {
-        const edge = mode === "r" ? clip.end : clip.start;
-        dt = snap(edge + dt, useStore.getState().grid, p, ev.altKey) - edge;
-        if (mode === "move") dt = Math.max(dt, -Math.min(...moveIds.map((id) => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)?.start ?? 0)));
+        const grid = useStore.getState().grid;
+        const edges = clipEdges(p, moveIds);
+        if (mode === "move") {
+          const start = snapSpan(clip.start + dt, clip.end - clip.start, grid, p, edges, false, pps);
+          dt = start - clip.start;
+          dt = Math.max(dt, -Math.min(...moveIds.map((id) => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)?.start ?? 0)));
+          if (ev.ctrlKey || ev.metaKey) dt = 0;
+        } else if (mode === "l") dt = snapEdge(clip.start + dt, grid, p, edges, ev.altKey, pps) - clip.start;
+        else dt = snapEdge(clip.end + dt, grid, p, edges, ev.altKey, pps) - clip.end;
       }
       let trackDelta = 0, dy = 0;
       if (mode === "move" && sourceLane) {
@@ -940,7 +1083,7 @@ export function Arrange() {
           if (Math.abs(dx) < 8) dt = 0;
         }
       }
-      last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.ctrlKey };
+      last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.altKey };
       setPreview(last);
     }, () => {
       if (!moved) { setPreview(null); return; }
@@ -967,6 +1110,23 @@ export function Arrange() {
         else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut } });
         else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: edge.offset } });
       }
+      if (!last.copy && (last.mode === "move" || last.mode === "l" || last.mode === "r")) {
+        for (const [id, fade] of overlapFades(p, last)) {
+          const clip = all.find((item) => item.c.id === id)?.c;
+          const params: Record<string, unknown> = { id };
+          if (clip && Math.abs(fade.fadeIn - (clip.fadeIn ?? 0)) > 0.001) { params.fadeIn = fade.fadeIn; params.fadeInType = "scurve"; }
+          if (clip && Math.abs(fade.fadeOut - (clip.fadeOut ?? 0)) > 0.001) { params.fadeOut = fade.fadeOut; params.fadeOutType = "scurve"; }
+          if (params.fadeIn !== undefined || params.fadeOut !== undefined) calls.push({ method: "clip.set", params });
+          const heldItem = held.find((item) => item.id === id);
+          if (heldItem) { heldItem.fadeIn = fade.fadeIn; heldItem.fadeOut = fade.fadeOut; }
+          else {
+            const clip = all.find((item) => item.c.id === id)?.c;
+            if (!clip) continue;
+            const edge = shownClip(clip, last, null);
+            held.push({ id, start: edge.start, end: edge.end, offset: edge.offset, fadeIn: fade.fadeIn, fadeOut: fade.fadeOut });
+          }
+        }
+      }
       setPreview(null);
       if (!last.copy) setSettled(held);
       const label = { move: last.copy ? "Copy clips" : "Move clips", fi: "Fade", fo: "Fade", slip: "Slip", l: "Trim", r: "Trim" }[last.mode];
@@ -988,7 +1148,10 @@ export function Arrange() {
     }, () => {
       setTimeDrag(null);
       if (!dragged) act("transport.setPosition", { time: anchor });
-      else if (Math.abs(end - anchor) > 0.02) act("transport.setLoop", { start: Math.min(anchor, end), end: Math.max(anchor, end), enabled: true });
+      else if (Math.abs(end - anchor) > 0.02) {
+        armLoopRange();
+        act("transport.setLoop", { start: Math.min(anchor, end), end: Math.max(anchor, end), enabled: true });
+      }
     });
   };
 
@@ -1131,7 +1294,7 @@ export function Arrange() {
         ))}
         <div className="grow" />
         <span className="small faint">Snap</span>
-        <select className="input sm" value={grid} onChange={(e) => useStore.setState({ grid: e.target.value as Grid })} title="Snap grid. Hold Alt while dragging to bypass">
+        <select className="input sm" value={grid} onChange={(e) => useStore.setState({ grid: e.target.value as Grid })} title="Snap grid. While snap is on, a clip also catches other clips and markers. Hold Alt while trimming or moving the playhead to ignore it. Hold Ctrl while dragging a clip up or down to keep its timing. Hold Alt while dragging a clip to copy it.">
           <option value="bar">1 Bar</option>
           <option value="1/2">1/2</option>
           <option value="beat">1/4</option>

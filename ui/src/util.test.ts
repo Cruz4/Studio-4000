@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./types";
 import { groupOrder, pluginDropIndex } from "./pluginReorder";
-import { clipGainDbAt, dbToFader, faderToDb, formatBars, formatDb, formatRulerTime, formatTime, gridSeconds, meterPos, noteName, parseDb, rulerStep, secondsPerBar, shade, snap } from "./util";
+import { clipGainDbAt, crossfadeOverlaps, dbToFader, faderToDb, formatBars, formatDb, formatRulerTime, formatTime, gridSeconds, meterPos, noteName, parseDb, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "./util";
 
 const song = (bpm: number, timeSig: [number, number] = [4, 4]) => ({ bpm, timeSig }) as Project;
 
@@ -41,6 +41,27 @@ describe("musical time", () => {
     expect(snap(1.3, "bar", p)).toBeCloseTo(2);
     expect(snap(1.3, "beat", p, true)).toBeCloseTo(1.3);
     expect(snap(-0.2, "off", p)).toBe(0);
+    expect(snapEdge(1.02, "off", p, [1])).toBeCloseTo(1.02);
+    expect(snapEdge(1.04, "beat", p, [1.05], false, 100)).toBeCloseTo(1.05);
+    expect(snapEdge(1.02, "beat", p, [3], false, 100)).toBeCloseTo(1);
+    expect(snapSpan(0.8, 2.1, "beat", p, [3], false, 100)).toBeCloseTo(0.9);
+    const fades = crossfadeOverlaps(
+      [
+        { id: "a", start: 0, end: 2, fadeIn: 0, fadeOut: 0, prevStart: 0, prevEnd: 1.2 },
+        { id: "b", start: 1.5, end: 4, fadeIn: 0, fadeOut: 0, prevStart: 2, prevEnd: 4 },
+      ],
+      new Set(["b"]),
+    );
+    expect(fades.get("a")?.fadeOut).toBeCloseTo(0.5);
+    expect(fades.get("b")?.fadeIn).toBeCloseTo(0.5);
+    const kept = crossfadeOverlaps(
+      [
+        { id: "a", start: 0, end: 2, fadeIn: 0, fadeOut: 0.2, prevStart: 0, prevEnd: 2 },
+        { id: "b", start: 1.5, end: 4, fadeIn: 0.2, fadeOut: 0, prevStart: 1.5, prevEnd: 4 },
+      ],
+      new Set(["a"]),
+    );
+    expect(kept.size).toBe(0);
   });
 
   it("formats clock time", () => {

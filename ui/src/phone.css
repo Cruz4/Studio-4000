@@ -101,11 +101,14 @@
   html[data-shell="web"] .welcome-side {
     left: 0;
     width: 100%;
+    /* The panel is only there after Join or the assistant opens. An empty layer was sitting on top of the start page and swallowing every tap. */
+    pointer-events: none;
   }
   html[data-shell="web"] .welcome-side .side {
     position: relative;
     width: 100%;
     inset: auto;
+    pointer-events: auto;
   }
 
   html[data-shell="web"] .dock {
@@ -143,12 +146,19 @@
 
   html[data-shell="web"] .welcome {
     place-items: start center;
-    padding: max(12px, env(safe-area-inset-top)) 0 max(20px, env(safe-area-inset-bottom));
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: max(12px, env(safe-area-inset-top)) 0 max(28px, env(safe-area-inset-bottom));
   }
   html[data-shell="web"] .welcome-inner {
     width: min(1040px, calc(100vw - 16px));
     grid-template-columns: 1fr;
     gap: 16px;
+    padding-bottom: 36px;
   }
   html[data-shell="web"] .welcome .brand { flex-wrap: wrap; margin-bottom: 12px; }
   html[data-shell="web"] .wordmark { height: 56px; max-width: calc(100vw - 32px); object-fit: contain; }

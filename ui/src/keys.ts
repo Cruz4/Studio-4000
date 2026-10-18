@@ -90,7 +90,8 @@ export function installMusicalTyping() {
 
   const down = (e: KeyboardEvent) => {
     const s = S();
-    if (!(s.typing || editorInstrument()) || !s.project || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || editing(e.target)) return;
+    // The piano keys are only taken while musical typing is on. An open MIDI clip used to swallow S, E, R, and the other shortcuts.
+    if (!s.typing || !s.project || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || editing(e.target)) return;
     if (s.paletteOpen || s.settingsOpen || s.exportOpen) return;
     const k = e.key.toLowerCase();
     const consume = () => { e.preventDefault(); e.stopImmediatePropagation(); };

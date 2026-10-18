@@ -137,7 +137,12 @@ void registerTransportApi (AppEngine& app)
         const auto s = reqNum (p, "start"), e = reqNum (p, "end");
 
         if (e - s < 0.05)
-            throw RpcError ("Loop range is too short");
+        {
+            t.setLoopRange ({ seconds (0.0), seconds (0.0) });
+            t.looping = false;
+            app.markProjectChanged();
+            return var (true);
+        }
 
         t.setLoopRange ({ seconds (s), seconds (e) });
 

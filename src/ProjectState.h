@@ -28,6 +28,8 @@ var describeClip (te::Clip&);
 
 /** Replaces an audio clip's gain envelope. Points are [seconds from the clip start, dB]. An empty list clears it. */
 void setClipGainPoints (te::AudioClipBase&, const juce::Array<juce::var>& points);
+/** Replaces an audio clip's pan envelope. Points are [seconds from the clip start, pan from -1 to 1]. An empty list clears it. */
+void setClipPanPoints (te::AudioClipBase&, const juce::Array<juce::var>& points);
 var describeTrack (AppEngine&, te::Track&);
 
 /** The full project model the UI renders from. */

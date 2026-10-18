@@ -2,7 +2,7 @@ import { native, rpc } from "./bridge";
 import { COFFEE_URL, supportMailto } from "./support";
 import { panic, shiftOctave, toggleTyping } from "./keys";
 import { usePad } from "./gamepad/pad";
-import { act, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
+import { act, disarmLoopRange, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
 import type { Clip, Track } from "./types";
 import { AUDIO_FILTER, gridSeconds, secondsPerBar, secondsPerBeat } from "./util";
 
@@ -147,6 +147,11 @@ export function splitAtPlayhead() {
 
 export function deleteSelection() {
   const s = S();
+  if (s.loopTargeted) {
+    useStore.setState({ loopTargeted: false });
+    act("transport.setLoop", { start: 0, end: 0, enabled: false });
+    return;
+  }
   if (s.selectedPlugin && !s.selectedClips.length) {
     const id = s.selectedPlugin;
     useStore.setState({ selectedPlugin: null, openPlugins: s.openPlugins.filter((x) => x !== id) });
@@ -437,6 +442,15 @@ export function runCommand(id: string) {
   if (c && (!c.when || c.when())) c.run();
 }
 
+function typingTarget(el: EventTarget | null) {
+  const node = el as HTMLElement | null;
+  if (!node) return false;
+  if (node.tagName === "TEXTAREA" || node.tagName === "SELECT" || node.isContentEditable) return true;
+  if (node.tagName !== "INPUT") return false;
+  const type = (node as HTMLInputElement).type;
+  return type !== "range" && type !== "checkbox" && type !== "radio" && type !== "button" && type !== "color";
+}
+
 function keyName(e: KeyboardEvent) {
   const parts = [];
   if (e.ctrlKey || e.metaKey) parts.push("Ctrl");
@@ -460,8 +474,7 @@ export function installShortcuts() {
   map.set("SHIFT+?", commands.find((c) => c.id === "shortcuts")!);
 
   const handler = (e: KeyboardEvent) => {
-    const el = e.target as HTMLElement;
-    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+    if (typingTarget(e.target)) return;
     const s = S();
     if (s.paletteOpen || s.settingsOpen || s.exportOpen) return;
     if (e.key.startsWith("Arrow") && nudgeSelection(e.key, e.shiftKey)) { e.preventDefault(); return; }
@@ -470,6 +483,18 @@ export function installShortcuts() {
     e.preventDefault();
     c.run();
   };
+  // A level bar keeps keyboard focus after a click, and then every shortcut is ignored.
+  const refocus = (e: PointerEvent) => {
+    const node = e.target as HTMLElement | null;
+    if (!node?.closest(".loop-bar")) disarmLoopRange();
+    if (typingTarget(node) || node?.closest("input:not([type=range]), textarea, select, [contenteditable='true']")) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) active.blur();
+  };
   window.addEventListener("keydown", handler);
-  return () => window.removeEventListener("keydown", handler);
+  window.addEventListener("pointerdown", refocus, true);
+  return () => {
+    window.removeEventListener("keydown", handler);
+    window.removeEventListener("pointerdown", refocus, true);
+  };
 }

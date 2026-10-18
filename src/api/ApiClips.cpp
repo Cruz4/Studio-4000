@@ -271,6 +271,20 @@ void registerClipApi (AppEngine& app)
         return var (true);
     });
 
+    rpc.add ("clip.setPanPoints", K::write, "Sets the clip pan envelope. Points are [seconds from the clip start, pan from -1 to 1]; an empty list clears it",
+             "{id, points}", [&app] (const var& p)
+    {
+        auto& ac = audioClip (app, reqStr (p, "id"));
+        juce::Array<var> points;
+
+        if (auto* list = p["points"].getArray())
+            for (const auto& pt : *list)
+                points.add (pt);
+
+        setClipPanPoints (ac, points);
+        return var (true);
+    });
+
     rpc.add ("clip.set", K::write, "Changes clip properties",
              "{id, name?, colour?, muted?, gainDb?, pan?, fadeIn?, fadeOut?, fadeInType?, fadeOutType?, pitch?, reversed?, autoTempo?, take?}",
              [&app] (const var& p)

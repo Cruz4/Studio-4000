@@ -249,7 +249,9 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
           <div className="fx-eq-overlay">
             <div className="fx-seg small">
               {(["off", "post", "both"] as const).map((m) => (
-                <button key={m} className={cx(analyser === m && "on")} disabled={classic} onClick={() => setAnalyser(m)}>
+                <button key={m} className={cx(analyser === m && "on")} disabled={classic}
+                  title={classic ? "Classic EQ is Tracktion Engine's 4-band equaliser. It draws the curve, and it does not measure the audio. Parametric EQ shows the live spectrum." : undefined}
+                  onClick={() => setAnalyser(m)}>
                   {m === "off" ? "Analyser off" : m === "post" ? "Post" : "Pre + post"}
                 </button>
               ))}

@@ -69,7 +69,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Loop",
     group: "Playing and recording",
     where: "The loop button in the transport, or the L key. The loop range is the top strip of the time ruler",
-    how: "Drag in the top of the ruler to set the loop. L turns looping on. Recording while looped stacks takes on the clip. Shift+L loops whatever clips are selected. Punch, the button next to loop or the P key, records only inside that range.",
+    how: "Drag in the top of the ruler, or drag empty space with the Time tool, to set the loop. Drag the purple bar to move it. Drag either end to change its length. Right-click it to turn looping on or off, or to clear it. Delete clears it when the bar was the last thing you clicked or moved. L turns looping on. Recording while looped stacks takes on the clip. Shift+L loops whatever clips are selected. Punch, the button next to loop or the P key, records only inside that range.",
     also: ["cycle", "loop region", "punch"],
   },
   {
@@ -104,7 +104,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Snap",
     group: "Clips",
     where: "The Snap menu above the clips, on the right",
-    how: "Clips, trims, and the playhead land on this grid. Choices run from 1 bar down through 1/4, 1/8, triplets, and off. Hold Alt while you drag to ignore the grid for that one move.",
+    how: "Clips, trims, and the playhead land on this grid. While any snap is on, a clip you drag also catches the start or end of another clip, and any marker, as you pass it. Choices run from 1 bar down through 1/4, 1/8, triplets, and off. Hold Alt while you trim, or while you move the playhead, to ignore the grid for that drag. Hold Ctrl while you drag a clip up or down and it stays at its current time.",
     also: ["grid", "quantize grid", "magnet"],
   },
   {
@@ -118,21 +118,21 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Move a clip",
     group: "Clips",
     where: "The title line on any clip, or the Move tool",
-    how: "The title bar is always the move tool, even if Split or Erase is selected. Drag the title onto another track. The ghost grows or shrinks to the height of the track you are dropping on. Audio only drops on audio tracks, and MIDI only on instrument tracks. Arrow keys nudge by one snap step. Shift+arrows jump by a bar. Up and down move the clip to the next track.",
+    how: "The title bar is always the move tool, even if Split or Erase is selected. Double-click a clip to open it in the Editor. Drag the title onto another track. The ghost grows or shrinks to the height of the track you are dropping on. Audio only drops on audio tracks, and MIDI only on instrument tracks. Hold Ctrl while you drag up or down and the clip keeps its timing. Hold Alt while you drag to drop a copy. Arrow keys nudge by one snap step. Shift+arrows jump by a bar. Up and down move the clip to the next track.",
     also: ["drag clip", "move clip", "ghost", "another track"],
   },
   {
     title: "Trim a clip",
     group: "Clips",
-    where: "The left and right edges of a clip, with the Move tool selected",
-    how: "Drag either edge to shorten or lengthen the clip. The audio stays put while the edge moves. New clips do not get an automatic fade. Drag the small handles on the top edge when you want a fade in or fade out.",
+    where: "The left and right edges of a clip",
+    how: "Hover either edge and the pointer becomes the horizontal trim arrows, whichever tool is selected. Drag that edge to shorten or lengthen the clip. The audio stays put while the edge moves. The IN box at the top left and the OUT box at the top right fade the clip. Drag IN to the right, or OUT to the left. The same boxes are on the clip in the Editor.",
     also: ["crop", "resize clip", "edge", "fade"],
   },
   {
     title: "Clip fades and crossfade",
     group: "Clips",
-    where: "The fade handles on an audio clip, or the X key",
-    how: "Drag the fade-in handle from the left and the fade-out handle from the right. Right-click a clip and choose Crossfade overlaps, or press X, to fade two overlapping clips on the same track across the overlap.",
+    where: "The IN and OUT boxes on an audio clip, or the X key",
+    how: "IN at the top left fades the start in. OUT at the top right fades the end out. Drag IN right, or OUT left. The same boxes are on the clip in the Editor. Drag one audio clip over another on the same track and they crossfade across the overlap. Right-click a clip and choose Crossfade overlaps, or press X, to do the same to the clips you have selected.",
     also: ["fade in", "fade out", "crossfade"],
   },
   {
@@ -141,6 +141,13 @@ export const GLOSSARY: GlossaryEntry[] = [
     where: "The horizontal line across an audio clip",
     how: "The number at the bottom left is the whole clip's volume. Drag it up to make the clip louder, or down to make it quieter. The waveform grows and shrinks as you drag. Shift makes the drag finer, and double-click sets it back to 0 dB. The line across the clip is the level over time, on top of that volume: click it to add a point and drag the point. Double-click or right-click a point to remove it.",
     also: ["volume envelope", "clip volume", "automation on clip"],
+  },
+  {
+    title: "Clip pan",
+    group: "Clips",
+    where: "The blue line across an audio clip, and the pan bar in the track name row",
+    how: "The blue line is the clip's pan over time. The top is right, the bottom is left, and the middle is center. Click the line to add a point and drag it. Double-click or right-click a point to remove it. The bar in the empty space of the track name is that track's pan. Double-click it for center.",
+    also: ["balance", "left right", "stereo pan"],
   },
   {
     title: "Copy, paste, and delete clips",
@@ -194,8 +201,8 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     title: "Track volume and pan",
     group: "Tracks",
-    where: "The level bar on the track header, and the fader in the mixer",
-    how: "Drag the header bar or the mixer fader. The scale is in decibels, and 0 dB is unity. Double-click a fader or its meter to put it back to 0. The same fader is the track volume.",
+    where: "The level bar on the track header, the pan bar in the track name row, and the fader in the mixer",
+    how: "Drag the header bar or the mixer fader. The scale is in decibels, and 0 dB is unity. Double-click a fader or its meter to put it back to 0. The pan bar sits in the track name row. Left is left, right is right, and double-click returns to center.",
     also: ["fader", "volume", "pan", "db", "gain"],
   },
   {

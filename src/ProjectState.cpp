@@ -130,44 +130,78 @@ namespace
         return vol;
     }
 
-    te::AutomationCurve* clipGainCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, bool create)
+    te::AutomationCurve* clipParamCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, te::AutomatableParameter& param, bool create)
     {
         auto* curves = ac.getAutomationCurveList (create);
 
         if (curves == nullptr)
             return nullptr;
 
-        const te::AutomatableParameterID want { vol.itemID, vol.volParam->paramID };
+        const te::AutomatableParameterID want { vol.itemID, param.paramID };
 
         for (auto item : curves->getItems())
             if (item != nullptr && item->getDestID() == want)
                 return &item->getCurve (te::CurveModifierType::absolute).curve;
 
-        if (! create || vol.volParam == nullptr)
+        if (! create)
             return nullptr;
 
-        auto mod = curves->addCurve (*vol.volParam);
+        auto mod = curves->addCurve (param);
         return mod != nullptr ? &mod->getCurve (te::CurveModifierType::absolute).curve : nullptr;
+    }
+
+    te::AutomationCurve* clipGainCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, bool create)
+    {
+        return vol.volParam != nullptr ? clipParamCurve (ac, vol, *vol.volParam, create) : nullptr;
+    }
+
+    te::AutomationCurve* clipPanCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, bool create)
+    {
+        return vol.panParam != nullptr ? clipParamCurve (ac, vol, *vol.panParam, create) : nullptr;
+    }
+
+    bool curveHasPoints (te::AutomationCurve* curve)
+    {
+        return curve != nullptr && curve->getNumPoints() > 0;
+    }
+
+    void removeParamCurve (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol, te::AutomatableParameter& param)
+    {
+        if (auto* curve = clipParamCurve (ac, vol, param, false))
+            curve->clear (ac.getUndoManager());
+
+        if (auto* curves = ac.getAutomationCurveList (false))
+            for (int i = (int) curves->getItems().size(); --i >= 0;)
+                if (curves->getItems()[(size_t) i] != nullptr && curves->getItems()[(size_t) i]->getDestID().paramID == param.paramID)
+                    curves->removeCurve (i);
+    }
+
+    void dropEnvelopePluginIfIdle (te::AudioClipBase& ac, te::VolumeAndPanPlugin& vol)
+    {
+        if (! curveHasPoints (clipGainCurve (ac, vol, false)) && ! curveHasPoints (clipPanCurve (ac, vol, false)))
+            vol.deleteFromParent();
     }
 
     void clearClipGain (te::AudioClipBase& ac)
     {
         auto* vol = clipGainPlugin (ac, false);
 
-        if (vol == nullptr)
+        if (vol == nullptr || vol->volParam == nullptr)
             return;
 
-        auto* um = ac.getUndoManager();
+        removeParamCurve (ac, *vol, *vol->volParam);
+        dropEnvelopePluginIfIdle (ac, *vol);
+    }
 
-        if (auto* curve = clipGainCurve (ac, *vol, false))
-            curve->clear (um);
+    void clearClipPan (te::AudioClipBase& ac)
+    {
+        auto* vol = clipGainPlugin (ac, false);
 
-        if (auto* curves = ac.getAutomationCurveList (false))
-            for (int i = (int) curves->getItems().size(); --i >= 0;)
-                if (curves->getItems()[(size_t) i] != nullptr && curves->getItems()[(size_t) i]->getDestID().paramID == vol->volParam->paramID)
-                    curves->removeCurve (i);
+        if (vol == nullptr || vol->panParam == nullptr)
+            return;
 
-        vol->deleteFromParent();
+        removeParamCurve (ac, *vol, *vol->panParam);
+        dropEnvelopePluginIfIdle (ac, *vol);
     }
 
     juce::Array<var> clipGainPointVars (te::AudioClipBase& ac)
@@ -229,6 +263,63 @@ void setClipGainPoints (te::AudioClipBase& ac, const juce::Array<juce::var>& poi
     }
 }
 
+juce::Array<var> clipPanPointVars (te::AudioClipBase& ac)
+{
+    juce::Array<var> out;
+    auto* vol = clipGainPlugin (ac, false);
+    auto* curve = vol != nullptr ? clipPanCurve (ac, *vol, false) : nullptr;
+
+    if (curve == nullptr)
+        return out;
+
+    const double clipStart = ac.getPosition().getStart().inSeconds();
+    const double content = ac.getContentStartBeat().inBeats();
+    auto& ts = ac.edit.tempoSequence;
+
+    for (int i = 0; i < curve->getNumPoints(); ++i)
+    {
+        const double beats = te::toBeats (curve->getPointPosition (i), ts).inBeats();
+        const double time = ts.toTime (te::BeatPosition::fromBeats (content + beats)).inSeconds();
+        const float pan = curve->getPointValue (i);
+        out.add (var (juce::Array<var> { time - clipStart, std::round (pan * 100.0) / 100.0 }));
+    }
+
+    return out;
+}
+
+void setClipPanPoints (te::AudioClipBase& ac, const juce::Array<juce::var>& points)
+{
+    if (points.isEmpty())
+    {
+        clearClipPan (ac);
+        return;
+    }
+
+    auto* vol = clipGainPlugin (ac, true);
+    auto* curve = vol != nullptr ? clipPanCurve (ac, *vol, true) : nullptr;
+
+    if (vol == nullptr || curve == nullptr || vol->panParam == nullptr)
+        return;
+
+    auto* um = ac.getUndoManager();
+    curve->clear (um);
+
+    const double clipStart = ac.getPosition().getStart().inSeconds();
+    const double content = ac.getContentStartBeat().inBeats();
+    auto& ts = ac.edit.tempoSequence;
+
+    for (const auto& pt : points)
+    {
+        if (! pt.isArray() || pt.size() < 2)
+            continue;
+
+        const double local = (double) pt[0];
+        const float pan = vol->panParam->valueRange.snapToLegalValue (juce::jlimit (-1.0f, 1.0f, (float) (double) pt[1]));
+        const double beats = ts.toBeats (te::TimePosition::fromSeconds (clipStart + local)).inBeats() - content;
+        curve->addPoint (te::BeatPosition::fromBeats (juce::jmax (0.0, beats)), pan, 0.0f, um);
+    }
+}
+
 var describeClip (te::Clip& c)
 {
     auto& edit = c.edit;
@@ -266,6 +357,7 @@ var describeClip (te::Clip& c)
          .set ("channels", af.getNumChannels())
          .set ("gainDb", ac->getGainDB())
          .set ("gainPoints", clipGainPointVars (*ac))
+         .set ("panPoints", clipPanPointVars (*ac))
          .set ("pan", ac->getPan())
          .set ("fadeIn", ac->getFadeIn().inSeconds())
          .set ("fadeOut", ac->getFadeOut().inSeconds())

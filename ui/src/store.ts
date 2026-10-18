@@ -47,6 +47,8 @@ interface State {
   /** Every track in the current selection. The last one clicked stays in selectedTrack. */
   selectedTracks: string[];
   selectedClips: string[];
+  /** Delete clears the loop range when the purple bar was the last thing clicked or moved. */
+  loopTargeted: boolean;
   editorClip: string | null;
   automationOpen: Record<string, string | null>;
   bottom: BottomTab | null;
@@ -121,6 +123,7 @@ export const useStore = create<State>((set) => ({
   selectedTrack: null,
   selectedTracks: [],
   selectedClips: [],
+  loopTargeted: false,
   editorClip: null,
   automationOpen: {},
   bottom: "effects",
@@ -219,7 +222,16 @@ export async function loadCatalogue() {
 
 /** Highlights an effect so Delete and the other slot actions apply to it, without opening its window. */
 export function selectPlugin(id: string | null) {
-  useStore.setState({ selectedPlugin: id, ...(id ? { selectedClips: [] } : {}) });
+  useStore.setState({ selectedPlugin: id, ...(id ? { selectedClips: [], loopTargeted: false } : {}) });
+}
+
+/** The loop bar is what Delete will clear, until the user clicks a clip or an effect. */
+export function armLoopRange() {
+  useStore.setState({ loopTargeted: true, selectedClips: [], selectedPlugin: null });
+}
+
+export function disarmLoopRange() {
+  if (useStore.getState().loopTargeted) useStore.setState({ loopTargeted: false });
 }
 
 /** Opens an effect window beside the slot that asked for it. Other open windows stay open. */

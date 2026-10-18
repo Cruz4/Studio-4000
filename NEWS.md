@@ -1,3 +1,9 @@
+The start page on a phone can be tapped and scrolled. The session types, How things work, Join, audio setup, and Recent are all on that page. Desktop mode is unchanged.
+
+Hover either end of a clip and the pointer becomes trim arrows, whichever tool is selected. Double-click a clip to open the Editor. IN and OUT boxes fade the start and the end, in the arrangement and in the Editor, and overlapping clips crossfade. A clip has a blue pan line next to the yellow gain line, and the track name row has a pan bar. With snap on, a dragged clip catches another clip's start or end, and any marker. Hold Ctrl while dragging a clip up or down to keep its time. Hold Alt while dragging to drop a copy.
+
+The purple loop bar can be resized from either end. Right-click it to turn looping on or off, or to clear it. Delete clears it when the bar was the last thing you clicked or moved.
+
 The public page fits a phone. Menus, transport, tracks, mixer, effects, and the start screen stay on the page, and every control can be reached. Sound and recording still need the Windows app.
 
 Drag the bottom-left of a clip to change its volume, and the waveform grows or shrinks with it. A new audio track or bus can be stereo or mono. Track effects and clip effects each have their own dry/wet bar. Export asks for a name and a folder, and can write MP3, or MP3 and WAV together.

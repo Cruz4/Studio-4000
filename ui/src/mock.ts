@@ -152,7 +152,12 @@ export function createMock(emit: Emit) {
     "transport.toggle": () => { playing = !playing; return playing; },
     "transport.record": () => { recording = !recording; playing = recording; return recording; },
     "transport.setPosition": (p) => { t = p.time; return true; },
-    "transport.setLoop": (p) => { project!.loop = [p.start, p.end]; if (p.enabled !== undefined) project!.looping = p.enabled; changed(); return true; },
+    "transport.setLoop": (p) => {
+      if ((p.end ?? 0) - (p.start ?? 0) < 0.05) { project!.loop = [0, 0]; project!.looping = false; }
+      else { project!.loop = [p.start, p.end]; if (p.enabled !== undefined) project!.looping = p.enabled; }
+      changed();
+      return true;
+    },
     "transport.setLooping": (p) => { project!.looping = p.enabled; changed(); return true; },
     "transport.setClick": (p) => { if (p.enabled !== undefined) project!.click = p.enabled; changed(); return true; },
     "transport.setPunch": (p) => { project!.punch = p.enabled; changed(); return true; },
@@ -207,6 +212,17 @@ export function createMock(emit: Emit) {
         .filter((pt) => Number.isFinite(pt[0]) && Number.isFinite(pt[1]))
         .sort((a, b) => a[0] - b[0]);
       c.gainPoints = pts;
+      changed();
+      return true;
+    },
+    "clip.setPanPoints": (p) => {
+      const c = findClip(p.id);
+      if (!c || c.kind !== "audio") return false;
+      const pts = ((p.points as number[][]) ?? [])
+        .map((pt) => [Number(pt[0]), Math.max(-1, Math.min(1, Number(pt[1])))] as [number, number])
+        .filter((pt) => Number.isFinite(pt[0]) && Number.isFinite(pt[1]))
+        .sort((a, b) => a[0] - b[0]);
+      c.panPoints = pts;
       changed();
       return true;
     },
@@ -439,7 +455,7 @@ export function createMock(emit: Emit) {
         await new Promise((r) => setTimeout(r, 5));
         if (!h) return { ok: true, result: null };
         const undoable = new Set(["track.add", "track.remove", "track.set", "track.arm", "track.move", "track.duplicate",
-          "clip.move", "clip.slip", "clip.trim", "clip.split", "clip.delete", "clip.duplicate", "clip.set", "clip.setGainPoints", "clip.importAudio", "clip.addMidi", "clip.normalize", "clip.stretch",
+          "clip.move", "clip.slip", "clip.trim", "clip.split", "clip.delete", "clip.duplicate", "clip.set", "clip.setGainPoints", "clip.setPanPoints", "clip.importAudio", "clip.addMidi", "clip.normalize", "clip.stretch",
           "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "master.set", "chain.load", "batch.run",
           "midi.setNotes", "midi.addNote", "midi.quantize", "midi.transpose"]);
         if (project && undoable.has(method)) {
@@ -447,7 +463,7 @@ export function createMock(emit: Emit) {
             "plugin.add": "Add effect", "plugin.remove": "Remove effect", "plugin.move": "Reorder effect", "plugin.duplicate": "Duplicate effect",
             "plugin.set": "Effect bypass", "chain.load": "Load effect chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
             "clip.split": "Split", "clip.duplicate": "Duplicate", "clip.trim": "Trim", "clip.slip": "Slip", "clip.set": "Clip change",
-            "clip.addMidi": "New MIDI clip", "clip.normalize": "Normalize", "clip.setGainPoints": "Clip gain", "track.add": "New track", "track.remove": "Delete track",
+            "clip.addMidi": "New MIDI clip", "clip.normalize": "Normalize", "clip.setGainPoints": "Clip gain", "clip.setPanPoints": "Clip pan", "track.add": "New track", "track.remove": "Delete track",
             "master.set": "Master volume", "midi.setNotes": "Edit notes", "batch.run": "Edit",
           };
           undoStack.push({ before: structuredClone(project), name: method === "batch.run" ? (p?.label || "Edit") : (names[method] ?? "Edit") });

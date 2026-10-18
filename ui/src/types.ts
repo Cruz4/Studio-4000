@@ -69,6 +69,8 @@ export interface Clip {
   fxMix?: number;
   /** Gain breakpoints in seconds from the clip's left edge, and dB. The line holds the end values. */
   gainPoints?: [number, number][];
+  /** Pan breakpoints in seconds from the clip's left edge. -1 is left, 0 is center, 1 is right. */
+  panPoints?: [number, number][];
 }
 
 export interface AutomationLane {
