@@ -125,14 +125,14 @@ export const GLOSSARY: GlossaryEntry[] = [
     title: "Trim a clip",
     group: "Clips",
     where: "The left and right edges of a clip",
-    how: "Hover either edge and the pointer becomes the horizontal trim arrows, whichever tool is selected. Drag that edge to shorten or lengthen the clip. The audio stays put while the edge moves. The IN box at the top left and the OUT box at the top right fade the clip. Drag IN to the right, or OUT to the left. The same boxes are on the clip in the Editor.",
+    how: "Hover either edge and the pointer becomes the horizontal trim arrows, whichever tool is selected. Drag that edge to shorten or lengthen the clip. The audio stays put while the edge moves. The IN box sits under the name, just after the L. OUT sits at the same height on the right. Drag sideways to change the length, or up and down to make the fade steeper, straighter, or lighter. You can grab the fade line itself the same way.",
     also: ["crop", "resize clip", "edge", "fade"],
   },
   {
     title: "Clip fades and crossfade",
     group: "Clips",
     where: "The IN and OUT boxes on an audio clip, or the X key",
-    how: "IN at the top left fades the start in. OUT at the top right fades the end out. Drag IN right, or OUT left. The same boxes are on the clip in the Editor. Drag one audio clip over another on the same track and they crossfade across the overlap. Right-click a clip and choose Crossfade overlaps, or press X, to do the same to the clips you have selected.",
+    how: "IN sits under the clip name, just after the L. OUT sits at that same height on the right, so neither covers the name. Drag sideways to change how long the fade is. Drag up or down, or grab the fade line, to bend it: up is steeper, the middle is straight, and down stays quieter for longer. The same boxes are on the clip in the Editor. Drag one audio clip over another on the same track and they crossfade across the overlap. Right-click a clip and choose Crossfade overlaps, or press X, to do the same to the clips you have selected.",
     also: ["fade in", "fade out", "crossfade"],
   },
   {
@@ -145,8 +145,8 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     title: "Clip pan",
     group: "Clips",
-    where: "The blue line across an audio clip, and the pan bar in the track name row",
-    how: "The blue line is the clip's pan over time. The top is right, the bottom is left, and the middle is center. Click the line to add a point and drag it. Double-click or right-click a point to remove it. The bar in the empty space of the track name is that track's pan. Double-click it for center.",
+    where: "The blue line across an audio clip, and the pan knob in the track name row",
+    how: "The blue line is the clip's pan over time. The top is right, the bottom is left, and the middle is center. Click the line to add a point and drag it. Double-click or right-click a point to remove it. The knob beside the track name is that track's pan. Its readout says C, L, or R, and double-click returns to center.",
     also: ["balance", "left right", "stereo pan"],
   },
   {
@@ -201,8 +201,8 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     title: "Track volume and pan",
     group: "Tracks",
-    where: "The level bar on the track header, the pan bar in the track name row, and the fader in the mixer",
-    how: "Drag the header bar or the mixer fader. The scale is in decibels, and 0 dB is unity. Double-click a fader or its meter to put it back to 0. The pan bar sits in the track name row. Left is left, right is right, and double-click returns to center.",
+    where: "The level bar on the track header, the pan knob in the track name row, and the fader in the mixer",
+    how: "Drag the header bar or the mixer fader. The scale is in decibels, and 0 dB is unity. Double-click a fader or its meter to put it back to 0. The pan knob sits in the track name row, with a readout: C is center, L is left, R is right. Drag the knob up or down, and double-click it to return to center.",
     also: ["fader", "volume", "pan", "db", "gain"],
   },
   {

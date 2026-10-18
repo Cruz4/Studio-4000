@@ -9,7 +9,7 @@ import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleA
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
-import { clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
+import { bendOfFade, clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fadeInPaths, fadeOfBend, fadeOutPaths, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
 import { askText } from "./Ask";
 import { ClipGain } from "./ClipGain";
 import { ClipPan, panText } from "./ClipPan";
@@ -17,7 +17,7 @@ import { openMenu, type MenuItem } from "./ContextMenu";
 import { FxToggle, InsertSlot, SynthSlot } from "./Mixer";
 import { FX_COPY } from "../pluginReorder";
 import { beginTrackReorder } from "../trackReorder";
-import { DbField, Icon, startDrag } from "./ui";
+import { DbField, Icon, Knob, startDrag } from "./ui";
 import { Waveform } from "./Waveform";
 
 const TOOL_LABEL: Record<ArrangeTool, string> = { move: "Move", time: "Time", split: "Split", slip: "Slip", erase: "Erase" };
@@ -38,6 +38,8 @@ interface DragPreview {
   trackDelta: number;
   dy: number;
   copy: boolean;
+  /** Fade drag only. -1 is steep, 0 is straight, 1 stays quiet longer. */
+  fadeBend?: number;
 }
 
 /* ------------------------------------------------------------------ uploads */
@@ -402,10 +404,16 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   };
   const offsetDelta = offset - clip.offset;
   const gainSource = liveGain ?? clip.gainPoints;
+  const inBend = affected && preview?.mode === "fi" ? (preview.fadeBend ?? 0) : bendOfFade(clip.fadeInType);
+  const outBend = affected && preview?.mode === "fo" ? (preview.fadeBend ?? 0) : bendOfFade(clip.fadeOutType);
   const drawClip = {
     ...clip, start, end, offset, fadeIn, fadeOut, gainDb,
+    fadeInType: affected && preview?.mode === "fi" ? fadeOfBend(inBend) : clip.fadeInType,
+    fadeOutType: affected && preview?.mode === "fo" ? fadeOfBend(outBend) : clip.fadeOutType,
     gainPoints: gainSource?.map(([t, db]) => [t - offsetDelta, db] as [number, number]),
   };
+  const inFade = fadeInPaths((fadeIn / Math.max(0.001, end - start)) * 100, inBend);
+  const outFade = fadeOutPaths((1 - fadeOut / Math.max(0.001, end - start)) * 100, outBend);
   const notes = clip.notes ?? [];
   const pitches = notes.map((n) => n[0]);
   const lo = Math.min(...pitches, 60) - 2, hi = Math.max(...pitches, 72) + 2;
@@ -536,15 +544,19 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
       )}
       {clip.kind === "audio" && (
         <svg className="fades" preserveAspectRatio="none" viewBox="0 0 100 100">
-          {fadeIn > 0 && <path d={`M0,0 L0,100 Q${(fadeIn / (end - start)) * 50},10 ${(fadeIn / (end - start)) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
-          {fadeOut > 0 && <path d={`M100,0 L100,100 Q${100 - (fadeOut / (end - start)) * 50},10 ${100 - (fadeOut / (end - start)) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
+          {fadeIn > 0 && <path d={inFade.shade} fill="rgba(0,0,0,.35)" />}
+          {fadeOut > 0 && <path d={outFade.shade} fill="rgba(0,0,0,.35)" />}
+          {fadeIn > 0 && <path className="fade-edge" d={inFade.edge} />}
+          {fadeOut > 0 && <path className="fade-edge" d={outFade.edge} />}
+          {fadeIn > 0 && <path className="fade-hit" d={inFade.edge} onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }} />}
+          {fadeOut > 0 && <path className="fade-hit" d={outFade.edge} onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }} />}
         </svg>
       )}
       <div className="edge l" title="Trim the start" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "l"); }} />
       <div className="edge r" title="Trim the end" onPointerDown={(e) => { e.stopPropagation(); if (wantsEditor(clip)) return; onDown(e, clip, "r"); }} />
       {clip.kind === "audio" && <>
-        <div className="fade-h in" title="Fade in. Drag right to make it longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }}>IN</div>
-        <div className="fade-h out" title="Fade out. Drag left to make it longer." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }}>OUT</div>
+        <div className="fade-h in" title="Fade in. Drag right to change the length. Drag up or down to make it steeper, straighter, or lighter." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fi"); }}>IN</div>
+        <div className="fade-h out" title="Fade out. Drag left to change the length. Drag up or down to make it steeper, straighter, or lighter." onPointerDown={(e) => { e.stopPropagation(); onDown(e, clip, "fo"); }}>OUT</div>
       </>}
     </div>
   );
@@ -642,7 +654,7 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         if (e.clientX > e.currentTarget.getBoundingClientRect().right - 10) return;
-        if ((e.target as HTMLElement).closest("button, select, .slot, .slider")) return;
+        if ((e.target as HTMLElement).closest("button, select, .slot, .slider, .knob, .track-pan")) return;
         if (e.ctrlKey || e.metaKey) { selectTrack(track.id, "toggle"); return; }
         selectTrack(track.id);
         const row = e.currentTarget.closest(".track-row");
@@ -665,11 +677,12 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
         {!tight && track.kind === "return" && <span className="kind">FX</span>}
         {!tight && track.kind === "instrument" && <span className="kind">INST</span>}
         {!tight && track.kind === "group" && <span className="kind">BUS</span>}
-        <div className="grow track-pan" title={`Pan ${panText(panValue)}. Double-click for center.`}>
-          <input type="range" className="slider" min={-1} max={1} step={0.01} value={panValue}
-            onChange={(e) => { const v = Math.round(+e.target.value * 100) / 100; setPan(v); act("track.set", { id: track.id, pan: v }); }}
-            onPointerUp={() => setPan(null)}
-            onDoubleClick={() => { setPan(null); act("track.set", { id: track.id, pan: 0 }); }} />
+        <div className="track-pan" title={`Pan ${panText(panValue)}. Drag up or down. Double-click for center.`}>
+          <Knob value={(panValue + 1) / 2} bipolar size={tight ? 16 : 20} title={`Pan ${panText(panValue)}. Double-click for center.`}
+            onChange={(v) => { const next = Math.round((v * 2 - 1) * 100) / 100; setPan(next); act("track.set", { id: track.id, pan: next }); }}
+            onCommit={() => setPan(null)}
+            onReset={() => { setPan(null); act("track.set", { id: track.id, pan: 0 }); }} />
+          <span className="pan-read mono">{panText(panValue)}</span>
         </div>
         {menuButton}
         {tight && controls}
@@ -1083,7 +1096,10 @@ export function Arrange() {
           if (Math.abs(dx) < 8) dt = 0;
         }
       }
-      last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.altKey };
+      const fadeBend = mode === "fi" || mode === "fo"
+        ? clamp(bendOfFade(mode === "fi" ? clip.fadeInType : clip.fadeOutType) - _dy / 70, -1, 1)
+        : undefined;
+      last = { ids: moveIds, mode, dt, trackDelta, dy, copy: mode === "move" && ev.altKey, fadeBend };
       setPreview(last);
     }, () => {
       if (!moved) { setPreview(null); return; }
@@ -1106,8 +1122,8 @@ export function Arrange() {
           else calls.push({ method: "clip.move", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
         } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: edge.start } });
         else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: edge.end } });
-        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: edge.fadeIn } });
-        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut } });
+        else if (last.mode === "fi") calls.push({ method: "clip.set", params: { id, fadeIn: edge.fadeIn, fadeInType: fadeOfBend(last.fadeBend ?? bendOfFade(c.fadeInType)) } });
+        else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut, fadeOutType: fadeOfBend(last.fadeBend ?? bendOfFade(c.fadeOutType)) } });
         else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: edge.offset } });
       }
       if (!last.copy && (last.mode === "move" || last.mode === "l" || last.mode === "r")) {

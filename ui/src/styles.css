@@ -351,12 +351,14 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .clip .edge.l { left: 0; }
 .clip .edge.r { right: 0; }
 .clip .fade-h, .editor-clip .fade-h {
-  position: absolute; top: 2px; width: 22px; height: 14px; border-radius: 3px; z-index: 5; cursor: ew-resize;
+  position: absolute; top: 20px; width: 22px; height: 14px; border-radius: 3px; z-index: 5; cursor: move;
   background: rgba(0, 0, 0, .72); color: #fff; font: 700 8px/14px var(--mono, ui-monospace, sans-serif); text-align: center;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, .5);
 }
-.clip .fade-h.in, .editor-clip .fade-h.in { left: 3px; }
-.clip .fade-h.out, .editor-clip .fade-h.out { right: 3px; }
+.clip .fade-h.in, .editor-clip .fade-h.in { left: 16px; }
+.clip .fade-h.out, .editor-clip .fade-h.out { right: 16px; }
+.clip svg.fades .fade-edge, .editor-clip svg.fades .fade-edge { fill: none; stroke: rgba(255, 255, 255, .8); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.clip svg.fades .fade-hit { fill: none; stroke: transparent; stroke-width: 14px; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: move; }
 .clip .takes { position: absolute; right: 6px; top: 1px; font-size: 10px; z-index: 3; background: rgba(0, 0, 0, .35); padding: 0 5px; border-radius: 4px; cursor: pointer; }
 .clip .clip-gain { position: absolute; left: 4px; bottom: 3px; z-index: 6; height: 15px; padding: 0 4px; border-radius: 3px; background: rgba(0, 0, 0, .62); color: #fff; font: 600 10px/15px var(--mono, ui-monospace, monospace); cursor: ns-resize; user-select: none; box-shadow: 0 0 0 1px rgba(255, 255, 255, .28); }
 .clip .clip-gain:hover, .clip .clip-gain.active { background: rgba(0, 0, 0, .82); color: #fff6c2; }
@@ -368,12 +370,11 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .gain-readout { position: absolute; transform: translate(8px, -14px); font: 10px var(--mono); color: #fff6c2; text-shadow: 0 1px 2px #000; pointer-events: none; white-space: nowrap; }
 .pan-line .gain-pt { background: #7ee7ff; border-color: #042028; }
 .pan-readout { color: #7ee7ff; }
-.track-pan { display: flex; align-items: center; height: 14px; }
-.track-pan .slider { width: 100%; min-width: 0; height: 4px; }
-.track-head.compact .track-pan .slider { height: 4px; }
-.track-head.compact .track-pan .slider::-webkit-slider-thumb { width: 10px; height: 10px; }
-.track-head.tight .track-pan { height: 10px; }
-.track-head.tight .track-pan .slider { height: 4px; }
+.track-pan { display: flex; align-items: center; gap: 4px; flex: none; height: 20px; }
+.track-pan .col { gap: 0; }
+.track-pan .pan-read { width: 32px; font-size: 10px; line-height: 1; color: #7ee7ff; text-align: left; }
+.track-head.tight .track-pan { height: 16px; gap: 2px; }
+.track-head.tight .track-pan .pan-read { width: 26px; font-size: 9px; }
 .auto-row { display: flex; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .18); }
 .auto-head { position: sticky; left: 0; z-index: 5; width: var(--header-w); flex: none; background: var(--bg1); border-right: 1px solid var(--line); padding: 6px 8px 6px 16px; display: flex; flex-direction: column; gap: 4px; }
 .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 12px rgba(255, 255, 255, .6); z-index: 8; pointer-events: none; }
@@ -513,6 +514,11 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .editor-clip canvas { position: absolute; left: 0; top: 17px; height: calc(100% - 17px); }
 .fx-col:not(.open) .fx-card-kind { display: none; }
 .inspector { width: 290px; flex: none; padding: 12px; border-right: 1px solid var(--line); overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.inspector > .row { align-items: flex-end; min-width: 0; }
+.inspector > .row > .field { flex: 1 1 0; min-width: 0; }
+.inspector .clip-num { width: 64px; max-width: 100%; flex: none; }
+.inspector select.input { width: 100%; min-width: 0; }
+.inspector .field > .row > .input.grow { max-width: 96px; }
 .piano { flex: 1; display: flex; min-width: 0; min-height: 0; }
 .piano-keys { width: 56px; flex: none; overflow: hidden; position: relative; border-right: 1px solid var(--line); }
 .piano-grid { flex: 1; overflow: auto; position: relative; }

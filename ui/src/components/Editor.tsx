@@ -5,7 +5,7 @@ import { useGamepadSurface } from "../gamepad/surfaces";
 import { noteOff, noteOn } from "../keys";
 import { act, onTick, useStore } from "../store";
 import type { Clip, Project, Track } from "../types";
-import { clamp, cx, formatDb, noteName, secondsPerBeat } from "../util";
+import { bendOfFade, clamp, cx, fadeInPaths, fadeOfBend, fadeOutPaths, formatDb, noteName, secondsPerBeat } from "../util";
 import { ClipGain } from "./ClipGain";
 import { ClipPan } from "./ClipPan";
 import { openMenu } from "./ContextMenu";
@@ -28,7 +28,7 @@ function Num({ label, value, onCommit, step = 0.1, min, max, suffix }: { label: 
     <label className="field">
       <span>{label}</span>
       <div className="row" style={{ gap: 4 }}>
-        <input className="input sm grow mono" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit}
+        <input className="input sm mono clip-num" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit}
           onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "ArrowUp") { e.preventDefault(); onCommit(clamp(value + step, min ?? -Infinity, max ?? Infinity)); } if (e.key === "ArrowDown") { e.preventDefault(); onCommit(clamp(value - step, min ?? -Infinity, max ?? Infinity)); } }} />
         {suffix && <span className="small faint">{suffix}</span>}
       </div>
@@ -45,7 +45,7 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const [zoom, setZoom] = useState(1);
   const [scroll, setScroll] = useState(0);
   const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
-  const [liveFade, setLiveFade] = useState<{ fadeIn: number; fadeOut: number } | null>(null);
+  const [liveFade, setLiveFade] = useState<{ fadeIn: number; fadeOut: number; inBend: number; outBend: number } | null>(null);
   useGamepadSurface({
     id: "editor-audio",
     region: "editor",
@@ -77,20 +77,17 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
         <label className="field"><span>Name</span><input className="input sm" defaultValue={clip.name} key={clip.id + clip.name} onBlur={(e) => e.target.value !== clip.name && act("clip.set", { id: clip.id, name: e.target.value })} /></label>
         <div className="row">
           <Num label="Gain" value={clip.gainDb ?? 0} step={0.5} min={-48} max={24} suffix="dB" onCommit={(v) => act("clip.set", { id: clip.id, gainDb: v })} />
-          <Num label="Pan" value={clip.pan ?? 0} step={0.05} min={-1} max={1} onCommit={(v) => act("clip.set", { id: clip.id, pan: v })} />
+          <Num label="Pitch" value={clip.pitch ?? 0} step={1} min={-24} max={24} suffix="st" onCommit={(v) => act("clip.set", { id: clip.id, pitch: v })} />
         </div>
         <div className="row">
           <Num label="Fade in" value={clip.fadeIn ?? 0} step={0.05} min={0} max={len} suffix="s" onCommit={(v) => act("clip.set", { id: clip.id, fadeIn: v })} />
           <Num label="Fade out" value={clip.fadeOut ?? 0} step={0.05} min={0} max={len} suffix="s" onCommit={(v) => act("clip.set", { id: clip.id, fadeOut: v })} />
         </div>
-        <div className="row">
-          <label className="field grow"><span>Fade shape</span>
-            <select className="input sm" defaultValue="linear" onChange={(e) => act("clip.set", { id: clip.id, fadeInType: e.target.value, fadeOutType: e.target.value })}>
-              <option value="linear">Linear</option><option value="convex">Convex</option><option value="concave">Concave</option><option value="scurve">S-curve</option>
-            </select>
-          </label>
-          <Num label="Pitch" value={clip.pitch ?? 0} step={1} min={-24} max={24} suffix="st" onCommit={(v) => act("clip.set", { id: clip.id, pitch: v })} />
-        </div>
+        <label className="field"><span>Fade shape</span>
+          <select className="input sm" value={clip.fadeInType ?? "linear"} onChange={(e) => act("clip.set", { id: clip.id, fadeInType: e.target.value, fadeOutType: e.target.value })}>
+            <option value="linear">Linear</option><option value="convex">Convex</option><option value="concave">Concave</option><option value="scurve">S-curve</option>
+          </select>
+        </label>
         <div className="row" style={{ flexWrap: "wrap" }}>
           <button className={cx("btn sm", clip.reversed && "on")} onClick={() => act("clip.set", { id: clip.id, reversed: !clip.reversed })}>Reverse</button>
           <button className={cx("btn sm", clip.autoTempo && "on")} title="Follow project tempo changes (time-stretch)" onClick={() => act("clip.set", { id: clip.id, autoTempo: !clip.autoTempo })}>Follow tempo</button>
@@ -152,36 +149,61 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
               ]);
             }}>
             <div className="clip-label">{clip.name} · gain {formatDb(clip.gainDb ?? 0)} dB</div>
-            <Waveform clip={{ ...clip, gainPoints: (liveGain ?? clip.gainPoints) }} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={scroll} viewWidth={w} clipLeft={0} />
+            <Waveform clip={{
+              ...clip,
+              gainPoints: (liveGain ?? clip.gainPoints),
+              fadeIn: liveFade?.fadeIn ?? clip.fadeIn,
+              fadeOut: liveFade?.fadeOut ?? clip.fadeOut,
+              fadeInType: liveFade ? fadeOfBend(liveFade.inBend) : clip.fadeInType,
+              fadeOutType: liveFade ? fadeOfBend(liveFade.outBend) : clip.fadeOutType,
+            }} pxPerSec={pps} colour="rgba(255,255,255,.85)" viewLeft={scroll} viewWidth={w} clipLeft={0} />
             <ClipGain id={clip.id} points={clip.gainPoints} duration={len} offsetDelta={0} onDraft={setLiveGain} />
             <ClipPan id={clip.id} points={clip.panPoints} duration={len} offsetDelta={0} onDraft={() => {}} />
             <svg className="fades" preserveAspectRatio="none" viewBox="0 0 100 100">
-              {(liveFade?.fadeIn ?? clip.fadeIn ?? 0) > 0 && <path d={`M0,0 L0,100 Q${((liveFade?.fadeIn ?? clip.fadeIn ?? 0) / len) * 50},10 ${((liveFade?.fadeIn ?? clip.fadeIn ?? 0) / len) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
-              {(liveFade?.fadeOut ?? clip.fadeOut ?? 0) > 0 && <path d={`M100,0 L100,100 Q${100 - ((liveFade?.fadeOut ?? clip.fadeOut ?? 0) / len) * 50},10 ${100 - ((liveFade?.fadeOut ?? clip.fadeOut ?? 0) / len) * 100},0 Z`} fill="rgba(0,0,0,.35)" />}
+              {(() => {
+                const inn = liveFade?.fadeIn ?? clip.fadeIn ?? 0;
+                const out = liveFade?.fadeOut ?? clip.fadeOut ?? 0;
+                const inBend = liveFade?.inBend ?? bendOfFade(clip.fadeInType);
+                const outBend = liveFade?.outBend ?? bendOfFade(clip.fadeOutType);
+                const innPaths = fadeInPaths((inn / Math.max(0.001, len)) * 100, inBend);
+                const outPaths = fadeOutPaths((1 - out / Math.max(0.001, len)) * 100, outBend);
+                return <>
+                  {inn > 0 && <path d={innPaths.shade} fill="rgba(0,0,0,.35)" />}
+                  {out > 0 && <path d={outPaths.shade} fill="rgba(0,0,0,.35)" />}
+                  {inn > 0 && <path className="fade-edge" d={innPaths.edge} />}
+                  {out > 0 && <path className="fade-edge" d={outPaths.edge} />}
+                </>;
+              })()}
             </svg>
-            <div className="fade-h in" title="Fade in. Drag right to make it longer."
+            <div className="fade-h in" title="Fade in. Drag right to change the length. Drag up or down to make it steeper, straighter, or lighter."
               onPointerDown={(e) => {
                 if (e.button !== 0) return;
                 e.stopPropagation();
                 const startIn = clip.fadeIn ?? 0;
                 const startOut = clip.fadeOut ?? 0;
+                const startBend = bendOfFade(clip.fadeInType);
                 let next = startIn;
-                startDrag(e, (dx) => {
+                let bend = startBend;
+                startDrag(e, (dx, dy) => {
                   next = clamp(startIn + dx / pps, 0, len);
-                  setLiveFade({ fadeIn: next, fadeOut: startOut });
-                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeIn: next }); });
+                  bend = clamp(startBend - dy / 70, -1, 1);
+                  setLiveFade({ fadeIn: next, fadeOut: startOut, inBend: bend, outBend: bendOfFade(clip.fadeOutType) });
+                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeIn: next, fadeInType: fadeOfBend(bend) }); });
               }}>IN</div>
-            <div className="fade-h out" title="Fade out. Drag left to make it longer."
+            <div className="fade-h out" title="Fade out. Drag left to change the length. Drag up or down to make it steeper, straighter, or lighter."
               onPointerDown={(e) => {
                 if (e.button !== 0) return;
                 e.stopPropagation();
                 const startIn = clip.fadeIn ?? 0;
                 const startOut = clip.fadeOut ?? 0;
+                const startBend = bendOfFade(clip.fadeOutType);
                 let next = startOut;
-                startDrag(e, (dx) => {
+                let bend = startBend;
+                startDrag(e, (dx, dy) => {
                   next = clamp(startOut - dx / pps, 0, len);
-                  setLiveFade({ fadeIn: startIn, fadeOut: next });
-                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeOut: next }); });
+                  bend = clamp(startBend - dy / 70, -1, 1);
+                  setLiveFade({ fadeIn: startIn, fadeOut: next, inBend: bendOfFade(clip.fadeInType), outBend: bend });
+                }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeOut: next, fadeOutType: fadeOfBend(bend) }); });
               }}>OUT</div>
             <div ref={playhead} className="playhead" />
           </div>

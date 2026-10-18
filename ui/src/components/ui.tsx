@@ -167,7 +167,7 @@ export function Knob({ value, onChange, onCommit, size = 34, bipolar, label, tit
           <path d={bipolar ? arc(Math.min(0, ang), Math.max(0, ang)) : arc(a0, ang)} stroke="url(#kg)" strokeWidth={3} fill="none" strokeLinecap="round" />
         )}
         <defs><linearGradient id="kg"><stop offset="0" stopColor="#00d1ff" /><stop offset="1" stopColor="#7c5cff" /></linearGradient></defs>
-        <circle cx={size / 2} cy={size / 2} r={r - 5} fill="#1f2432" />
+        <circle cx={size / 2} cy={size / 2} r={Math.max(2, r - Math.min(5, r * 0.45))} fill="#1f2432" />
         <line x1={size / 2} y1={size / 2} x2={pt(ang)[0] * 0.62 + size / 2 * 0.38} y2={pt(ang)[1] * 0.62 + size / 2 * 0.38} stroke="#fff" strokeWidth={2} strokeLinecap="round" />
       </svg>
       {label && <span className="small dim">{label}</span>}

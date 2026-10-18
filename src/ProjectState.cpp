@@ -36,6 +36,14 @@ int chainMixPercent (const te::PluginList& list)
     return 100;
 }
 
+const char* fadeTypeName (te::AudioFadeCurve::Type type)
+{
+    if (type == te::AudioFadeCurve::convex)  return "convex";
+    if (type == te::AudioFadeCurve::concave) return "concave";
+    if (type == te::AudioFadeCurve::sCurve)  return "scurve";
+    return "linear";
+}
+
 var describeParameter (te::AutomatableParameter& p)
 {
     // NaN or infinity would make the JSON unreadable for the interface.
@@ -361,6 +369,8 @@ var describeClip (te::Clip& c)
          .set ("pan", ac->getPan())
          .set ("fadeIn", ac->getFadeIn().inSeconds())
          .set ("fadeOut", ac->getFadeOut().inSeconds())
+         .set ("fadeInType", fadeTypeName (ac->getFadeInType()))
+         .set ("fadeOutType", fadeTypeName (ac->getFadeOutType()))
          .set ("pitch", ac->getPitchChange())
          .set ("reversed", ac->getIsReversed())
          .set ("autoTempo", ac->getAutoTempo());

@@ -58,6 +58,9 @@ export interface Clip {
   pan?: number;
   fadeIn?: number;
   fadeOut?: number;
+  /** linear, convex (steep), concave (stays quiet longer), or scurve. */
+  fadeInType?: string;
+  fadeOutType?: string;
   pitch?: number;
   reversed?: boolean;
   autoTempo?: boolean;

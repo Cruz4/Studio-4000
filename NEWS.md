@@ -1,3 +1,5 @@
+IN and OUT sit under the clip name, after the L and at the right end, so the name stays whole. Drag a fade sideways to change its length, or up and down to make it steeper, straight, or lighter. The track name row shows pan as a knob with a C, L, or R readout.
+
 The start page on a phone can be tapped and scrolled. The session types, How things work, Join, audio setup, and Recent are all on that page. Desktop mode is unchanged.
 
 Hover either end of a clip and the pointer becomes trim arrows, whichever tool is selected. Double-click a clip to open the Editor. IN and OUT boxes fade the start and the end, in the arrangement and in the Editor, and overlapping clips crossfade. A clip has a blue pan line next to the yellow gain line, and the track name row has a pan bar. With snap on, a dragged clip catches another clip's start or end, and any marker. Hold Ctrl while dragging a clip up or down to keep its time. Hold Alt while dragging to drop a copy.
