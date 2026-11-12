@@ -4,7 +4,7 @@ Updates from November 11–12, 2026
 Restored the original gray backgrounds, toolbar gradients, FX panels and graph styling. Kept the requested slightly darker, bolder main text and readable EQ type labels.
 
 ### Keep the takes coming
-Right-click Record for loop takes on separate tracks. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
+Right-click Record to set up and arm loop takes without starting recording. A LOOP badge on Record shows the mode is enabled. Click Record or press R when you're ready, or right-click again to change settings or turn the mode off. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
 
 Recording waveforms stay steady as the take grows. ASIO interfaces appear in the driver list, pending input changes settle before capture, and driver latency is compensated. The audio-load badge stays still and leaves padding around the toolbar's search button.
 

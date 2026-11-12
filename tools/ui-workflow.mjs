@@ -130,13 +130,25 @@ try {
  if(await page.eval(()=>window.__test.store.useStore.getState().project.tracks.find(t=>t.id===window.__test.vocal).plugins.length)!==applied.length)throw new Error("Factory chain did not undo as one step");
  await page.eval(()=>{const{store}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null,openPlugins:[]});return store.act("transport.setLoop",{start:0,end:0,enabled:false});});await sleep(120);
  await page.eval(()=>document.querySelector(".tbtn.rec").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true})));await sleep(100);
- if(!await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Start recording")?.disabled))throw new Error("Loop takes must require a range");await page.shot("loop-takes-needs-range");
+ if(!await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Arm loop takes")?.disabled))throw new Error("Arming loop takes must require a range");
+ if(await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].some(b=>b.textContent==="Start recording")))throw new Error("Loop-take setup must not have an immediate recording action");await page.shot("loop-takes-needs-range");
  await page.eval(()=>document.querySelector('.modal-head button[title="Close"]').click());await page.eval(()=>window.__test.store.act("transport.setLoop",{start:1,end:4,enabled:true}));await sleep(100);
  await page.eval(()=>document.querySelector(".tbtn.rec").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true})));await sleep(100);await page.shot("loop-takes-setup");
- await page.eval(()=>{const boxes=document.querySelectorAll('.modal input[type="checkbox"]');boxes[2].click();});await sleep(50);
- await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Save settings").click());await sleep(150);
+ await page.eval(()=>{[...document.querySelectorAll('.modal label')].find(l=>l.textContent.includes('Mute previous takes')).querySelector('input').click();});await sleep(50);
+ await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Arm loop takes").click());await sleep(200);
  const loop=await page.eval(()=>window.__test.store.useStore.getState().project.loopTakes);
  if(!loop.enabled||loop.takeCount!==4||loop.mutePrevious)throw new Error("Loop-take settings not saved: "+JSON.stringify(loop));
+ const armed=await page.eval(()=>{const{store,vocal}=window.__test,s=store.useStore.getState();return !s.transport.playing&&!s.transport.recording&&s.project.tracks.filter(t=>t.armed).length===1&&s.project.tracks.find(t=>t.armed).id===vocal&&document.querySelector('.tbtn.rec.loop-takes .loop-take-badge')?.textContent==='LOOP';});
+ if(!armed)throw new Error("Loop setup must arm the source and show LOOP without starting transport");await page.shot("loop-takes-armed");
+ await page.eval(()=>document.querySelector(".tbtn.rec").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true})));await sleep(100);
+ await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Turn off loop takes").click());await sleep(150);
+ if(!await page.eval(()=>!window.__test.store.useStore.getState().project.loopTakes.enabled&&!window.__test.store.useStore.getState().transport.recording&&!document.querySelector('.loop-take-badge')))throw new Error("Turning loop takes off must clear the mode indicator without starting recording");
+ await page.eval(()=>document.querySelector(".tbtn.rec").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true})));await sleep(100);
+ await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent==="Arm loop takes").click());await sleep(150);
+ await page.eval(()=>document.querySelector('.tbtn.rec').click());await sleep(200);
+ if(!await page.eval(()=>window.__test.store.useStore.getState().transport.recording))throw new Error("The armed mode must start only when Record is clicked");
+ await page.eval(()=>document.querySelector('.tbtn.rec').click());await sleep(150);
+ if(!await page.eval(()=>!window.__test.store.useStore.getState().transport.recording&&window.__test.store.useStore.getState().project.loopTakes.enabled))throw new Error("Stopping recording must retain the prepared loop mode");
  await page.eval(()=>{const{store,theme,vocal}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null});theme.applyPalette("light");const p=store.useStore.getState().project.tracks.find(t=>t.id===vocal).plugins.find(p=>p.type==="s4000eq");store.openPlugin(p.id);});await sleep(450);await page.shot("light-eq-readable");
  const colours=await page.eval(async()=>{
   const root=getComputedStyle(document.documentElement);

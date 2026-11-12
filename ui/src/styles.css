@@ -207,6 +207,11 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .tbtn.play.on { background: var(--green); color: #002217; box-shadow: 0 0 18px rgba(33, 230, 165, .45); }
 .tbtn.rec { color: var(--rec); }
 .tbtn.rec.on { background: var(--rec); color: #fff; animation: recpulse 1.2s ease-in-out infinite; }
+.tbtn.rec.loop-takes { position: relative; box-shadow: inset 0 0 0 1px var(--violet); }
+.tbtn.rec.loop-takes:not(.on) { background: rgba(var(--primary-rgb), .14); }
+.tbtn.rec.loop-takes > svg { transform: translateY(-4px); }
+.loop-take-badge { position: absolute; bottom: 2px; font: 700 8px/1 var(--font); letter-spacing: .02em; color: var(--text); }
+.tbtn.rec.on .loop-take-badge { color: #fff; }
 @keyframes recpulse { 50% { box-shadow: 0 0 26px rgba(255, 59, 92, .8); } }
 .clock { flex-direction: column; gap: 1px; width: 168px; line-height: 1; }
 .clock .main { font: 600 21px var(--mono); letter-spacing: .03em; color: #fff; text-shadow: 0 0 14px rgba(160, 139, 255, .35); }

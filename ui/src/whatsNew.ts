@@ -8,7 +8,8 @@ export interface WhatsNewGroup {
 
 export const WHATS_NEW: WhatsNewGroup[] = [
   { title: "Keep the takes coming", color: "#ff72df", items: [
-    "Right-click Record to set up automatic loop takes on new tracks.",
+    "Right-click Record to arm loop takes, then click Record when you're ready.",
+    "The LOOP badge shows the mode is on. Right-click Record to change it or turn it off.",
     "Choose a take count or keep going. Mute earlier takes or layer over them.",
     "Live waveforms stay steady, with driver latency compensation and ASIO support.",
   ] },
@@ -35,7 +36,8 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Studio Sessions is the default dark theme, with fuchsia Effects headings.",
     "Find the original dark look as Dark Night, plus 35 color palettes in Settings.",
     "The top-right switch takes you between Light and Studio Sessions.",
-    "Light mode keeps its original gray appearance, with slightly darker, bolder text and readable EQ labels.",
+    "Light mode keeps its original gray appearance, with slightly darker, bolder text.",
+    "EQ type labels stay readable.",
   ] },
 ];
 

@@ -104,6 +104,12 @@ export function TopBar() {
   const historyOpen = useStore((s) => s.historyOpen);
 
   if (!project) return null;
+  const loopTakes = project.loopTakes;
+  const recordLabel = loopTakes?.active
+    ? `Recording take ${loopTakes.take}${loopTakes.takeCount ? ` of ${loopTakes.takeCount}` : ""}. Click to stop. Right-click for loop-take settings.`
+    : loopTakes?.enabled
+      ? `Loop takes armed: ${loopTakes.takeCount ? `${loopTakes.takeCount} takes` : "until you stop"}. Click Record or press R when ready. Right-click to change settings or turn off loop takes.`
+      : "Record (R). Right-click to set up loop takes.";
   return (
     <div className="topbar">
       <div className="topbar-side">
@@ -131,8 +137,10 @@ export function TopBar() {
           <button className={cx("tbtn play", playing && !recording && "on")} title="Play / Stop (Space)" onClick={() => act(playing ? "transport.stop" : "transport.play")}>
             <Icon name={playing ? "stop" : "play"} size={18} />
           </button>
-          <button className={cx("tbtn rec", recording && "on")} title={project.loopTakes?.active ? `Recording take ${project.loopTakes.take}${project.loopTakes.takeCount ? ` of ${project.loopTakes.takeCount}` : ""}. Click to stop. Right-click for loop-take settings.` : `Record (R)${project.loopTakes?.enabled ? " - loop takes enabled" : ""}. Right-click for loop-take settings.`}
-            onClick={toggleRecord} onContextMenu={(e) => { e.preventDefault(); useStore.setState({ loopTakeSetupOpen: true }); }}><Icon name="record" size={18} /></button>
+          <button className={cx("tbtn rec", recording && "on", loopTakes?.enabled && "loop-takes")} title={recordLabel} aria-label={recordLabel}
+            onClick={toggleRecord} onContextMenu={(e) => { e.preventDefault(); useStore.setState({ loopTakeSetupOpen: true }); }}>
+            <Icon name="record" size={18} />{loopTakes?.enabled && <span className="loop-take-badge" aria-hidden>LOOP</span>}
+          </button>
           <button className="tbtn" title="Forward one bar (.)" onClick={() => act("transport.nudge", { bars: 1 })}><Icon name="forward" size={15} /></button>
           <div className="sep" />
           <button className={cx("tbtn", project.looping && "on")} title="Loop (L). Recording while looping stacks takes" onClick={() => runCommand("loop")}><Icon name="loop" /></button>

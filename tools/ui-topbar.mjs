@@ -78,6 +78,7 @@ try {
     const url = performance.getEntriesByType("resource").map((e) => e.name).find((u) => new URL(u).pathname === "/src/store.ts");
     const store = await import(url ?? "/src/store.ts");
     await store.act("project.new", { name: "A longer project title for toolbar spacing", template: "vocal" });
+    await store.act("recording.loopTakes.configure", { enabled: true, takeCount: 4, mutePrevious: true });
     store.useStore.setState({ aboutOpen: false });
   });
   await sleep(350);

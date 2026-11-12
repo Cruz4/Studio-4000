@@ -160,9 +160,9 @@ Select a palette under **Settings > General > Appearance theme**. Studio Session
 
 ### Record loop takes on separate tracks
 
-Highlight the part you want by dragging left or right on the time ruler. This works with every editing tool. The range must be longer than two seconds. Right-click **Record**, choose the source audio track, and select a take count or **Keep going until I stop**. Keep **Mute previous takes as I go** on for individual takes, or turn it off to layer over earlier performances. Click **Start recording**.
+Highlight the part you want by dragging left or right on the time ruler. This works with every editing tool. The range must be longer than two seconds. Right-click **Record**, choose the source audio track, and select a take count or **Keep going until I stop**. Keep **Mute previous takes as I go** on for individual takes, or turn it off to layer over earlier performances. Click **Arm loop takes** to save the setup without starting recording. The Record button shows **LOOP** while this mode is enabled. When you're ready, click Record or press **R**.
 
-Each pass gets its own track with the source's mono/stereo format, effects, mixer settings and output routing. The transport keeps running between passes. Recording stops at the chosen count or when you press Stop; the most recent take stays audible. Save settings to make the regular Record button use this mode. Turn **Use loop-take recording** off to return to standard recording.
+Each pass gets its own track with the source's mono/stereo format, effects, mixer settings and output routing. The transport keeps running between passes. Recording stops at the chosen count or when you press Stop; the most recent take stays audible. Right-click Record again to change the setup or choose **Turn off loop takes** before recording. The LOOP badge disappears when standard recording is restored.
 
 ### Use complete track chains
 
