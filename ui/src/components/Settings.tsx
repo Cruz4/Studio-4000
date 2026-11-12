@@ -4,7 +4,7 @@ import { PROVIDERS, getKey, loadConfig, saveConfig, type AiConfig, type Provider
 import { localRpc, native } from "../bridge";
 import { COFFEE_URL, supportMailto } from "../support";
 import { usePad } from "../gamepad/pad";
-import { act, loadCatalogue, toast, useStore } from "../store";
+import { act, loadCatalogue, loadDevices, toast, useStore } from "../store";
 import { Icon, Modal, Spinner, Tabs } from "./ui";
 import { cx } from "../util";
 
@@ -25,7 +25,12 @@ const call = async (method: string, params: Record<string, unknown> = {}) => {
 function AudioTab() {
   const [d, setD] = useState<Devices | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => localRpc<Devices>("devices.get").then(setD).catch((e) => toast(e.message, "error"));
+  const load = () => localRpc<Devices>("devices.get").then(async (next) => {
+    setD(next);
+    // Refresh the track routing menus as well as this local audio panel.
+    // loadDevices uses the host's devices when editing a joined session.
+    await loadDevices();
+  }).catch((e) => toast(e.message, "error"));
   useEffect(() => { load(); }, []);
   const set = async (p: Record<string, unknown>) => { setBusy(true); await call("devices.set", p); await load(); setBusy(false); };
   if (!d) return <div className="empty"><Spinner /></div>;
