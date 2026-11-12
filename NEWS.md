@@ -16,6 +16,8 @@ Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enh
 ### Edit with confidence
 Selected clips have a fuchsia outline and a subtle brightness lift. Time selections have a clearer fill and edges. Drag the ruler with any tool to select a range, then right-click to split all tracks at both boundaries. Markers extend through the tracks and magnetically catch clips. Ctrl-drag catches markers when Snap is off.
 
+Clip gain, fade, trim and take controls stay behind the track information panels when scrolling horizontally. Hidden controls no longer draw or receive clicks over track headers.
+
 Alt-drag shows a live ghost copy, applies overlap crossfades during the drag, and keeps them on drop. Copies retain independent effects and automation. History has readable names, fixed-height rows, clear Undo/Redo sections and exact step counts.
 
 ### Print your effects

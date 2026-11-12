@@ -376,7 +376,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .io-chip:hover { color: var(--text); background: rgba(255, 255, 255, 0.09); border-color: var(--line2); }
 .io-chip svg { flex: none; opacity: .85; }
 .io-chip.off { color: var(--faint); border-style: dashed; }
-.lane { position: relative; flex: none; }
+/* Keep every clip control below the sticky track header, even with a high local z-index. */
+.lane { position: relative; flex: none; isolation: isolate; }
 .master-row .track-head { cursor: default; background: linear-gradient(90deg, rgba(var(--primary-rgb), .22), rgba(var(--secondary-rgb), .08)), var(--bg2); }
 .lane.master-lane { background: linear-gradient(90deg, rgba(var(--primary-rgb), .18), rgba(var(--secondary-rgb), .06) 240px), var(--bg3); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), .28); }
 .lane.drop { background: rgba(var(--primary-rgb), .08); outline: 1px dashed rgba(var(--primary-rgb), .6); outline-offset: -2px; }

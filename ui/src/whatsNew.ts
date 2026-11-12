@@ -31,6 +31,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Bus meters show the summed signal, including nested buses.",
     "Check mono playback with a Mono toggle on tracks, buses and the master.",
     "The shorter CPU badge stays still, with room around the search button.",
+    "Clip gain and fade controls stay behind track headers when you scroll.",
   ] },
   { title: "Make it yours", color: "#f2cf87", items: [
     "Studio Sessions is the default dark theme, with fuchsia Effects headings.",

@@ -113,10 +113,25 @@ try {
   window.dispatchEvent(new PointerEvent("pointermove",{bubbles:true,buttons:1,altKey:true,clientX:x+3*pps,clientY:y}));return{x:x+3*pps,y};
  });await sleep(150);
  const liveFades=await page.eval(()=>({ghost:document.querySelectorAll(".duplicate-ghost .fade-edge").length,original:[...document.querySelectorAll('[data-clip="'+window.__test.source+'"]')].find(e=>!e.closest(".duplicate-ghost")).querySelectorAll(".fade-edge").length}));
- if(liveFades.ghost<1||liveFades.original<1)throw new Error("Copy drag has no live crossfade: "+JSON.stringify(liveFades));await page.shot("copy-live-crossfade");
+ if(liveFades.ghost<1||liveFades.original<1)throw new Error("Copy drag has no live crossfade: "+JSON.stringify(liveFades));
+ await page.eval(()=>{document.querySelector('.arrange-body').scrollLeft=270;});await sleep(100);
+ const ghostControls=await page.eval(()=>{let covered=0;const leaks=[];for(const c of document.querySelectorAll('.duplicate-ghost .clip-gain,.duplicate-ghost .fade-h')){const r=c.getBoundingClientRect(),h=c.closest('.track-row').querySelector('.track-head').getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;if(x>=h.left&&x<h.right){++covered;if(!document.elementFromPoint(x,y)?.closest('.track-head'))leaks.push(c.className);}}return{covered,leaks};});
+ if(!ghostControls.covered||ghostControls.leaks.length)throw new Error("Duplicate-preview controls leaked over track info: "+JSON.stringify(ghostControls));
+ await page.eval(()=>{document.querySelector('.arrange-body').scrollLeft=0;});await sleep(100);await page.shot("copy-live-crossfade");
  await page.eval(d=>window.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,button:0,altKey:true,clientX:d.x,clientY:d.y})),drag);await sleep(300);
  const copy=await page.eval(()=>{const clips=window.__test.store.useStore.getState().project.tracks[0].clips;return{original:clips.find(c=>c.id===window.__test.source),copy:clips.find(c=>c.id!==window.__test.source),ghosts:document.querySelectorAll(".duplicate-ghost").length};});
  if(copy.ghosts||Math.abs(copy.original.fadeOut-3)>.001||Math.abs(copy.copy.fadeIn-3)>.001)throw new Error("Drop did not retain crossfade: "+JSON.stringify(copy));await page.shot("copy-dropped-crossfade");
+ const clipLayers=[];
+ for(const palette of ["studio-sessions","light"]){
+  await page.eval(palette=>{window.__test.theme.applyPalette(palette);window.__test.store.useStore.setState({selectedClips:[]});},palette);await sleep(100);
+  for(const left of [60,270]){
+   await page.eval(left=>{document.querySelector('.arrange-body').scrollLeft=left;},left);await sleep(100);
+   const result=await page.eval(()=>{let covered=0,visible=0;const leaks=[];for(const row of document.querySelectorAll('.track-row[data-track]')){const h=row.querySelector('.track-head')?.getBoundingClientRect();if(!h)continue;for(const c of row.querySelectorAll('.clip-gain,.fade-h,.edge,.takes,.gain-pt')){const r=c.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;if(y<h.top||y>h.bottom||x<h.left||x>innerWidth)continue;const top=document.elementFromPoint(x,y);if(x<h.right){++covered;if(!top?.closest('.track-head'))leaks.push({control:c.className,top:top?.className,x,y});}else if(top?.closest('.clip'))++visible;}}return{covered,visible,leaks};});
+   clipLayers.push({palette,left,...result});if(!result.covered||result.leaks.length)throw new Error("Clip controls leaked over track info: "+JSON.stringify(clipLayers));
+  }
+  await page.shot(`clip-controls-behind-header-${palette}`);
+ }
+ await page.eval(()=>{document.querySelector('.arrange-body').scrollLeft=0;window.__test.theme.applyPalette('studio-sessions');});await sleep(100);
  await page.eval(()=>{const{store,vocal}=window.__test;store.useStore.setState({selectedTrack:vocal,selectedTracks:[vocal],selectedClips:[],browserTab:"chains"});});await sleep(200);await page.shot("factory-chains-browser");
  await page.eval(()=>document.querySelector(".chain-item").click());await sleep(120);await page.shot("factory-chain-preview");
  await page.eval(()=>[...document.querySelectorAll(".modal-foot button")].find(b=>b.textContent.startsWith("Apply to")).click());await sleep(200);
