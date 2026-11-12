@@ -355,8 +355,13 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .clip { position: absolute; top: 4px; bottom: 4px; border-radius: 7px; overflow: hidden; cursor: grab; box-shadow: 0 1px 0 rgba(255, 255, 255, .1) inset; }
 .clip .clip-label { position: absolute; left: 0; right: 0; top: 0; height: 17px; padding: 1px 7px; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, .92); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; z-index: 2; }
 .clip canvas { position: absolute; left: 0; top: 17px; width: 100%; height: calc(100% - 17px); }
-.clip.selected { box-shadow: 0 0 0 2px #fff, 0 0 18px rgba(255, 255, 255, .25); z-index: 3; }
+.clip.selected { box-shadow: 0 0 0 2px #ff00ff, 0 0 0 3px rgba(0, 0, 0, .4); z-index: 3; }
+.clip.selected::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 7;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 0, 255, .06));
+}
 .clip.muted { opacity: .4; filter: grayscale(.7); }
+.clip.muted.selected { opacity: .75; filter: none; }
 .arrange .clip .edge { position: absolute; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 4; }
 .arrange .clip .edge::after { content: ""; position: absolute; top: 18px; bottom: 4px; width: 2px; border-radius: 1px; background: transparent; }
 .arrange .clip .edge.l::after { left: 2px; }
@@ -910,7 +915,6 @@ button.template.akasheet-card { width: 108px; text-align: center; }
   border-color: #0c0e12;
   box-shadow: 0 16px 40px rgba(8, 10, 14, .28);
 }
-:root[data-theme="light"] .clip.selected { box-shadow: 0 0 0 2px #161922, 0 0 16px rgba(22, 25, 34, .18); }
 :root[data-theme="light"] .fx-window {
   color: var(--text);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, #868e97), #707880 72%);

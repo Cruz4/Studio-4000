@@ -1,3 +1,5 @@
+Selected clips in Tracks view now have a crisp fuchsia outline and a subtle brightness lift across their fill. The selection stays consistent across all themes, with waveforms, notes and editing handles still visible.
+
 Studio Sessions is the default dark theme. Its Effects category headings use Technological Shine's fuchsia, with the rest of its colours unchanged. The original dark appearance is available in Settings as Dark Night, and Plotting (Default) is now named Plotting. The toolbar switches between Default Light and Studio Sessions; saved custom palette choices are preserved.
 
 The audio load badge is shorter, and the toolbar now preserves space for the right-hand search button. Long project names truncate before they can push controls past the window edge, and narrower windows compact the toolbar while keeping the transport and right-hand actions accessible. Percentage changes keep their fixed spacing.
