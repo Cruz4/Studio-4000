@@ -97,7 +97,7 @@ namespace
                 }
                 for (int ch = 0; ch < 2; ++ch)
                     for (int i = 0; i < block; ++i)
-                        input.setSample (ch, i, ring.getSample (ch, (cursor + i) % delay));
+                        input.setSample (ch, i, ch == 0 ? ring.getSample (ch, (cursor + i) % delay) : 0.25f);
                 output.clear();
                 callback->audioDeviceIOCallbackWithContext (input.getArrayOfReadPointers(), 2,
                                                            output.getArrayOfWritePointers(), 2, block, {});
@@ -264,10 +264,19 @@ void RecordingSelfTest::beginRecording()
         if (type != "recordings") return;
         if (auto* previews = payload.getArray())
             for (auto& preview : *previews)
-                if (preview["trackId"].toString() == recordTrack && (double) preview["length"] > 0.1)
+                if (preview["trackId"].toString() == recordTrack && (double) preview["length"] > 1.0)
                     if (auto* peaks = preview["data"].getArray())
-                        for (auto& peak : *peaks)
-                            sawPreview = sawPreview || std::abs ((int) peak) > 5;
+                    {
+                        // Check an old LEFT-channel transient, after later buffers have arrived.
+                        // The independent right-channel mic signal must not satisfy this check.
+                        const int stride = juce::jmax (1, (int) preview["channels"]) * 2;
+                        const double binsPerSecond = (double) preview["binsPerSecond"];
+                        const int begin = juce::jmax (0, (int) std::floor (0.23 * binsPerSecond));
+                        const int end = juce::jmin (peaks->size() / stride, (int) std::ceil (0.29 * binsPerSecond));
+                        for (int bin = begin; bin < end; ++bin)
+                            sawPreview = sawPreview || std::abs ((int) (*peaks)[bin * stride]) > 5
+                                                    || std::abs ((int) (*peaks)[bin * stride + 1]) > 5;
+                    }
     };
     ++LoopbackDevice::probeSerial;
     call ("transport.record");
@@ -305,9 +314,15 @@ void RecordingSelfTest::inspectRecording()
                       .createReaderFor (clip->getCurrentSourceFile());
     std::unique_ptr<juce::AudioFormatReader> owned (reader);
     if (reader == nullptr) throw RpcError ("Cannot read the recorded file");
-    juce::AudioBuffer<float> buffer (1, (int) reader->lengthInSamples);
-    reader->read (&buffer, 0, buffer.getNumSamples(), 0, true, false);
-    for (double expected : { 1.25, 1.5, 2.0, 2.5 })
+    juce::AudioBuffer<float> buffer (2, (int) reader->lengthInSamples);
+    reader->read (&buffer, 0, buffer.getNumSamples(), 0, true, true);
+    // Check the first captured samples using an independent continuous microphone signal.
+    // A backing clip's seek/start-up transient is a separate playback behavior.
+    bool firstSamples = reader->numChannels >= 2 && buffer.getNumSamples() >= 128;
+    for (int i = 0; i < juce::jmin (128, buffer.getNumSamples()); ++i)
+        firstSamples = firstSamples && std::abs (buffer.getSample (1, i) - 0.25f) < 0.001f;
+    check ("first microphone samples are preserved", firstSamples);
+    for (double expected : { 1.5, 2.0, 2.5 })
     {
         const double sourceTime = expected - pos.getStart().inSeconds() + pos.getOffset().inSeconds();
         const int centre = (int) std::llround (sourceTime * reader->sampleRate);
@@ -318,7 +333,7 @@ void RecordingSelfTest::inspectRecording()
         const double errorMs = first < 0 ? 9999.0 : (first - centre) * 1000.0 / reader->sampleRate;
         check ("pulse at " + String (expected) + "s is aligned", std::abs (errorMs) < 2.0, String (errorMs, 3) + " ms");
     }
-    check ("actual waveform is visible before stopping", sawPreview);
+    check ("earlier waveform peaks remain visible before stopping", sawPreview);
     std::cout << "Scenario " << scenario << ": " << reader->sampleRate << " Hz, "
               << scenarios[scenario].block << " samples" << std::endl;
 }
