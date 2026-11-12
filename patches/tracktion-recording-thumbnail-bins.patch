@@ -1,26 +1,38 @@
 diff --git a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h b/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
 --- a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
 +++ b/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
-@@ -42,8 +42,11 @@
+@@ -42,22 +42,40 @@
          /** Destructor */
          void reset (int numChannels, double sampleRate)
          {
 -            thumb->reset (numChannels, sampleRate, 0);
 -            nextSampleNum = 0;
+-        }
+-
+-        /** Adss a block of recorded data to the thumbnail.
+-            This is called by the engine so shouldn't need to be called manually.
+-        */
+-        void addBlock (const juce::AudioBuffer<float>& incoming, int startOffsetInBuffer, int numSamples)
+-        {
+-            thumb->addBlock (nextSampleNum, incoming, startOffsetInBuffer, numSamples);
+-            nextSampleNum += numSamples;
+-        }
+-
+-    private:
+-        friend class RecordingThumbnailManager;
+-        std::atomic<int64_t> nextSampleNum { 0 };
 +            thumb->reset (numChannels, sampleRate, 0);
 +            nextSampleNum = 0;
 +            pendingSamples = 0;
 +            pending.setSize (numChannels, 1024);
 +            pending.clear();
-         }
- 
-         /** Adss a block of recorded data to the thumbnail.
-@@ -51,8 +51,21 @@
-         */
-         void addBlock (const juce::AudioBuffer<float>& incoming, int startOffsetInBuffer, int numSamples)
-         {
--            thumb->addBlock (nextSampleNum, incoming, startOffsetInBuffer, numSamples);
--            nextSampleNum += numSamples;
++        }
++
++        /** Adss a block of recorded data to the thumbnail.
++            This is called by the engine so shouldn't need to be called manually.
++        */
++        void addBlock (const juce::AudioBuffer<float>& incoming, int startOffsetInBuffer, int numSamples)
++        {
 +            // Studio 4000: accumulate partial thumbnail bins so later silence cannot
 +            // overwrite an earlier transient. Publish the partial bin too for live drawing.
 +            while (numSamples > 0)
@@ -36,14 +48,10 @@ diff --git a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailMa
 +                if (pendingSamples == pending.getNumSamples())
 +                    pendingSamples = 0;
 +            }
-         }
- 
-     private:
-@@ -57,7 +57,9 @@
- 
-     private:
-         friend class RecordingThumbnailManager;
--        std::atomic<int64_t> nextSampleNum { 0 };
++        }
++
++    private:
++        friend class RecordingThumbnailManager;
 +        std::atomic<int64_t> nextSampleNum { 0 };
 +        juce::AudioBuffer<float> pending;
 +        int pendingSamples = 0;
