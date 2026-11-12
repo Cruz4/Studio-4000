@@ -164,8 +164,9 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 /* The two sides share the leftover width equally, so the console sits in the true centre whenever there's room. */
 .topbar { position: relative; z-index: 30; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 12px; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(20, 23, 34, .92), rgba(10, 12, 18, .92)); backdrop-filter: blur(12px); box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset; }
-.topbar-side { flex: 1 1 0; min-width: max-content; display: flex; align-items: center; gap: 10px; }
-.topbar-side.right { justify-content: flex-end; }
+.topbar-side { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.topbar-side.right { min-width: max-content; justify-content: flex-end; }
+.topbar-side > .seg { flex: none; }
 .console { flex: none; display: flex; align-items: center; gap: 8px; }
 .seg { display: flex; align-items: center; gap: 2px; height: 38px; padding: 3px; border-radius: 11px; background: var(--bg1); border: 1px solid var(--line); }
 .seg .btn.icon { width: 30px; height: 30px; border-radius: 8px; }
@@ -193,7 +194,7 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .mixer.full .strip .strip-name { height: 26px; font-size: 13px; line-height: 20px; }
 .mixer.full .strip-rack { flex: 1 1 0; min-height: 48px; max-height: none; }
 .mixer.full .fader-area { flex: 1.35 1 0; height: auto; min-height: 260px; }
-.project-name { display: flex; flex-direction: column; line-height: 1.15; min-width: 110px; max-width: 200px; flex-shrink: 0; }
+.project-name { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; max-width: 200px; flex: 0 1 200px; }
 .project-name b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-name span { font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .transport { display: flex; align-items: center; gap: 3px; height: 44px; padding: 0 3px; border-radius: 12px; background: var(--bg1); border: 1px solid var(--line); }
@@ -215,9 +216,17 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .tempo .sig { cursor: pointer; min-width: 40px; }
 .lufs { gap: 4px; padding: 0 12px 0 6px; }
 .master-meter { width: 96px; height: 10px; margin-left: 6px; border-radius: 3px; }
+@media (max-width: 1800px) { .topbar .lufs { display: none; } }
 @media (max-width: 1560px) { .master-meter { display: none; } .lufs { padding: 0 6px; } }
 @media (max-width: 1480px) { .project-name span, .topbar .pill { display: none; } .project-name { justify-content: center; } }
-@media (max-width: 1360px) { .clock { width: 132px; } .clock .main { font-size: 18px; } .tbtn { width: 32px; } }
+@media (max-width: 1480px) {
+  .topbar { gap: 8px; }
+  .topbar-side { gap: 6px; }
+  .topbar .seg .btn.icon { width: 28px; }
+  .topbar .view-switch span { padding: 0 9px; }
+  .topbar .clock { width: 144px; }
+}
+@media (max-width: 1360px) { .topbar .brand-mark { display: none; } .topbar .clock { width: 132px; } .clock .main { font-size: 18px; } .tbtn { width: 32px; } }
 @media (max-width: 1320px) { .lufs { display: none; } }
 @media (max-width: 1100px) { .project-name { display: none; } }
 
@@ -978,7 +987,7 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 [data-pad-focus], .pad-focus { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 
-.engine-load { flex: 0 0 76px; width: 76px; min-width: 76px; justify-content: space-between; }
+.engine-load { flex: 0 0 56px; width: 56px; min-width: 56px; padding-inline: 6px; gap: 4px; justify-content: space-between; }
 .engine-load > span { width: 4ch; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .marker-lines { position: absolute; top: 34px; bottom: 0; z-index: 6; pointer-events: none; overflow: hidden; }
 .marker-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--amber); box-shadow: 1px 0 0 rgba(0,0,0,.6); opacity: .85; }

@@ -23,3 +23,5 @@
 /*-run.log
 /ui-smoke/
 /ui-smoke.log
+
+/topbar-*.log
