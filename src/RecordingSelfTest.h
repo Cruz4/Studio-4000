@@ -16,13 +16,15 @@ private:
     juce::File workDir;
     int scenario = 0, stage = 0, failures = 0;
     juce::uint32 started = 0;
-    String recordTrack;
+    String recordTrack, inputName, recordingFile;
     bool sawPreview = false;
 
     void timerCallback() override;
     void check (const String&, bool, const String& = {});
     var call (const String&, const var& = {});
     void beginScenario();
+    void enableInput();
+    void beginRecording();
     void inspectRecording();
 };
 }

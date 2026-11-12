@@ -11,12 +11,28 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: Restore audio dependency build
+        id: audio-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            external
+            build
+          key: recording-win-v1-${{ hashFiles('tools/deps.json') }}-${{ github.sha }}
+          restore-keys: recording-win-v1-${{ hashFiles('tools/deps.json') }}-
       - name: Fetch audio and WebView2 dependencies
         shell: pwsh
         run: .\tools\fetch-deps.ps1
       - name: Build Windows app with ASIO
         shell: pwsh
         run: .\build.ps1 -RequireAsio
+      - name: Cache compiled audio dependencies
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            external
+            build
+          key: ${{ steps.audio-cache.outputs.cache-primary-key }}
       - name: Test UI
         working-directory: ui
         run: npm test

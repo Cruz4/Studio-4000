@@ -189,7 +189,12 @@ void RecordingSelfTest::beginScenario()
     auto playback = call ("track.add", Obj().set ("kind", "audio").set ("name", "Pulse source"))[0].toString();
     call ("clip.importAudio", Obj().set ("trackId", playback).set ("file", file.getFullPathName()).set ("start", 0.0));
     recordTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Recorded pulses"))[0].toString();
-    tdm.rescanWaveDeviceList();
+    started = juce::Time::getMillisecondCounter();
+}
+
+void RecordingSelfTest::enableInput()
+{
+    auto& tdm = app.getEngine().getDeviceManager();
     te::WaveInputDevice* input = nullptr;
     for (int i = 0; i < tdm.getNumWaveInDevices(); ++i)
         if (auto* w = tdm.getWaveInDevice (i); w != nullptr && ! w->isTrackDevice())
@@ -198,16 +203,27 @@ void RecordingSelfTest::beginScenario()
             break;
         }
     if (input == nullptr) throw RpcError ("No loopback input");
+    inputName = input->getName();
     input->setEnabled (true);
-    input->setRecordAdjustmentMs (s.correctionMs);
-    call ("track.setInput", Obj().set ("id", recordTrack).set ("input", input->getName()));
+    started = juce::Time::getMillisecondCounter();
+}
+
+void RecordingSelfTest::beginRecording()
+{
+    call ("devices.setInput", Obj().set ("name", inputName)
+                                  .set ("recordAdjustmentMs", scenarios[scenario].correctionMs));
+    call ("track.setInput", Obj().set ("id", recordTrack).set ("input", inputName));
     call ("track.setMonitor", Obj().set ("id", recordTrack).set ("mode", "off"));
     call ("track.arm", Obj().set ("id", recordTrack).set ("armed", true));
     call ("transport.setLoop", Obj().set ("start", 0.0).set ("end", 0.0));
+    call ("transport.setCountIn", Obj().set ("mode", "none"));
+    call ("transport.setClick", Obj().set ("enabled", false));
     call ("transport.setPosition", Obj().set ("time", 1.25));
     sawPreview = false;
     app.sendEvent = [this] (const String& type, const var& payload)
     {
+        if (type == "toast")
+            std::cout << "Engine message: " << juce::JSON::toString (payload, true) << std::endl;
         if (type != "recordings") return;
         if (auto* previews = payload.getArray())
             for (auto& preview : *previews)
@@ -217,13 +233,31 @@ void RecordingSelfTest::beginScenario()
                             sawPreview = sawPreview || std::abs ((int) peak) > 5;
     };
     call ("transport.record");
+    check ("transport enters recording", app.edit().getTransport().isRecording());
+    recordingFile = {};
+    for (auto* input : app.edit().getAllInputDevices())
+        for (auto target : input->getTargets())
+            if (target.toString() == recordTrack)
+            {
+                const auto file = input->getRecordingFile (target);
+                if (file != juce::File()) recordingFile = file.getFullPathName();
+                std::cout << "Input " << input->getInputDevice().getName()
+                          << " armed=" << input->isRecordingEnabled (target)
+                          << " recording=" << input->isRecording (target)
+                          << " file=" << file.getFullPathName() << std::endl;
+            }
+    auto attempt = app.rpc.call ("devices.set", Obj().set ("bufferSize", 512), "selftest");
+    check ("device settings stay fixed during recording", ! (bool) attempt["ok"]);
     started = juce::Time::getMillisecondCounter();
 }
 
 void RecordingSelfTest::inspectRecording()
 {
     auto& at = app.audioTrack (recordTrack);
-    check ("recording creates a clip", at.getClips().size() == 1);
+    check ("recording creates a clip", at.getClips().size() == 1,
+           "clips=" + String (at.getClips().size()) + " file=" + recordingFile);
+    if (recordingFile.isNotEmpty())
+        std::cout << "Recorded file size: " << juce::File (recordingFile).getSize() << std::endl;
     if (at.getClips().size() != 1) return;
     auto* clip = dynamic_cast<te::WaveAudioClip*> (at.getClips()[0]);
     if (clip == nullptr) throw RpcError ("Recording is not an audio clip");
@@ -261,9 +295,25 @@ void RecordingSelfTest::timerCallback()
             beginScenario();
             stage = 1;
         }
-        else if (app.edit().getTransport().getPosition().inSeconds() >= 3.0)
+        else if (stage == 1 && juce::Time::getMillisecondCounter() - started > 500)
+        {
+            // DeviceManager rebuilds its inputs asynchronously after opening an interface.
+            enableInput();
+            stage = 2;
+        }
+        else if (stage == 2 && juce::Time::getMillisecondCounter() - started > 300)
+        {
+            beginRecording();
+            stage = 3;
+        }
+        else if (stage == 3 && app.edit().getTransport().getPosition().inSeconds() >= 3.0)
         {
             app.edit().getTransport().stop (false, true);
+            stage = 4;
+            started = juce::Time::getMillisecondCounter();
+        }
+        else if (stage == 4 && juce::Time::getMillisecondCounter() - started > 300)
+        {
             inspectRecording();
             app.sendEvent = nullptr;
             if (++scenario < (int) std::size (scenarios))

@@ -208,6 +208,7 @@ void registerDeviceApi (AppEngine& app)
 
     rpc.add ("devices.showPanel", K::read, "Opens the native audio and MIDI device settings window", "{}", [&app] (const var&)
     {
+        requireStoppedRecording (app);
         auto& dm = app.getEngine().getDeviceManager().deviceManager;
         auto selector = std::make_unique<juce::AudioDeviceSelectorComponent> (dm, 0, 64, 0, 64, true, true, true, false);
         selector->setSize (560, 520);
