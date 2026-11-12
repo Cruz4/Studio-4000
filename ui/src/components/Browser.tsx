@@ -4,6 +4,7 @@ import { importAudio, selectedTrack } from "../commands";
 import { act, type BrowserTab, loadCatalogue, openPlugin, toast, useStore } from "../store";
 import type { CatalogueEntry } from "../types";
 import { cx } from "../util";
+import { CHAIN_CATEGORIES, TRACK_CHAINS } from "../trackChains";
 import { Icon, Spinner, Tabs } from "./ui";
 
 const GROUP_ORDER = ["Pitch", "EQ", "Dynamics", "Filter", "Saturation", "Reverb", "Delay", "Modulation", "Stereo", "Utility",
@@ -84,9 +85,9 @@ export function Browser() {
           <div className="grow" />
           <button className="btn sm ghost icon" title="Hide the browser for more room (B)" onClick={() => useStore.setState({ browserOpen: false })}><Icon name="chevronLeft" size={14} /></button>
         </div>
-        {(tab === "fx" || tab === "inst") && (
+        {(tab === "fx" || tab === "inst" || tab === "chains") && (
           <div className="row">
-            <input className="input sm grow" placeholder={`Search ${tab === "fx" ? "effects" : "instruments"}…`} value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="input sm grow" placeholder={`Search ${tab === "fx" ? "effects" : tab === "chains" ? "chains" : "instruments"}…`} value={q} onChange={(e) => setQ(e.target.value)} />
             <button className="btn sm icon" title="Scan for VST plug-ins (runs in a separate process, so a crashing plug-in can't take the app down)" onClick={() => act("plugins.scan")}>
               {scanning ? <Spinner size={12} /> : <Icon name="search" size={12} />}
             </button>
@@ -146,6 +147,23 @@ export function Browser() {
 
         {tab === "chains" && (
           <>
+            <div className="small dim" style={{ padding: "8px 10px" }}>96 complete chains. Choose a sound to preview its effects.</div>
+            {CHAIN_CATEGORIES.map((category, index) => {
+              const items = TRACK_CHAINS.filter((p) => p.category === category && q.toLowerCase().split(/\s+/).every((word) => `${p.category} ${p.name} ${p.description} ${p.plugins.map((e) => e.name + " " + e.setting).join(" ")}`.toLowerCase().includes(word)));
+              if (!items.length) return null;
+              const expanded = open[`chain:${category}`] ?? (!!q || index === 0);
+              return <section key={category}>
+                <button className="b-group row section-title chain-group" aria-expanded={expanded} onClick={() => setOpen({ ...open, [`chain:${category}`]: !expanded })}>
+                  <Icon name={expanded ? "chevronDown" : "chevronRight"} size={12} /><span className="grow">{category}</span><span>{items.length}</span>
+                </button>
+                {expanded && items.map((p) => <button key={p.id} className="chain-item" draggable title={p.description}
+                  onDragStart={(e) => { e.dataTransfer.setData("application/x-s3-factory-chain", p.id); e.dataTransfer.effectAllowed = "copy"; }}
+                  onClick={() => { const t = selectedTrack(); if (t) useStore.setState({ chainPreset: { id: p.id, trackId: t.id } }); else toast("Select a track first", "warning"); }}>
+                  <b>{p.name}</b><span>{p.plugins.length} effects · {p.description}</span>
+                </button>)}
+              </section>;
+            })}
+            {chains.length > 0 && <div className="b-group section-title">Your saved chains</div>}
             {chains.map((c) => (
               <div key={c} className={cx("b-item")} draggable title="Drag onto a track, or double-click to load onto the selected track"
                 onDragStart={(e) => e.dataTransfer.setData("application/x-s3-chain", c)}
@@ -153,7 +171,7 @@ export function Browser() {
                 <Icon name="layers" size={13} /><span className="grow ellipsis">{c}</span>
               </div>
             ))}
-            {!chains.length && <div className="empty"><span>Save a track's effects as a chain from its ⋯ menu, then reuse it on any track.</span></div>}
+            {!chains.length && <div className="small dim" style={{ padding: 10 }}>Save your own combinations from the effects rack to keep them here too.</div>}
           </>
         )}
       </div>

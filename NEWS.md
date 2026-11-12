@@ -1,55 +1,28 @@
-Selected clips in Tracks view now have a crisp fuchsia outline and a subtle brightness lift across their fill. The selection stays consistent across all themes, with waveforms, notes and editing handles still visible.
+Updates from November 11–12, 2026
 
-Studio Sessions is the default dark theme. Its Effects category headings use Technological Shine's fuchsia, with the rest of its colours unchanged. The original dark appearance is available in Settings as Dark Night, and Plotting (Default) is now named Plotting. The toolbar switches between Default Light and Studio Sessions; saved custom palette choices are preserved.
+### Keep the takes coming
+Right-click Record for loop takes on separate tracks. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
 
-The audio load badge is shorter, and the toolbar now preserves space for the right-hand search button. Long project names truncate before they can push controls past the window edge, and narrower windows compact the toolbar while keeping the transport and right-hand actions accessible. Percentage changes keep their fixed spacing.
+Recording waveforms stay steady as the take grows. ASIO interfaces appear in the driver list, pending input changes settle before capture, and driver latency is compensated. The audio-load badge stays still and leaves padding around the toolbar's search button.
 
-Arming and immediately starting recording now flushes pending routing changes before capture, preventing a queued update from interrupting the new take. Recording waveforms now use fixed sample bins and a stable canvas, so previously drawn audio stays still. The audio engine load badge has a fixed width and tabular digits, keeping toolbar buttons stationary.
+### Find your sound
+96 complete track chains, with 12 per category: clean vocals, warm vocals, creative vocals, individual drum hits, drum loops and buses, bass, instruments, and mix/group processing. Browse, search and preview their effect order in Chains, or choose a factory chain in the effects rack. Replace or append effects in one undo step; instruments and mixer controls are preserved.
 
-Alt-drag shows the original clip and a live ghost copy before the drop, including moves to compatible tracks. Copies have independent clip, effect and automation IDs. Cached automation sources retain their curve objects during deletion and undo, preventing the dangling-reference crash reproduced with audio clips containing fades and envelopes. Markers now draw through every track above clips. Clip edges magnetically catch markers with Snap on; with Snap off, Ctrl-drag temporarily enables the marker catch. Drag farther to release it. Ctrl+wheel track-height zoom is unchanged.
+Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enhancer join 355 curated effect presets and genuine factory defaults for all 229 bundled effects. These are adjustable starting points. Hard Limiter controls sample peaks; it is not a true-peak limiter.
 
-Five new native effects: Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enhancer. Existing de-essing, pitch correction, distortion, doubling and stereo expansion have additional voice-specific starting points. All 229 bundled effects expose genuine factory defaults, 355 curated presets use verified native parameter IDs and units, and every parameter editor can save and recall your own snapshots. Applying a preset resets unspecified controls to factory defaults. Hard Limiter enforces sample peaks; it is not a true-peak limiter. Tube-style Compressor is an original asymmetric saturation design, not a named hardware emulation. Choose Settings > General > Appearance theme for all 35 supplied palettes; the toolbar Light/Dark button still selects only the two default themes. Text and button ink are contrast checked.
+### Edit with confidence
+Selected clips have a fuchsia outline and a subtle brightness lift. Time selections have a clearer fill and edges. Drag the ruler with any tool to select a range, then right-click to split all tracks at both boundaries. Markers extend through the tracks and magnetically catch clips. Ctrl-drag catches markers when Snap is off.
 
-Recording shows a growing clip and the actual captured waveform while the take is running. Selection drags scroll at all four edges and keep offscreen clips selected. Windows builds now include ASIO; the main driver list shows individual ASIO interfaces such as Focusrite USB ASIO, and ASIO input and output stay on the same interface. Recording applies pending audio-device changes before capture starts, and input capture shares playback's audio-block clock so a start-up reset cannot shift the take by one buffer. Driver latency is compensated automatically, with an additional timing correction available per input when a loopback measurement shows a remaining constant offset. Device settings cannot change during a take.
+Alt-drag shows a live ghost copy, applies overlap crossfades during the drag, and keeps them on drop. Copies retain independent effects and automation. History has readable names, fixed-height rows, clear Undo/Redo sections and exact step counts.
 
-The assistant edits the session, not just chats: it sees what you selected, can print MIDI to audio, turn a hummed clip into notes, and still runs Smart Mix if no model key is connected. Guests hear a click generated on their computer (Click + cue), not the late full mix. Mark tracks with C for that cue. MIDI records in takes like a vocal. Audio to MIDI is Ctrl+Shift+M. Print to audio is Ctrl+Shift+B. Capture MIDI (Ctrl+Shift+L) keeps notes you already played.
+### Print your effects
+Choose Bounce with Effects to New Track from a track's menu. The track and its inserts are rendered to audio below the original, with room for effect tails. The original stays editable and is muted for comparison, avoiding doubled playback.
 
-Hold IN or OUT and drag up or down. The fade follows your hand the whole way, from a rise that comes in almost at once to one that stays quiet until the end, and it stays on the shape you leave.
+Bus meters now follow the summed post-fader signal, including buses nested inside other buses.
 
-IN and OUT sit under the clip name, after the L and at the right end, so the name stays whole. Drag a fade sideways to change its length, or up and down to make it steeper, straight, or lighter. The track name row shows pan as a knob with a C, L, or R readout.
+Every track, bus and the master has a Mono toggle for checking left/right compatibility. It averages the channels for playback and restores stereo when switched off, without changing the recording format.
 
-The start page on a phone can be tapped and scrolled. The session types, How things work, Join, audio setup, and Recent are all on that page. Desktop mode is unchanged.
+### Make it yours
+Studio Sessions is the default dark theme, with fuchsia Effects headings. The original dark appearance is available as Dark Night. Plotting has its shorter name, and all 35 supplied palettes remain in Settings. The top-right switch alternates between Light and Studio Sessions.
 
-Hover either end of a clip and the pointer becomes trim arrows, whichever tool is selected. Double-click a clip to open the Editor. IN and OUT boxes fade the start and the end, in the arrangement and in the Editor, and overlapping clips crossfade. A clip has a blue pan line next to the yellow gain line, and the track name row has a pan bar. With snap on, a dragged clip catches another clip's start or end, and any marker. Hold Ctrl while dragging a clip up or down to keep its time. Hold Alt while dragging to drop a copy.
-
-The purple loop bar can be resized from either end. Right-click it to turn looping on or off, or to clear it. Delete clears it when the bar was the last thing you clicked or moved.
-
-The public page fits a phone. Menus, transport, tracks, mixer, effects, and the start screen stay on the page, and every control can be reached. Sound and recording still need the Windows app.
-
-Drag the bottom-left of a clip to change its volume, and the waveform grows or shrinks with it. A new audio track or bus can be stereo or mono. Track effects and clip effects each have their own dry/wet bar. Export asks for a name and a folder, and can write MP3, or MP3 and WAV together.
-
-Joining a live session stays connected. The host's code tries this network first, then the internet address, and Join again replaces a connection that dropped.
-
-Studio 4000 includes its own auto filter, auto pan, channel strips, DJ EQ, dual filter, expander, resonant filter, flanger, mono delay, overdrive, ring modulator, signal generator, tilt EQ, utility, FM synth, and analog poly synth.
-
-File → Save as writes the session to a folder you choose and copies its audio there. A stereo file stays stereo, and the clip draws the left channel above the right. The master sits at the bottom of the track list, with its effects, level, and speaker output.
-
-A blank bus can take a vocal or any other track. Point the track's output at the bus and it plays through that bus, with or without an effect on it.
-
-Zooming in on the tracks keeps the timeline filled instead of leaving a blank page on the right. Double-clicking an effect opens a window tall enough to show the whole editor.
-
-What's new opens the first time a session starts, and again from Help. The label at the bottom is this build. Hosting is a button: Studio 4000 opens the connection and gives one code, and the other person pastes it to join from another network. End closes the session for everyone, and Leave returns to the join screen. Effects minimize to a few knobs, keep each knob's color in every view, and show a green power light when they are on. Several effects can be copied, pasted, deleted, or reordered together, and a chain can be saved and loaded on a track or an audio clip. Audio clips have a gain line. The ruler shows clock time. MIDI notes stay inside a clip while it is dragged. New clips do not get a tiny automatic fade. The light theme is a darker silver with near-black section lines, and the track level bar keeps the dark shape.
-
-The Effects tab keeps the chain in a row. An open effect is only as tall as its controls, so the whole panel fits without stretching that section. The same screens can be opened in a phone or tablet browser; sound and recording still need the Windows app. Dragging an effect lands it where the line shows. The same drag works on the track list and the mixer. A showcase page in the site folder shows the studio and downloads the latest Windows zip from this project. The first panel under the tracks is Effects: the selected track's effects sit in a row, and each one opens, closes, reorders, and can be edited or removed. Drop another effect on that row to add it. The track name panel stays solid, so the waveform no longer shows through the controls. The AKAsheet tip in the top bar is nearly solid pink. Light mode now covers effect windows, menus, and popups, and selected labels stay dark enough to read. Bar lines show on the light track page. A level can be typed, and double-clicking a mixer meter sets it to 0 dB. AKAsheet links include the Studio 4000 referral.
-
-Opening the app while online installs the newest published build, then brings the window back.
-
-Mixer levels use an even decibel scale: the same number of decibels is the same distance above and below 0, and on the way down. A Light button on the menu bar switches to a lighter theme. AKAsheet tips are pink.
-
-Faders now reach +15 dB, with more level marks around 0 and above it, on the full mixer and the mixer under the tracks.
-
-Holding an effect shows the effect you are dragging and a line where it will land, on the mixer and on the track headers.
-
-Chorus opens with depth, speed, width and mix, and a picture of the voices moving.
-
-The landing page keeps Ctrl+J on one line. AKAsheet is the sixth start card, and its mark sits in the bottom-right corner of that page.
+Light mode has brighter surfaces, stronger dark text, readable EQ type buttons and purple Effects browser headings. Active track FX badges are fuchsia in Studio Sessions.

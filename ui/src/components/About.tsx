@@ -17,7 +17,7 @@ export function About() {
     <Modal
       title={<span className="whats-title">What's new</span>}
       onClose={closeNotes}
-      width={560}
+      width={700}
       footer={(
         <div className="whats-foot">
           <span className="pill whats-ver">{label || "v0.1.0"}</span>
@@ -25,16 +25,16 @@ export function About() {
         </div>
       )}
     >
-      <div className="whats">
-        <p className="whats-lead">Trim from any edge. Fade when clips overlap. Pan on the clip and the track.</p>
-        {WHATS_NEW.map((group) => (
+      <div className="whats"><div className="whats-date">November 11–12, 2026</div>
+        <p className="whats-lead">More room to create. From the first take to a finished sound.</p>
+        <div className="whats-grid">{WHATS_NEW.map((group) => (
           <section key={group.title} className="whats-row" style={{ ["--accent" as string]: group.color }}>
             <h4>{group.title}</h4>
             <ul>
               {group.items.map((item) => <li key={item}>{item}</li>)}
             </ul>
           </section>
-        ))}
+        ))}</div>
       </div>
     </Modal>
   );

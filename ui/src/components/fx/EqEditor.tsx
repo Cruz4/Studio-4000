@@ -123,7 +123,7 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.stroke();
-      ctx.fillStyle = b.on ? "#0a0b12" : rgba(color, 0.9);
+      ctx.fillStyle = b.on ? "#0a0b12" : document.documentElement.dataset.theme === "light" ? COLORS.ink : rgba(color, 0.9);
       ctx.font = "bold 10px Inter, Segoe UI, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";

@@ -157,3 +157,25 @@ Every bundled effect has a **Factory default** entry. The original Studio effect
 Marker lines extend through tracks and clips. With Snap enabled, either clip edge catches a marker within ten screen pixels. With Snap off, hold Ctrl while dragging to enable the marker magnet temporarily. Move farther than the catch zone to continue past the marker. With Snap enabled, Ctrl still locks time for vertical moves. Alt-drag shows the stationary original plus a translucent copy while dragging, then commits the copy at the shown time and compatible destination track.
 
 Select a palette under **Settings > General > Appearance theme**. Studio Sessions is the default dark theme, with fuchsia Effects category headings. Dark Night preserves the original dark appearance. All 35 supplied palettes remain available, with dark tinted surfaces and contrast-adjusted text. The toolbar Light/Dark button switches between Default Light and Studio Sessions. Ctrl+wheel over track information continues to resize tracks.
+
+### Record loop takes on separate tracks
+
+Highlight the part you want by dragging left or right on the time ruler. This works with every editing tool. The range must be longer than two seconds. Right-click **Record**, choose the source audio track, and select a take count or **Keep going until I stop**. Keep **Mute previous takes as I go** on for individual takes, or turn it off to layer over earlier performances. Click **Start recording**.
+
+Each pass gets its own track with the source's mono/stereo format, effects, mixer settings and output routing. The transport keeps running between passes. Recording stops at the chosen count or when you press Stop; the most recent take stays audible. Save settings to make the regular Record button use this mode. Turn **Use loop-take recording** off to return to standard recording.
+
+### Use complete track chains
+
+Open **Chains** in the left browser, or **Load chain** in the effects rack. There are 96 factory chains in eight categories, including 36 vocal chains. Search for a sound or processor, select a chain, and review its effect order. Choose whether to replace or append effects, then apply it. Instruments and mixer controls stay in place, and the change undoes in one step. You can also drag a chain onto a track to open its preview. See [Track chains](TRACK-CHAINS.md) for starting levels and examples.
+
+### Split a selected range
+
+Drag the ruler to highlight time, then right-click inside the highlighted range on a clip, a lane or the ruler. **Split all tracks at selection boundaries** cuts audio and MIDI clips at both ends without deleting the middle. Both cuts undo together. If tracks are selected, the menu also offers to split only those tracks.
+
+### Print a track with its effects
+
+Right-click a track header and choose **Bounce with Effects to New Track**. A new audio track appears directly below the source, with its effects and fader level baked into the audio and an allowance for effect tails. The original remains editable and is muted to avoid doubled playback. The new track has no duplicate insert effects. Undo removes the printed track and restores the original's mute state.
+
+Bus meters show the summed signal after the bus fader, including buses inside other buses. Alt-drag duplicates display overlap crossfades during the drag and retain them immediately on drop. Selected clips and time ranges use clearer fuchsia highlights.
+
+The **Mono** toggle in every track header and mixer strip averages left and right into matching mono outputs. It is available on audio tracks, instruments, returns, buses and the master. Toggle it off to restore stereo. This checks playback without changing the recording format, source files or insert presets.

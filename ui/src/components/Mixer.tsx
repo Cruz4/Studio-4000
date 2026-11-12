@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMeterCanvas } from "../meters";
+import { MonoButton } from "./MonoButton";
 import { type Choice, inputChoices, outputChoices } from "../io";
 import { openTrackMenu, createTrackItems, openFormatMenu } from "../trackMenu";
 import { act, type Devices, loadDevices, openPlugin, selectPlugin, selectTrack, useStore } from "../store";
@@ -203,6 +204,7 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
         <div className="strip-toggles">
           <button className={cx("toggle mute", track.mute && "on")} title="Mute" onClick={() => act("track.set", { id: track.id, mute: !track.mute })}>M</button>
           <button className={cx("toggle solo", track.solo && "on")} title="Solo" onClick={() => act("track.set", { id: track.id, solo: !track.solo })}>S</button>
+          <MonoButton id={track.id} on={track.sumToMono} />
           {recordable && <button className={cx("toggle arm", track.armed && "on")} title="Arm for recording" onClick={() => act("track.arm", { id: track.id, armed: !track.armed })}>●</button>}
         </div>
       </div>
@@ -237,6 +239,7 @@ function MasterStrip({ project, devices, full }: { project: Project; devices: De
           <ChoiceSelect value={devices?.masterOutput ?? outs[0]} choices={outs.map((o) => ({ value: o, label: o }))} title="Speakers the master bus plays through" prefix="🔊 "
             onChange={(v) => act("devices.setMasterOutput", { name: v }).then(() => loadDevices())} />
         ) : <span className="section-title ellipsis" title={outs[0]}>{outs[0] ?? "Stereo out"}</span>}
+        <MonoButton id="master" on={project.master.sumToMono} />
       </div>
       <div className="fader-area">
         <FaderScale marks={full ? FULL_MARKS : DOCK_MARKS} />

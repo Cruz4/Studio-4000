@@ -202,7 +202,17 @@ export function createMock(emit: Emit) {
     "clip.delete": (p) => { for (const tr of project!.tracks) tr.clips = tr.clips.filter((c) => c.id !== p.id && !(p.ids || []).includes(c.id)); changed(); return true; },
     "clip.duplicate": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => p.trackId ? x.id === p.trackId : x.clips.includes(c))!; const len = c.end - c.start;
       const at = p.start ?? c.end;
-      const d = { ...structuredClone(c), id: nid(), start: at, end: at + len, notes: c.notes?.map((n): Note => [n[0], n[1] + at - c.start, n[2], n[3], n[4], n[5]]) }; tr.clips.push(d); changed(); return d.id; },
+      const d = { ...structuredClone(c), id: nid(), start: at, end: at + len, ...(p.fadeIn != null ? { fadeIn: p.fadeIn, fadeInType: "scurve", fadeInBend: undefined } : {}), ...(p.fadeOut != null ? { fadeOut: p.fadeOut, fadeOutType: "scurve", fadeOutBend: undefined } : {}), notes: c.notes?.map((n): Note => [n[0], n[1] + at - c.start, n[2], n[3], n[4], n[5]]) }; tr.clips.push(d); changed(); return d.id; },
+    "clip.splitAt": (p) => {
+      let count = 0;
+      for (const tr of project!.tracks.filter((t) => !p.trackIds || p.trackIds.includes(t.id)))
+        for (const clip of [...tr.clips]) if (clip.start < p.time && clip.end > p.time) { handlers["clip.split"]({ id: clip.id, time: p.time }); count++; }
+      return count;
+    },
+    "recording.loopTakes.configure": (p) => {
+      if (project) { project.loopTakes = { enabled: false, takeCount: 4, mutePrevious: true, active: false, take: 0, trackId: "", ...project.loopTakes, ...p }; changed(); return project.loopTakes; }
+      return null;
+    },
     "clip.set": (p) => {
       const clip = findClip(p.id)!;
       Object.assign(clip, { ...p, id: p.id });
@@ -358,6 +368,17 @@ export function createMock(emit: Emit) {
     },
     "plugin.openEditor": () => false,
     "chain.list": () => [...savedChains.keys()].map((name) => ({ name, file: name })),
+    "chain.applyPreset": (p) => {
+      const list = targetList(p);
+      if (!list) throw new Error("Choose a track or an audio clip");
+      const additions = p.plugins.map((spec: { type: string; name: string; values: Record<string, number> }) => {
+        const effect = plugin(spec.type, spec.name);
+        for (const [id, value] of Object.entries(spec.values)) updateParam(effect.params, id, { value });
+        return effect;
+      });
+      if (p.replace !== false) for (let i = list.length - 1; i >= 0; i--) if (!list[i].synth) list.splice(i, 1);
+      list.push(...additions); changed(); return { ids: additions.map((p: Plugin) => p.id), name: p.name };
+    },
     "chain.save": (p) => {
       const list = targetList(p);
       if (!list || !p.name) return null;
@@ -486,12 +507,12 @@ export function createMock(emit: Emit) {
         if (!h) return { ok: true, result: null };
         const undoable = new Set(["track.add", "track.remove", "track.set", "track.arm", "track.move", "track.duplicate",
           "clip.move", "clip.slip", "clip.trim", "clip.split", "clip.delete", "clip.duplicate", "clip.set", "clip.setGainPoints", "clip.setPanPoints", "clip.importAudio", "clip.addMidi", "clip.normalize", "clip.stretch",
-          "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "master.set", "chain.load", "batch.run",
+          "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "master.set", "chain.load", "chain.applyPreset", "batch.run",
           "midi.setNotes", "midi.addNote", "midi.quantize", "midi.transpose"]);
         if (project && undoable.has(method)) {
           const names: Record<string, string> = {
             "plugin.add": "Add effect", "plugin.remove": "Remove effect", "plugin.move": "Reorder effect", "plugin.duplicate": "Duplicate effect",
-            "plugin.set": "Effect bypass", "chain.load": "Load effect chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
+            "plugin.set": "Effect bypass", "chain.load": "Load effect chain", "chain.applyPreset": "Apply track chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
             "clip.split": "Split", "clip.duplicate": "Duplicate", "clip.trim": "Trim", "clip.slip": "Slip", "clip.set": "Clip change",
             "clip.addMidi": "New MIDI clip", "clip.normalize": "Normalize", "clip.setGainPoints": "Clip gain", "clip.setPanPoints": "Clip pan", "track.add": "New track", "track.remove": "Delete track",
             "master.set": "Master volume", "midi.setNotes": "Edit notes", "batch.run": "Edit",

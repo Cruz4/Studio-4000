@@ -17,6 +17,7 @@
 /selftest-out.txt
 
 /effect-presets.test.json
+/track-chains.test.json
 /refinement-test.*
 /recording-test.*
 

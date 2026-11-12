@@ -224,9 +224,12 @@ void registerClipApi (AppEngine& app)
         int count = 0;
 
         for (auto* ct : tracks)
-            for (auto* c : ct->getClips())
-                if (c->getPosition().time.contains (t) && ct->splitClip (*c, t) != nullptr)
+        {
+            const auto clips = ct->getClips(); // Splitting may reallocate the track's clip list.
+            for (auto* c : clips)
+                if (c->getPosition().getStart() < t && c->getPosition().getEnd() > t && ct->splitClip (*c, t) != nullptr)
                     ++count;
+        }
 
         return var (count);
     });
@@ -264,6 +267,11 @@ void registerClipApi (AppEngine& app)
         auto snapshot = te::ClipCopy::fromClipboardState (state, source->getClipSlot() != nullptr);
         te::Clip::Ptr copy (te::insertClipCopy (*destination, snapshot));
         if (copy == nullptr) throw RpcError ("Could not duplicate the clip");
+        if (auto* audio = dynamic_cast<te::AudioClipBase*> (copy.get()))
+        {
+            if (has (p, "fadeIn")) { audio->setFadeIn (duration (num (p, "fadeIn"))); audio->state.removeProperty ("s4000FadeInBend", audio->getUndoManager()); audio->setFadeInType (fadeType ("scurve")); }
+            if (has (p, "fadeOut")) { audio->setFadeOut (duration (num (p, "fadeOut"))); audio->state.removeProperty ("s4000FadeOutBend", audio->getUndoManager()); audio->setFadeOutType (fadeType ("scurve")); }
+        }
         return var (copy->itemID.toString());
     });
 

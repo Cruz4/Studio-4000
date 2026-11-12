@@ -185,7 +185,7 @@ juce::Array<ConvertedNote> audioToMidiNotes (te::Engine& engine,
     return notes;
 }
 
-juce::File bounceTrackToWav (AppEngine& app, te::AudioTrack& track, te::TimeRange range, const String& name)
+juce::File bounceTrackToWav (AppEngine& app, te::AudioTrack& track, te::TimeRange range, const String& name, double tailSeconds, bool isolateParentEffects)
 {
     auto& edit = app.edit();
     auto dest = app.getBouncesDir().getNonexistentChildFile (juce::File::createLegalFileName (name), ".wav", false);
@@ -206,7 +206,20 @@ juce::File bounceTrackToWav (AppEngine& app, te::AudioTrack& track, te::TimeRang
     r.useMasterPlugins = false;
     r.canRenderInMono = false;
     r.checkNodesForAudio = false;
-    r.endAllowance = te::TimeDuration::fromSeconds (0.4);
+    r.endAllowance = te::TimeDuration::fromSeconds (juce::jlimit (0.0, 30.0, tailSeconds));
+
+    // A printed child returns through its parent bus, so bake only its own effects.
+    std::vector<std::pair<te::Plugin::Ptr, bool>> parentEffects;
+    if (isolateParentEffects)
+        for (auto* parent = track.getParentFolderTrack(); parent != nullptr; parent = parent->getParentFolderTrack())
+            for (auto* effect : parent->pluginList) { parentEffects.emplace_back (effect, effect->isEnabled()); effect->setEnabled (false); }
+    const bool sourceMuted = track.isMuted (false);
+    if (isolateParentEffects) track.setMute (false);
+    juce::ErasedScopeGuard restore ([&]
+    {
+        for (auto& item : parentEffects) item.first->setEnabled (item.second);
+        if (isolateParentEffects) track.setMute (sourceMuted);
+    });
 
     const te::Edit::ScopedRenderStatus busy (edit, true);
     te::Renderer::renderToFile ("Print to audio", r);

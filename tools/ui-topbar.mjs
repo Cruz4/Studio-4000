@@ -82,6 +82,8 @@ try {
   });
   await sleep(350);
   const results = [];
+  for (const theme of ["studio-sessions", "light"]) {
+    await page.eval(async (theme) => (await import("/src/theme.ts")).applyPalette(theme), theme);
   for (const width of [1920, 1680, 1600, 1536, 1480, 1440, 1366, 1280]) {
     await page.viewport(width); await sleep(100);
     results.push(await page.eval((width) => {
@@ -94,6 +96,7 @@ try {
       return { width, badge: box(".engine-load"), cpuVisible: getComputedStyle(badge).display !== "none", padding: width - box(command).right,
         stable: new Set(positions).size === 1, left: box(".topbar-side:first-child"), leftControls: box(".topbar-side:first-child .seg"), console: box(".console"), right: box(".topbar-side.right") };
     }, width));
+  }
   }
   console.log(JSON.stringify(results, null, 2));
   await page.viewport(1536); await page.shot("topbar-1536");

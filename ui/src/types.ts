@@ -96,6 +96,7 @@ export interface Track {
   kind: TrackKind;
   /** 1 plays one channel. 2 plays a stereo pair. Audio tracks and buses remember this. */
   channels?: 1 | 2;
+  sumToMono?: boolean;
   colour: string;
   mute: boolean;
   solo: boolean;
@@ -131,7 +132,7 @@ export interface Project {
   tempos: { beat: number; time: number; bpm: number }[];
   markers: { id: string; number: number; name: string; time: number; colour: string }[];
   tracks: Track[];
-  master: { plugins: Plugin[]; volumeDb?: number; pan?: number; volumePluginId?: string };
+  master: { plugins: Plugin[]; volumeDb?: number; pan?: number; volumePluginId?: string; sumToMono?: boolean };
   buses: { bus: number; name: string }[];
   click: boolean;
   clickRecordOnly: boolean;
@@ -141,6 +142,7 @@ export interface Project {
   loop: [number, number];
   looping: boolean;
   canUndo: boolean;
+  loopTakes?: { enabled: boolean; takeCount: number; mutePrevious: boolean; active: boolean; take: number; trackId: string };
   canRedo: boolean;
   undoName: string;
   redoName: string;

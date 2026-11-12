@@ -1,0 +1,6944 @@
+[
+  {
+    "id": "vocals-clean-and-forward--clear-lead",
+    "category": "Vocals - Clean and Forward",
+    "name": "Clear Lead",
+    "description": "Low-cut cleanup, controlled peaks and a restrained presence lift.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Vocal",
+        "values": {
+          "threshold": -20,
+          "ratio": 3.5,
+          "knee": 6,
+          "attack": 8,
+          "release": 120,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000vocalenhancer",
+        "name": "Vocal Enhancer",
+        "setting": "Lead vocal clarity",
+        "values": {
+          "highpass": 80,
+          "presence": 2,
+          "air": 1,
+          "excite": 10,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--locked-rap",
+    "category": "Vocals - Clean and Forward",
+    "name": "Locked Rap",
+    "description": "Forward rap with fast peak control and a tucked dark slap.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Rap vocal - controlled presence",
+        "values": {
+          "b1on": 1,
+          "b1freq": 85,
+          "b1slope": 1,
+          "b3freq": 300,
+          "b3gain": -3,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1.5
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Rap lead - fast peak control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 4,
+          "attack": 3,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Close rap - 6 kHz control",
+        "values": {
+          "frequency": 6000,
+          "threshold": -32,
+          "range": 9,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Rap vocal - dark slap",
+        "values": {
+          "sync": 0,
+          "time": 85,
+          "feedback": 5,
+          "pingPong": 0,
+          "lowCut": 220,
+          "highCut": 4200,
+          "mix": 8
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--open-ballad",
+    "category": "Vocals - Clean and Forward",
+    "name": "Open Ballad",
+    "description": "Gentle RMS compression leaves expression intact; a soft room adds depth.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Ballad - gentle RMS leveling",
+        "values": {
+          "threshold": -24,
+          "ratio": 2.2,
+          "knee": 12,
+          "attack": 30,
+          "release": 280,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Airy vocal - gentle 8.5 kHz",
+        "values": {
+          "frequency": 8500,
+          "threshold": -26,
+          "range": 4,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Ballad vocal - long soft space",
+        "values": {
+          "room size": 0.78,
+          "damping": 0.6,
+          "width": 1,
+          "wet level": 0.07,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--breathy-close-up",
+    "category": "Vocals - Clean and Forward",
+    "name": "Breathy Close-Up",
+    "description": "Limited gain riding and gentle de-essing for a quiet, intimate performance.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 70,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000leveler",
+        "name": "Vocal Leveler",
+        "setting": "Quiet vocal lift",
+        "values": {
+          "target": -20,
+          "range": 5,
+          "floor": -44,
+          "attack": 180,
+          "release": 1200
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Whisper lift",
+        "values": {
+          "threshold": -32,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 5,
+          "release": 150,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 120,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Whisper",
+        "values": {
+          "frequency": 8000,
+          "threshold": -40,
+          "range": 10,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--spoken-focus",
+    "category": "Vocals - Clean and Forward",
+    "name": "Spoken Focus",
+    "description": "Speech cleanup and clear consonants with a barely audible room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Podcast voice",
+        "values": {
+          "b1on": 1,
+          "b1freq": 100,
+          "b1slope": 1,
+          "b2freq": 160,
+          "b2gain": 1.5,
+          "b3freq": 250,
+          "b3gain": -3,
+          "b3q": 1.4,
+          "b5freq": 4000,
+          "b5gain": 2,
+          "b5q": 0.8,
+          "b8on": 1,
+          "b8freq": 12000,
+          "b8slope": 0,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Spoken voice - clear consonants",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 15,
+          "release": 160,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Podcast",
+        "values": {
+          "frequency": 5500,
+          "threshold": -30,
+          "range": 8,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Spoken voice - subtle room",
+        "values": {
+          "room size": 0.22,
+          "damping": 0.75,
+          "width": 0.6,
+          "wet level": 0.025,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--proximity-rescue",
+    "category": "Vocals - Clean and Forward",
+    "name": "Proximity Rescue",
+    "description": "Reduces close-mic boom, then smooths phrases without adding extra bass.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal - reduce proximity boom",
+        "values": {
+          "b1on": 1,
+          "b1freq": 95,
+          "b2freq": 160,
+          "b2gain": -3,
+          "b3freq": 280,
+          "b3gain": -2,
+          "b3q": 0.9
+        }
+      },
+      {
+        "type": "s4000vocaldynamics",
+        "name": "Vocal Dynamics",
+        "setting": "Clean lead vocal",
+        "values": {
+          "threshold": -18,
+          "ratio": 3,
+          "attack": 10,
+          "release": 160,
+          "expandThreshold": -50,
+          "expandRatio": 1.5,
+          "range": 12,
+          "makeup": 2,
+          "ceiling": -2
+        }
+      },
+      {
+        "type": "s4000leveler",
+        "name": "Vocal Leveler",
+        "setting": "Lead vocal - gentle leveling",
+        "values": {
+          "target": -20,
+          "range": 4,
+          "floor": -50,
+          "attack": 200,
+          "release": 1100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--nasal-softener",
+    "category": "Vocals - Clean and Forward",
+    "name": "Nasal Softener",
+    "description": "A broad 1 kHz cut with gentle dynamics; move the EQ band to the resonance.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal - tame nasal resonance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 75,
+          "b4freq": 1000,
+          "b4gain": -3,
+          "b4q": 1.8,
+          "b7gain": 1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Ballad - gentle RMS leveling",
+        "values": {
+          "threshold": -24,
+          "ratio": 2.2,
+          "knee": 12,
+          "attack": 30,
+          "release": 280,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Male vocal",
+        "values": {
+          "frequency": 5000,
+          "threshold": -28,
+          "range": 8,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--smooth-sibilance",
+    "category": "Vocals - Clean and Forward",
+    "name": "Smooth Sibilance",
+    "description": "A restrained air shelf and stronger de-essing for sharp S sounds.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Vocal",
+        "values": {
+          "threshold": -20,
+          "ratio": 3.5,
+          "knee": 6,
+          "attack": 8,
+          "release": 120,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Harsh S",
+        "values": {
+          "frequency": 6000,
+          "threshold": -36,
+          "range": 14,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Lead vocal - small dark room",
+        "values": {
+          "room size": 0.3,
+          "damping": 0.65,
+          "width": 0.8,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--dry-rap-pocket",
+    "category": "Vocals - Clean and Forward",
+    "name": "Dry Rap Pocket",
+    "description": "Reduced pause noise, firm compression and de-essing without ambience.",
+    "plugins": [
+      {
+        "type": "s4000gate",
+        "name": "Noise Gate",
+        "setting": "Rap pauses - smooth close",
+        "values": {
+          "threshold": -44,
+          "range": -24,
+          "attack": 1,
+          "hold": 90,
+          "release": 170
+        }
+      },
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Rap vocal - controlled presence",
+        "values": {
+          "b1on": 1,
+          "b1freq": 85,
+          "b1slope": 1,
+          "b3freq": 300,
+          "b3gain": -3,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1.5
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Rap lead - fast peak control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 4,
+          "attack": 3,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Rap",
+        "values": {
+          "frequency": 6000,
+          "threshold": -26,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--consonant-detail",
+    "category": "Vocals - Clean and Forward",
+    "name": "Consonant Detail",
+    "description": "A slower attack keeps articulation while presence makes words clearer.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 1.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Spoken voice - clear consonants",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 22,
+          "release": 160,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000vocalenhancer",
+        "name": "Vocal Enhancer",
+        "setting": "Lead vocal clarity",
+        "values": {
+          "highpass": 80,
+          "presence": 2,
+          "air": 1,
+          "excite": 5,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--natural-chromatic-tune",
+    "category": "Vocals - Clean and Forward",
+    "name": "Natural Chromatic Tune",
+    "description": "Subtle chromatic pitch correction before cleanup and vocal compression.",
+    "plugins": [
+      {
+        "type": "s4000tune",
+        "name": "Pitch Correction",
+        "setting": "Chromatic vocal - natural",
+        "values": {
+          "key": 0,
+          "scale": 0,
+          "speed": 100,
+          "amount": 80,
+          "tolerance": 12,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Vocal",
+        "values": {
+          "threshold": -20,
+          "ratio": 3.5,
+          "knee": 6,
+          "attack": 8,
+          "release": 120,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Vocal slap",
+        "values": {
+          "sync": 0,
+          "time": 110,
+          "feedback": 10,
+          "pingPong": 0,
+          "lowCut": 300,
+          "highCut": 5000,
+          "mix": 7
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-clean-and-forward--polished-air",
+    "category": "Vocals - Clean and Forward",
+    "name": "Polished Air",
+    "description": "Adds controlled top-end sheen after compression, then reins in sibilance.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Air",
+        "values": {
+          "b7freq": 12000,
+          "b7gain": 4.5,
+          "b7q": 0.6,
+          "b6gain": 0,
+          "output": 0,
+          "b1on": 1,
+          "b1freq": 95
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Vocal",
+        "values": {
+          "threshold": -20,
+          "ratio": 3.5,
+          "knee": 6,
+          "attack": 8,
+          "release": 120,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000vocalenhancer",
+        "name": "Vocal Enhancer",
+        "setting": "Dark microphone - brighter vocal",
+        "values": {
+          "highpass": 75,
+          "presence": 3,
+          "air": 3,
+          "excite": 18,
+          "output": -2
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Airy vocal - gentle 8.5 kHz",
+        "values": {
+          "frequency": 8500,
+          "threshold": -26,
+          "range": 4,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--tube-silk",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Tube Silk",
+    "description": "Warm EQ into softly driven tube-style compression and a small room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Lead vocal - warm control",
+        "values": {
+          "threshold": -20,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 15,
+          "release": 180,
+          "drive": 4,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Lead vocal - small dark room",
+        "values": {
+          "room size": 0.3,
+          "damping": 0.65,
+          "width": 0.8,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--tape-close-up",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Tape Close-Up",
+    "description": "A dry, rounded vocal with light tape saturation and soft peak control.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 1,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Ballad - gentle RMS leveling",
+        "values": {
+          "threshold": -24,
+          "ratio": 2.2,
+          "knee": 12,
+          "attack": 30,
+          "release": 280,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape vocal",
+        "values": {
+          "type": 0,
+          "drive": 5,
+          "tone": 5,
+          "output": 0,
+          "mix": 60
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--velvet-ballad",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Velvet Ballad",
+    "description": "Slow tube-style gain reduction and a long, softly damped room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Ballad vocal - open attack",
+        "values": {
+          "threshold": -22,
+          "ratio": 2.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 300,
+          "drive": 2,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Low sibilance - 4.5 kHz",
+        "values": {
+          "frequency": 4500,
+          "threshold": -30,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Ballad vocal - long soft space",
+        "values": {
+          "room size": 0.78,
+          "damping": 0.6,
+          "width": 1,
+          "wet level": 0.12,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--soul-slap",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Soul Slap",
+    "description": "Warm midrange, light saturation and a short vintage-style slap.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Vocal leveler",
+        "values": {
+          "threshold": -24,
+          "ratio": 6,
+          "knee": 8,
+          "attack": 12,
+          "release": 180,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tube vocal",
+        "values": {
+          "type": 1,
+          "drive": 10,
+          "tone": 10,
+          "output": -1,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Rockabilly slap",
+        "values": {
+          "sync": 0,
+          "time": 80,
+          "feedback": 6,
+          "pingPong": 0,
+          "lowCut": 200,
+          "highCut": 4500,
+          "mix": 12
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--round-baritone",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Round Baritone",
+    "description": "Controls proximity buildup while keeping the low-mid body of a lower voice.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal - reduce proximity boom",
+        "values": {
+          "b1on": 1,
+          "b1freq": 65,
+          "b2freq": 160,
+          "b2gain": -1,
+          "b3freq": 280,
+          "b3gain": -2,
+          "b3q": 0.9
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Lead vocal - warm control",
+        "values": {
+          "threshold": -20,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 15,
+          "release": 180,
+          "drive": 2,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Low sibilance - 4.5 kHz",
+        "values": {
+          "frequency": 4500,
+          "threshold": -30,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--soft-bright-mic",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Soft Bright Mic",
+    "description": "Tames excess air and presence before a gentle, warm compressor.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 0,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000vocalenhancer",
+        "name": "Vocal Enhancer",
+        "setting": "Bright microphone - softer vocal",
+        "values": {
+          "highpass": 85,
+          "presence": -1.5,
+          "air": -2,
+          "excite": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Ballad vocal - open attack",
+        "values": {
+          "threshold": -22,
+          "ratio": 2.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 300,
+          "drive": 2,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--mellow-rap",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Mellow Rap",
+    "description": "A softened top end, firm tube control and a low dark echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Rap vocal - controlled presence",
+        "values": {
+          "b1on": 1,
+          "b1freq": 85,
+          "b1slope": 1,
+          "b3freq": 300,
+          "b3gain": -3,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 1,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Rap vocal - firm control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 5,
+          "release": 90,
+          "drive": 3,
+          "makeup": 3,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Rap",
+        "values": {
+          "frequency": 6000,
+          "threshold": -26,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Rap vocal - dark slap",
+        "values": {
+          "sync": 0,
+          "time": 85,
+          "feedback": 5,
+          "pingPong": 0,
+          "lowCut": 220,
+          "highCut": 4200,
+          "mix": 9
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--warm-narration",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Warm Narration",
+    "description": "Speech EQ, slow phrase leveling and low-range pause cleanup.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Podcast voice",
+        "values": {
+          "b1on": 1,
+          "b1freq": 100,
+          "b1slope": 1,
+          "b2freq": 160,
+          "b2gain": 1.5,
+          "b3freq": 250,
+          "b3gain": -3,
+          "b3q": 1.4,
+          "b5freq": 4000,
+          "b5gain": 1,
+          "b5q": 0.8,
+          "b8on": 1,
+          "b8freq": 12000,
+          "b8slope": 0,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000leveler",
+        "name": "Vocal Leveler",
+        "setting": "Spoken word - soft leveling",
+        "values": {
+          "target": -22,
+          "range": 6,
+          "floor": -52,
+          "attack": 250,
+          "release": 1500
+        }
+      },
+      {
+        "type": "s4000vocaldynamics",
+        "name": "Vocal Dynamics",
+        "setting": "Podcast - relaxed pauses",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "attack": 8,
+          "release": 220,
+          "expandThreshold": -54,
+          "expandRatio": 1.4,
+          "range": 10,
+          "makeup": 2,
+          "ceiling": -3
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Podcast",
+        "values": {
+          "frequency": 5500,
+          "threshold": -30,
+          "range": 8,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--lounge-double",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Lounge Double",
+    "description": "A lightly doubled warm lead with a short, dark room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Lead vocal - warm control",
+        "values": {
+          "threshold": -20,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 15,
+          "release": 180,
+          "drive": 4,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Lead vocal - tucked double",
+        "values": {
+          "detune": 5,
+          "delay": 14,
+          "width": 65,
+          "mix": 14
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Dark room",
+        "values": {
+          "room size": 0.5,
+          "damping": 0.85,
+          "width": 0.7,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--analog-backing-bed",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Analog Backing Bed",
+    "description": "Even compression, gentle tape color and broad doubles for backing vocals.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 120,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 0,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Backing stack - even bed",
+        "values": {
+          "threshold": -26,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 12,
+          "release": 200,
+          "makeup": 3,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 140,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Backing stack - gentle tape",
+        "values": {
+          "type": 0,
+          "drive": 4,
+          "tone": 0,
+          "output": -0.5,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Backing stack - soft top",
+        "values": {
+          "frequency": 6500,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Backing vocals - broad double",
+        "values": {
+          "detune": 11,
+          "delay": 24,
+          "width": 100,
+          "mix": 45
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--soft-edge-lead",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Soft Edge Lead",
+    "description": "Rounds sharp consonants before a lightly driven vocal compressor.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Rap consonants - soften",
+        "values": {
+          "attack": -10,
+          "sustain": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Lead vocal - warm control",
+        "values": {
+          "threshold": -20,
+          "ratio": 3,
+          "knee": 9,
+          "attack": 15,
+          "release": 180,
+          "drive": 2,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Lead vocal - small dark room",
+        "values": {
+          "room size": 0.3,
+          "damping": 0.65,
+          "width": 0.8,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-warm-and-smooth--intimate-tape-echo",
+    "category": "Vocals - Warm and Smooth",
+    "name": "Intimate Tape Echo",
+    "description": "A close warm vocal with restrained phrase riding and a darker echo tail.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000leveler",
+        "name": "Vocal Leveler",
+        "setting": "Lead vocal - gentle leveling",
+        "values": {
+          "target": -20,
+          "range": 4,
+          "floor": -50,
+          "attack": 200,
+          "release": 1100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dark dub",
+        "values": {
+          "sync": 6,
+          "feedback": 16,
+          "pingPong": 1,
+          "lowCut": 500,
+          "highCut": 1800,
+          "mix": 10
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--neon-telephone",
+    "category": "Vocals - Creative and Wide",
+    "name": "Neon Telephone",
+    "description": "A band-limited, gritty voice with a dark stereo echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Telephone",
+        "values": {
+          "b1on": 1,
+          "b1freq": 400,
+          "b1slope": 2,
+          "b8on": 1,
+          "b8freq": 3200,
+          "b8slope": 2,
+          "b5freq": 1500,
+          "b5gain": 5,
+          "b5q": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Rap lead - fast peak control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 4,
+          "attack": 3,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Lo-fi vocal",
+        "values": {
+          "type": 0,
+          "drive": 16,
+          "tone": -25,
+          "output": -1,
+          "mix": 75
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dark dub",
+        "values": {
+          "sync": 6,
+          "feedback": 62,
+          "pingPong": 1,
+          "lowCut": 500,
+          "highCut": 1800,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--zero-retune",
+    "category": "Vocals - Creative and Wide",
+    "name": "Zero Retune",
+    "description": "Fast chromatic tuning, tight compression and a small digital texture.",
+    "plugins": [
+      {
+        "type": "s4000tune",
+        "name": "Pitch Correction",
+        "setting": "Chromatic rap - fast retune",
+        "values": {
+          "key": 0,
+          "scale": 0,
+          "speed": 3,
+          "amount": 100,
+          "tolerance": 0,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Rap lead - fast peak control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 4,
+          "attack": 3,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Ad-lib - digital texture",
+        "values": {
+          "bits": 10,
+          "downsample": 2,
+          "mix": 12,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--fuchsia-orbit",
+    "category": "Vocals - Creative and Wide",
+    "name": "Fuchsia Orbit",
+    "description": "An obvious double moves slowly across stereo before a filtered echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 130,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Backing stack - even bed",
+        "values": {
+          "threshold": -26,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 12,
+          "release": 200,
+          "makeup": 3,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 140,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Ad-lib - obvious double",
+        "values": {
+          "detune": 18,
+          "delay": 32,
+          "width": 100,
+          "mix": 55
+        }
+      },
+      {
+        "type": "s4000tremolo",
+        "name": "Tremolo / Auto Pan",
+        "setting": "Ad-lib - slow pan",
+        "values": {
+          "mode": 1,
+          "shape": 0,
+          "sync": 0,
+          "rate": 0.25,
+          "depth": 30
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Ad-lib - long dark throw",
+        "values": {
+          "sync": 0,
+          "time": 480,
+          "feedback": 42,
+          "pingPong": 1,
+          "lowCut": 350,
+          "highCut": 3500,
+          "mix": 22
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--ghost-choir",
+    "category": "Vocals - Creative and Wide",
+    "name": "Ghost Choir",
+    "description": "Layered doubling and slow chorus with a distant, softened room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 160,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Backing stack - even bed",
+        "values": {
+          "threshold": -26,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 12,
+          "release": 200,
+          "makeup": 3,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 140,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Backing stack - soft top",
+        "values": {
+          "frequency": 6500,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Choir",
+        "values": {
+          "detune": 22,
+          "delay": 40,
+          "width": 100,
+          "mix": 35
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Backing stack - slow chorus",
+        "values": {
+          "depthMs": 3,
+          "speedHz": 0.25,
+          "width": 0.8,
+          "mixProportion": 0.3
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Backing stack - distant room",
+        "values": {
+          "room size": 0.65,
+          "damping": 0.55,
+          "width": 1,
+          "wet level": 0.18,
+          "dry level": 0.45,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--broken-radio",
+    "category": "Vocals - Creative and Wide",
+    "name": "Broken Radio",
+    "description": "A telephone band, coarse sampling and clipped grit for deliberate damage.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Telephone",
+        "values": {
+          "b1on": 1,
+          "b1freq": 400,
+          "b1slope": 2,
+          "b8on": 1,
+          "b8freq": 3200,
+          "b8slope": 2,
+          "b5freq": 1500,
+          "b5gain": 5,
+          "b5q": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Telephone grit - parallel",
+        "values": {
+          "bits": 7,
+          "downsample": 6,
+          "mix": 45,
+          "output": -2
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Ad-lib - hard grit",
+        "values": {
+          "type": 2,
+          "drive": 12,
+          "tone": -10,
+          "output": -4,
+          "mix": 45
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Vocal slap",
+        "values": {
+          "sync": 0,
+          "time": 110,
+          "feedback": 10,
+          "pingPong": 0,
+          "lowCut": 300,
+          "highCut": 5000,
+          "mix": 8
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--sidewalk-slap",
+    "category": "Vocals - Creative and Wide",
+    "name": "Sidewalk Slap",
+    "description": "Compressed, lightly crushed ad-libs with an obvious short double.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Rap vocal - controlled presence",
+        "values": {
+          "b1on": 1,
+          "b1freq": 85,
+          "b1slope": 1,
+          "b3freq": 300,
+          "b3gain": -3,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1.5
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Parallel vocal - blended density",
+        "values": {
+          "threshold": -30,
+          "ratio": 10,
+          "knee": 6,
+          "attack": 2,
+          "release": 100,
+          "makeup": 7,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Vocal texture",
+        "values": {
+          "bits": 10,
+          "downsample": 3,
+          "mix": 20,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Ad-lib - obvious double",
+        "values": {
+          "detune": 18,
+          "delay": 32,
+          "width": 100,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Rockabilly slap",
+        "values": {
+          "sync": 0,
+          "time": 80,
+          "feedback": 6,
+          "pingPong": 0,
+          "lowCut": 200,
+          "highCut": 4500,
+          "mix": 28
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--velvet-galaxy",
+    "category": "Vocals - Creative and Wide",
+    "name": "Velvet Galaxy",
+    "description": "A warm lead becomes a lush, slowly moving stereo texture.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Warm vocal",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b1slope": 0,
+          "b2freq": 200,
+          "b2gain": 2,
+          "b4freq": 800,
+          "b4gain": -1.5,
+          "b4q": 1,
+          "b6freq": 3500,
+          "b6gain": -1,
+          "b7freq": 10000,
+          "b7gain": 1.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Ballad vocal - open attack",
+        "values": {
+          "threshold": -22,
+          "ratio": 2.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 300,
+          "drive": 2,
+          "makeup": 2,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Slow and deep",
+        "values": {
+          "depthMs": 12,
+          "speedHz": 0.18,
+          "width": 0.7,
+          "mixProportion": 0.25
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Ambient wash",
+        "values": {
+          "sync": 1,
+          "feedback": 55,
+          "pingPong": 1,
+          "lowCut": 300,
+          "highCut": 4000,
+          "mix": 18
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Ambient",
+        "values": {
+          "room size": 0.9,
+          "damping": 0.35,
+          "width": 1,
+          "wet level": 0.12,
+          "dry level": 0.25,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--stutter-pulse",
+    "category": "Vocals - Creative and Wide",
+    "name": "Stutter Pulse",
+    "description": "A rhythmic amplitude chop after controlled vocal compression.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Rap lead - fast peak control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 4,
+          "attack": 3,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Gentle vocal",
+        "values": {
+          "frequency": 7000,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000tremolo",
+        "name": "Tremolo / Auto Pan",
+        "setting": "Choppy 1/16",
+        "values": {
+          "mode": 0,
+          "shape": 2,
+          "sync": 8,
+          "depth": 65
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "1/8 ping-pong",
+        "values": {
+          "sync": 6,
+          "feedback": 38,
+          "pingPong": 1,
+          "lowCut": 200,
+          "highCut": 6500,
+          "mix": 16
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--dark-dub-caller",
+    "category": "Vocals - Creative and Wide",
+    "name": "Dark Dub Caller",
+    "description": "Narrow vocal tone with audible filtered feedback and a dark room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Telephone",
+        "values": {
+          "b1on": 1,
+          "b1freq": 250,
+          "b1slope": 2,
+          "b8on": 1,
+          "b8freq": 5000,
+          "b8slope": 2,
+          "b5freq": 1500,
+          "b5gain": 5,
+          "b5q": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tube vocal",
+        "values": {
+          "type": 1,
+          "drive": 10,
+          "tone": 10,
+          "output": -1,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dub throw",
+        "values": {
+          "sync": 3,
+          "feedback": 38,
+          "pingPong": 1,
+          "lowCut": 400,
+          "highCut": 2500,
+          "mix": 30
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Dark room",
+        "values": {
+          "room size": 0.5,
+          "damping": 0.85,
+          "width": 0.7,
+          "wet level": 0.1,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--crisp-wide-stack",
+    "category": "Vocals - Creative and Wide",
+    "name": "Crisp Wide Stack",
+    "description": "Clean backing compression with bright, broad doubling and centered lows.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 150,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Backing stack - even bed",
+        "values": {
+          "threshold": -26,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 12,
+          "release": 200,
+          "makeup": 3,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 140,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Airy vocal - gentle 8.5 kHz",
+        "values": {
+          "frequency": 8500,
+          "threshold": -26,
+          "range": 4,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Backing vocals - broad double",
+        "values": {
+          "detune": 11,
+          "delay": 24,
+          "width": 100,
+          "mix": 45
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Vocal stack - moderate expansion",
+        "values": {
+          "width": 135,
+          "bassMono": 170,
+          "output": -0.5
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--grit-halo",
+    "category": "Vocals - Creative and Wide",
+    "name": "Grit Halo",
+    "description": "A strong distorted edge sits inside a smoother doubled vocal.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Rap vocal - controlled presence",
+        "values": {
+          "b1on": 1,
+          "b1freq": 85,
+          "b1slope": 1,
+          "b3freq": 300,
+          "b3gain": -3,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1.5
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Rap vocal - firm control",
+        "values": {
+          "threshold": -18,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 5,
+          "release": 90,
+          "drive": 6,
+          "makeup": 3,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Ad-lib - hard grit",
+        "values": {
+          "type": 2,
+          "drive": 10,
+          "tone": -10,
+          "output": -4,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Heavy",
+        "values": {
+          "frequency": 5500,
+          "threshold": -40,
+          "range": 18,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Lead vocal - tucked double",
+        "values": {
+          "detune": 5,
+          "delay": 14,
+          "width": 65,
+          "mix": 18
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Lead vocal - small dark room",
+        "values": {
+          "room size": 0.3,
+          "damping": 0.65,
+          "width": 0.8,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "vocals-creative-and-wide--studio-4000-prism-voice",
+    "category": "Vocals - Creative and Wide",
+    "name": "Studio 4000 Prism Voice",
+    "description": "App-original chromatic retune, digital dust, slow stereo motion and shimmer.",
+    "plugins": [
+      {
+        "type": "s4000tune",
+        "name": "Pitch Correction",
+        "setting": "Effect",
+        "values": {
+          "speed": 0,
+          "amount": 100,
+          "tolerance": 0,
+          "mix": 100,
+          "scale": 3
+        }
+      },
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 140,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Ambient dust",
+        "values": {
+          "bits": 9,
+          "downsample": 10,
+          "mix": 18,
+          "output": 0
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Fast shimmer",
+        "values": {
+          "depthMs": 3,
+          "speedHz": 3.5,
+          "width": 0.6,
+          "mixProportion": 0.2
+        }
+      },
+      {
+        "type": "s4000tremolo",
+        "name": "Tremolo / Auto Pan",
+        "setting": "Soft vocal move",
+        "values": {
+          "mode": 1,
+          "shape": 0,
+          "sync": 0,
+          "rate": 0.2,
+          "depth": 35
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Bright ping",
+        "values": {
+          "sync": 8,
+          "feedback": 28,
+          "pingPong": 1,
+          "lowCut": 400,
+          "highCut": 12000,
+          "mix": 17
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--kick-deep-punch",
+    "category": "Drums - Individual Hits",
+    "name": "Kick Deep Punch",
+    "description": "Sub cleanup, focused body and a slower attack preserve the kick transient.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Kick punch",
+        "values": {
+          "b1on": 1,
+          "b1freq": 30,
+          "b1slope": 0,
+          "b2gain": 0,
+          "b3freq": 60,
+          "b3gain": 3,
+          "b3q": 1.4,
+          "b4freq": 350,
+          "b4gain": -4,
+          "b4q": 1.6,
+          "b6freq": 4000,
+          "b6gain": 3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Kick control",
+        "values": {
+          "threshold": -18,
+          "ratio": 6,
+          "knee": 4,
+          "attack": 20,
+          "release": 90,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 30,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--kick-beater-click",
+    "category": "Drums - Individual Hits",
+    "name": "Kick Beater Click",
+    "description": "Less low-mid mud with transient emphasis for the kick beater.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Kick punch",
+        "values": {
+          "b1on": 1,
+          "b1freq": 30,
+          "b1slope": 0,
+          "b2gain": 0,
+          "b3freq": 60,
+          "b3gain": 1,
+          "b3q": 1.4,
+          "b4freq": 350,
+          "b4gain": -4,
+          "b4q": 1.6,
+          "b6freq": 4000,
+          "b6gain": 4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Kick click",
+        "values": {
+          "attack": 35,
+          "sustain": -15,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Kick control",
+        "values": {
+          "threshold": -18,
+          "ratio": 4,
+          "knee": 4,
+          "attack": 25,
+          "release": 90,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 30,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--snare-body",
+    "category": "Drums - Individual Hits",
+    "name": "Snare Body",
+    "description": "Keeps snare weight while reducing boxiness and controlling peaks.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Snare snap",
+        "values": {
+          "b2freq": 180,
+          "b2gain": 2,
+          "b4freq": 400,
+          "b4gain": -3,
+          "b4q": 1.5,
+          "b5freq": 2200,
+          "b5gain": 1,
+          "b5q": 1.2,
+          "b7freq": 8000,
+          "b7gain": 2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Snare punch",
+        "values": {
+          "threshold": -14,
+          "ratio": 5,
+          "knee": 2,
+          "attack": 12,
+          "release": 60,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--snare-crack",
+    "category": "Drums - Individual Hits",
+    "name": "Snare Crack",
+    "description": "Emphasizes the initial hit, then reins in the snare sustain.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Snare snap",
+        "values": {
+          "b2freq": 180,
+          "b2gain": -2,
+          "b4freq": 400,
+          "b4gain": -3,
+          "b4q": 1.5,
+          "b5freq": 2200,
+          "b5gain": 3,
+          "b5q": 1.2,
+          "b7freq": 8000,
+          "b7gain": 2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Snare crack",
+        "values": {
+          "attack": 60,
+          "sustain": -20,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Snare punch",
+        "values": {
+          "threshold": -14,
+          "ratio": 5,
+          "knee": 2,
+          "attack": 8,
+          "release": 60,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--snare-plate-pocket",
+    "category": "Drums - Individual Hits",
+    "name": "Snare Plate Pocket",
+    "description": "A controlled snare feeds a quiet plate-style reverb.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Snare snap",
+        "values": {
+          "b2freq": 180,
+          "b2gain": -2,
+          "b4freq": 400,
+          "b4gain": -3,
+          "b4q": 1.5,
+          "b5freq": 2200,
+          "b5gain": 3,
+          "b5q": 1.2,
+          "b7freq": 8000,
+          "b7gain": 2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Snare punch",
+        "values": {
+          "threshold": -14,
+          "ratio": 5,
+          "knee": 2,
+          "attack": 8,
+          "release": 60,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Snare plate",
+        "values": {
+          "room size": 0.35,
+          "damping": 0.4,
+          "width": 0.9,
+          "wet level": 0.1,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--hi-hat-silk",
+    "category": "Drums - Individual Hits",
+    "name": "Hi-Hat Silk",
+    "description": "High-passes rumble and softens excessive cymbal energy.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": 0,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": -1,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 350
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Overhead cymbals",
+        "values": {
+          "frequency": 9000,
+          "threshold": -22,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Cymbal control",
+        "values": {
+          "attack": -20,
+          "sustain": -25,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--overhead-air",
+    "category": "Drums - Individual Hits",
+    "name": "Overhead Air",
+    "description": "Cymbal de-essing and a light top shelf preserve stereo drum detail.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 120,
+          "b3freq": 80,
+          "b3gain": 0,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Overhead cymbals",
+        "values": {
+          "frequency": 9000,
+          "threshold": -22,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Drum overheads",
+        "values": {
+          "width": 150,
+          "bassMono": 250,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--room-tight",
+    "category": "Drums - Individual Hits",
+    "name": "Room Tight",
+    "description": "Reduces rumble and shortens the room tail for close drum grooves.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Tighten room",
+        "values": {
+          "attack": 10,
+          "sustain": -55,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 4,
+          "knee": 3,
+          "attack": 25,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--room-crush",
+    "category": "Drums - Individual Hits",
+    "name": "Room Crush",
+    "description": "Fast parallel compression and saturation bring out room excitement.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 90,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Squash",
+        "values": {
+          "threshold": -35,
+          "ratio": 12,
+          "knee": 0,
+          "attack": 1,
+          "release": 60,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 20,
+          "mix": 55
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Drum smack",
+        "values": {
+          "type": 2,
+          "drive": 8,
+          "tone": 10,
+          "output": 0,
+          "mix": 25
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--tom-weight",
+    "category": "Drums - Individual Hits",
+    "name": "Tom Weight",
+    "description": "Low-mid body with a broad boxiness cut and controlled attack.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 45,
+          "b3freq": 110,
+          "b3gain": 3,
+          "b3q": 1,
+          "b4freq": 450,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 3,
+          "knee": 3,
+          "attack": 18,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Punchy drums",
+        "values": {
+          "attack": 20,
+          "sustain": -10,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--clap-spread",
+    "category": "Drums - Individual Hits",
+    "name": "Clap Spread",
+    "description": "A filtered clap gets stereo doubling and a short reverb tail.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": 2,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 0,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 220,
+          "b5freq": 2400
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Snare punch",
+        "values": {
+          "threshold": -14,
+          "ratio": 3,
+          "knee": 2,
+          "attack": 8,
+          "release": 60,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Tight double",
+        "values": {
+          "detune": 8,
+          "delay": 12,
+          "width": 80,
+          "mix": 25
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Small room",
+        "values": {
+          "room size": 0.2,
+          "damping": 0.6,
+          "width": 0.7,
+          "wet level": 0.08,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-individual-hits--percussion-spark",
+    "category": "Drums - Individual Hits",
+    "name": "Percussion Spark",
+    "description": "Gentle transient definition and a subtle stereo echo for shakers and percussion.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": 0,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 1,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 180
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Loop punch",
+        "values": {
+          "attack": 15,
+          "sustain": -30,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "1/8 ping-pong",
+        "values": {
+          "sync": 6,
+          "feedback": 12,
+          "pingPong": 1,
+          "lowCut": 200,
+          "highCut": 6500,
+          "mix": 9
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--clean-drum-glue",
+    "category": "Drums - Loops and Buses",
+    "name": "Clean Drum Glue",
+    "description": "A low-cut and mild bus compression hold a kit together without heavy drive.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 1,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 2,
+          "knee": 3,
+          "attack": 25,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--parallel-impact",
+    "category": "Drums - Loops and Buses",
+    "name": "Parallel Impact",
+    "description": "Transient punch with blended heavy compression for a denser drum loop.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Loop punch",
+        "values": {
+          "attack": 25,
+          "sustain": -30,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Parallel punch",
+        "values": {
+          "threshold": -28,
+          "ratio": 8,
+          "knee": 2,
+          "attack": 5,
+          "release": 80,
+          "makeup": 2,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--dusty-sampler",
+    "category": "Drums - Loops and Buses",
+    "name": "Dusty Sampler",
+    "description": "A lower-resolution sampler texture with light tape color.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": -1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "12-bit sampler",
+        "values": {
+          "bits": 12,
+          "downsample": 2,
+          "mix": 35,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--tape-kit",
+    "category": "Drums - Loops and Buses",
+    "name": "Tape Kit",
+    "description": "Rounded saturation followed by slow-attack bus control.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Backing stack - gentle tape",
+        "values": {
+          "type": 0,
+          "drive": 4,
+          "tone": 0,
+          "output": -0.5,
+          "mix": 25
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 2,
+          "knee": 3,
+          "attack": 25,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--soft-attack-loop",
+    "category": "Drums - Loops and Buses",
+    "name": "Soft Attack Loop",
+    "description": "Softens sharp hits while keeping the groove level.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 0,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Cymbal control",
+        "values": {
+          "attack": -15,
+          "sustain": -25,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--room-bloom-kit",
+    "category": "Drums - Loops and Buses",
+    "name": "Room Bloom Kit",
+    "description": "Adds sustain and a quiet room for a larger acoustic kit impression.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Room bloom",
+        "values": {
+          "attack": -15,
+          "sustain": 20,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 2,
+          "knee": 3,
+          "attack": 25,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Drum room",
+        "values": {
+          "room size": 0.28,
+          "damping": 0.55,
+          "width": 0.8,
+          "wet level": 0.08,
+          "dry level": 0.55,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--dub-groove",
+    "category": "Drums - Loops and Buses",
+    "name": "Dub Groove",
+    "description": "Filtered echo adds movement behind a lightly saturated kit.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Drum smack",
+        "values": {
+          "type": 2,
+          "drive": 8,
+          "tone": 10,
+          "output": 0,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dark dub",
+        "values": {
+          "sync": 6,
+          "feedback": 24,
+          "pingPong": 1,
+          "lowCut": 500,
+          "highCut": 1800,
+          "mix": 14
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--electronic-tight",
+    "category": "Drums - Loops and Buses",
+    "name": "Electronic Tight",
+    "description": "Defined attack and shortened sustain for programmed drums.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 30,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Punchy drums",
+        "values": {
+          "attack": 30,
+          "sustain": -20,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 4,
+          "knee": 3,
+          "attack": 25,
+          "release": 70,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--breakbeat-crunch",
+    "category": "Drums - Loops and Buses",
+    "name": "Breakbeat Crunch",
+    "description": "Blended sample crushing and fast parallel compression create grit.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Drum crunch",
+        "values": {
+          "bits": 7,
+          "downsample": 3,
+          "mix": 25,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Parallel punch",
+        "values": {
+          "threshold": -28,
+          "ratio": 8,
+          "knee": 2,
+          "attack": 5,
+          "release": 80,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--acoustic-open",
+    "category": "Drums - Loops and Buses",
+    "name": "Acoustic Open",
+    "description": "Gentle cleanup and long attack keep an acoustic kit dynamic.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 0,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 0.5,
+          "b7freq": 12000,
+          "b7gain": 0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--wide-kit-top",
+    "category": "Drums - Loops and Buses",
+    "name": "Wide Kit Top",
+    "description": "Wider stereo ambience with centered low frequencies and cymbal control.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Overhead cymbals",
+        "values": {
+          "frequency": 9000,
+          "threshold": -22,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Drum overheads",
+        "values": {
+          "width": 150,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 1.5,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "drums-loops-and-buses--trashed-room-parallel",
+    "category": "Drums - Loops and Buses",
+    "name": "Trashed Room Parallel",
+    "description": "An intentionally distorted room effect blended with the original signal.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 100,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Destroyed",
+        "values": {
+          "type": 3,
+          "drive": 16,
+          "tone": 0,
+          "output": -6,
+          "mix": 25
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Squash",
+        "values": {
+          "threshold": -35,
+          "ratio": 12,
+          "knee": 0,
+          "attack": 1,
+          "release": 60,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 20,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--sub-foundation",
+    "category": "Bass",
+    "name": "Sub Foundation",
+    "description": "Subsonic cleanup, steady compression and mono low frequencies.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 15,
+          "release": 200,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mono",
+        "values": {
+          "width": 0,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--808-small-speaker-weight",
+    "category": "Bass",
+    "name": "808 Small-Speaker Weight",
+    "description": "Adds restrained harmonics while keeping deep bass centered.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0,
+          "b3gain": 1
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tube bass",
+        "values": {
+          "type": 1,
+          "drive": 14,
+          "tone": -20,
+          "output": -2,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "knee": 6,
+          "attack": 25,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Bass centred",
+        "values": {
+          "width": 125,
+          "bassMono": 200,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--picked-definition",
+    "category": "Bass",
+    "name": "Picked Definition",
+    "description": "Adds midrange articulation while smoothing string peaks.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 1200,
+          "b5gain": 2,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Bass definition",
+        "values": {
+          "attack": 25,
+          "sustain": -20,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 4,
+          "knee": 6,
+          "attack": 8,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--fingerstyle-warm",
+    "category": "Bass",
+    "name": "Fingerstyle Warm",
+    "description": "A warm, gently driven bass with slower compression.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 0.5,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Ballad vocal - open attack",
+        "values": {
+          "threshold": -20,
+          "ratio": 3,
+          "knee": 12,
+          "attack": 30,
+          "release": 300,
+          "drive": 2,
+          "makeup": 1,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--di-round-off",
+    "category": "Bass",
+    "name": "DI Round-Off",
+    "description": "Tames excessive pickup brightness before even compression.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -4,
+          "output": 0,
+          "b8on": 1,
+          "b8freq": 7000
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 15,
+          "release": 200,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tube bass",
+        "values": {
+          "type": 1,
+          "drive": 14,
+          "tone": -20,
+          "output": -2,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--fuzz-anchor",
+    "category": "Bass",
+    "name": "Fuzz Anchor",
+    "description": "Audible fuzz character with a controlled output and centered lows.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Fuzz bass",
+        "values": {
+          "type": 3,
+          "drive": 24,
+          "tone": -30,
+          "output": -3,
+          "mix": 50
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "knee": 6,
+          "attack": 15,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Bass centred",
+        "values": {
+          "width": 125,
+          "bassMono": 200,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--mono-synth-grip",
+    "category": "Bass",
+    "name": "Mono Synth Grip",
+    "description": "Tight envelope control for a centered synth bass.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 30,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 0,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Bass definition",
+        "values": {
+          "attack": 15,
+          "sustain": -12,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 15,
+          "release": 120,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mono",
+        "values": {
+          "width": 0,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--chorus-upper-bass",
+    "category": "Bass",
+    "name": "Chorus Upper Bass",
+    "description": "Adds mild chorus while collapsing the bass region back to mono.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 15,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Bass hint",
+        "values": {
+          "depthMs": 1.5,
+          "speedHz": 0.4,
+          "width": 0.2,
+          "mixProportion": 0.16
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Bass centred",
+        "values": {
+          "width": 125,
+          "bassMono": 220,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--dub-round",
+    "category": "Bass",
+    "name": "Dub Round",
+    "description": "A rounded bass tone with a low-pass and slow gain control.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -5,
+          "output": 0,
+          "b8on": 1,
+          "b8freq": 2500
+        }
+      },
+      {
+        "type": "s4000tubecomp",
+        "name": "Tube-style Compressor",
+        "setting": "Ballad vocal - open attack",
+        "values": {
+          "threshold": -22,
+          "ratio": 3,
+          "knee": 12,
+          "attack": 30,
+          "release": 300,
+          "drive": 2,
+          "makeup": 0,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mono",
+        "values": {
+          "width": 0,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--slap-peak-tamer",
+    "category": "Bass",
+    "name": "Slap Peak Tamer",
+    "description": "Controls fast slap transients while keeping midrange definition.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 1800,
+          "b5gain": 1.5,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 2,
+          "release": 100,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Bass definition",
+        "values": {
+          "attack": -10,
+          "sustain": -20,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--midrange-growl",
+    "category": "Bass",
+    "name": "Midrange Growl",
+    "description": "Parallel tube grit and a forward midrange for a bass that cuts.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 1000,
+          "b5gain": 3,
+          "b5q": 1,
+          "b7gain": -2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tube bass",
+        "values": {
+          "type": 1,
+          "drive": 10,
+          "tone": -20,
+          "output": -2,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 5,
+          "knee": 6,
+          "attack": 15,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "bass--soft-synth-bed",
+    "category": "Bass",
+    "name": "Soft Synth Bed",
+    "description": "Even, darker low end that leaves space for vocals and kick.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Bass guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b2freq": 80,
+          "b2gain": 2.5,
+          "b4freq": 250,
+          "b4gain": -3,
+          "b4q": 1.3,
+          "b5freq": 800,
+          "b5gain": -1,
+          "b5q": 1,
+          "b7gain": -4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Bass",
+        "values": {
+          "threshold": -22,
+          "ratio": 2.5,
+          "knee": 6,
+          "attack": 15,
+          "release": 240,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 20,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 12
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--acoustic-sparkle",
+    "category": "Instruments",
+    "name": "Acoustic Sparkle",
+    "description": "Reduces boom and pick harshness, then adds a quiet room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Acoustic guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b3freq": 200,
+          "b3gain": -2,
+          "b3q": 1,
+          "b5freq": 2500,
+          "b5gain": 2,
+          "b5q": 0.8,
+          "b6freq": 5000,
+          "b6gain": -1.5,
+          "b7freq": 10000,
+          "b7gain": 2.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Acoustic guitar",
+        "values": {
+          "threshold": -18,
+          "ratio": 3,
+          "knee": 8,
+          "attack": 12,
+          "release": 140,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 80
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Acoustic strum",
+        "values": {
+          "frequency": 5500,
+          "threshold": -26,
+          "range": 7,
+          "listen": 0
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Small room",
+        "values": {
+          "room size": 0.2,
+          "damping": 0.6,
+          "width": 0.7,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--acoustic-soft-pick",
+    "category": "Instruments",
+    "name": "Acoustic Soft Pick",
+    "description": "Softens hard picks while retaining a natural acoustic body.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Acoustic guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 80,
+          "b3freq": 200,
+          "b3gain": -2,
+          "b3q": 1,
+          "b5freq": 2500,
+          "b5gain": 2,
+          "b5q": 0.8,
+          "b6freq": 5000,
+          "b6gain": -1.5,
+          "b7freq": 10000,
+          "b7gain": 0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Soften picks",
+        "values": {
+          "attack": -40,
+          "sustain": 10,
+          "output": 1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Acoustic guitar",
+        "values": {
+          "threshold": -18,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 12,
+          "release": 140,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 80
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--funk-guitar-pulse",
+    "category": "Instruments",
+    "name": "Funk Guitar Pulse",
+    "description": "Clean compression and rhythmic tremolo for clipped funk parts.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Electric guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 100,
+          "b3freq": 350,
+          "b3gain": -2,
+          "b4freq": 800,
+          "b4gain": 1.5,
+          "b4q": 1.2,
+          "b6freq": 3000,
+          "b6gain": 2,
+          "b7freq": 8000,
+          "b7gain": -1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Electric guitar",
+        "values": {
+          "threshold": -16,
+          "ratio": 3,
+          "knee": 4,
+          "attack": 6,
+          "release": 100,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000tremolo",
+        "name": "Tremolo / Auto Pan",
+        "setting": "Guitar throb",
+        "values": {
+          "mode": 0,
+          "shape": 0,
+          "sync": 3,
+          "depth": 25
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--rock-rhythm-edge",
+    "category": "Instruments",
+    "name": "Rock Rhythm Edge",
+    "description": "Midrange guitar tone, blended grit and short ambience.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Electric guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 90,
+          "b3freq": 350,
+          "b3gain": -2,
+          "b4freq": 800,
+          "b4gain": 1.5,
+          "b4q": 1.2,
+          "b6freq": 3000,
+          "b6gain": 2,
+          "b7freq": 8000,
+          "b7gain": -1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Guitar grit",
+        "values": {
+          "type": 2,
+          "drive": 12,
+          "tone": 8,
+          "output": -1,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Electric guitar",
+        "values": {
+          "threshold": -16,
+          "ratio": 4,
+          "knee": 4,
+          "attack": 6,
+          "release": 100,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Small room",
+        "values": {
+          "room size": 0.2,
+          "damping": 0.6,
+          "width": 0.7,
+          "wet level": 0.05,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--clean-stereo-lead",
+    "category": "Instruments",
+    "name": "Clean Stereo Lead",
+    "description": "A clean guitar lead with stereo doubling and a dotted echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Electric guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 90,
+          "b3freq": 350,
+          "b3gain": -2,
+          "b4freq": 800,
+          "b4gain": 1.5,
+          "b4q": 1.2,
+          "b6freq": 3000,
+          "b6gain": 2,
+          "b7freq": 8000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Electric guitar",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 4,
+          "attack": 6,
+          "release": 100,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000doubler",
+        "name": "Vocal Doubler",
+        "setting": "Guitar spread",
+        "values": {
+          "detune": 10,
+          "delay": 16,
+          "width": 100,
+          "mix": 20
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Guitar dotted",
+        "values": {
+          "sync": 5,
+          "feedback": 40,
+          "pingPong": 1,
+          "lowCut": 150,
+          "highCut": 5000,
+          "mix": 18
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--open-piano",
+    "category": "Instruments",
+    "name": "Open Piano",
+    "description": "Retains hammer detail with gentle leveling and a hall behind the notes.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Piano",
+        "values": {
+          "b2freq": 120,
+          "b2gain": 1.5,
+          "b4freq": 500,
+          "b4gain": -2,
+          "b4q": 1,
+          "b6freq": 3000,
+          "b6gain": 1.5,
+          "b7freq": 10000,
+          "b7gain": 2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Piano hall",
+        "values": {
+          "room size": 0.7,
+          "damping": 0.4,
+          "width": 1,
+          "wet level": 0.09,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--intimate-piano",
+    "category": "Instruments",
+    "name": "Intimate Piano",
+    "description": "Softer attacks, darker top end and a small room.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Piano",
+        "values": {
+          "b2freq": 120,
+          "b2gain": 1.5,
+          "b4freq": 500,
+          "b4gain": -2,
+          "b4q": 1,
+          "b6freq": 3000,
+          "b6gain": 1.5,
+          "b7freq": 10000,
+          "b7gain": -1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Piano hammer",
+        "values": {
+          "attack": -12,
+          "sustain": -5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Ballad - gentle RMS leveling",
+        "values": {
+          "threshold": -24,
+          "ratio": 2.2,
+          "knee": 12,
+          "attack": 30,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Lead vocal - small dark room",
+        "values": {
+          "room size": 0.3,
+          "damping": 0.65,
+          "width": 0.8,
+          "wet level": 0.06,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--warm-electric-keys",
+    "category": "Instruments",
+    "name": "Warm Electric Keys",
+    "description": "Gentle tape color, slow chorus and a tucked stereo echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Piano",
+        "values": {
+          "b2freq": 120,
+          "b2gain": 1.5,
+          "b4freq": 500,
+          "b4gain": -2,
+          "b4q": 1,
+          "b6freq": 3000,
+          "b6gain": 1.5,
+          "b7freq": 10000,
+          "b7gain": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 18
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Slow sweep",
+        "values": {
+          "depthMs": 14,
+          "speedHz": 0.1,
+          "width": 0.75,
+          "mixProportion": 0.18
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "1/8 ping-pong",
+        "values": {
+          "sync": 6,
+          "feedback": 38,
+          "pingPong": 1,
+          "lowCut": 200,
+          "highCut": 6500,
+          "mix": 10
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--synth-pluck-focus",
+    "category": "Instruments",
+    "name": "Synth Pluck Focus",
+    "description": "Shortens sustain and adds a restrained dotted echo.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": 1,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 0,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 100,
+          "b5freq": 3000
+        }
+      },
+      {
+        "type": "s4000transient",
+        "name": "Transient Shaper",
+        "setting": "Loop punch",
+        "values": {
+          "attack": 15,
+          "sustain": -20,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dotted 1/8",
+        "values": {
+          "sync": 5,
+          "feedback": 32,
+          "pingPong": 0,
+          "lowCut": 250,
+          "highCut": 7000,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--wide-floating-pad",
+    "category": "Instruments",
+    "name": "Wide Floating Pad",
+    "description": "Filtered lows, slow chorus and stereo ambience make a broad pad.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": 0,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 0,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 180
+        }
+      },
+      {
+        "type": "chorus",
+        "name": "Chorus",
+        "setting": "Ambient",
+        "values": {
+          "depthMs": 16,
+          "speedHz": 0.22,
+          "width": 1,
+          "mixProportion": 0.3
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Ambient",
+        "values": {
+          "width": 190,
+          "bassMono": 200,
+          "output": -1
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Ambient",
+        "values": {
+          "room size": 0.9,
+          "damping": 0.35,
+          "width": 1,
+          "wet level": 0.14,
+          "dry level": 0.25,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--smooth-strings",
+    "category": "Instruments",
+    "name": "Smooth Strings",
+    "description": "A softer upper midrange with gentle compression and a hall.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": -2,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 0,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 90,
+          "b5freq": 3200,
+          "b5q": 0.9
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Piano hall",
+        "values": {
+          "room size": 0.7,
+          "damping": 0.4,
+          "width": 1,
+          "wet level": 0.1,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instruments--brass-bite-control",
+    "category": "Instruments",
+    "name": "Brass Bite Control",
+    "description": "Reduces sharp upper mids without removing all of the brass attack.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Flat",
+        "values": {
+          "b1on": 1,
+          "b1gain": 0,
+          "b2on": 1,
+          "b2gain": 0,
+          "b3on": 1,
+          "b3gain": 0,
+          "b4on": 1,
+          "b4gain": 0,
+          "b5on": 1,
+          "b5gain": -2.5,
+          "b6on": 1,
+          "b6gain": 0,
+          "b7on": 1,
+          "b7gain": 0,
+          "b8on": 0,
+          "b8gain": 0,
+          "output": 0,
+          "b1freq": 85,
+          "b5freq": 3000,
+          "b5q": 1.2
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Electric guitar",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 4,
+          "attack": 15,
+          "release": 100,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 100,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Small room",
+        "values": {
+          "room size": 0.2,
+          "damping": 0.6,
+          "width": 0.7,
+          "wet level": 0.07,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--gentle-mix-glue",
+    "category": "Mix and Groups",
+    "name": "Gentle Mix Glue",
+    "description": "Small tonal moves and slow, mild compression for a mix starting point.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": 0.5,
+          "output": 0,
+          "b3gain": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mix bus safe",
+        "values": {
+          "width": 110,
+          "bassMono": 140,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Mix sample safety -1 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--drum-group-punch",
+    "category": "Mix and Groups",
+    "name": "Drum Group Punch",
+    "description": "A bus chain that adds density while retaining initial hits.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Drum bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 35,
+          "b3freq": 80,
+          "b3gain": 2,
+          "b3q": 1,
+          "b4freq": 400,
+          "b4gain": -2.5,
+          "b6freq": 5000,
+          "b6gain": 1.5,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Drum bus",
+        "values": {
+          "threshold": -16,
+          "ratio": 4,
+          "knee": 3,
+          "attack": 25,
+          "release": 80,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 120,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Mix glue",
+        "values": {
+          "type": 0,
+          "drive": 3,
+          "tone": 0,
+          "output": 0,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--vocal-bus-focus",
+    "category": "Mix and Groups",
+    "name": "Vocal Bus Focus",
+    "description": "Keeps a vocal group centered, controlled and gently de-essed.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 90,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Backing stack - soft top",
+        "values": {
+          "frequency": 6500,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Vocal bus - narrow centre",
+        "values": {
+          "width": 75,
+          "bassMono": 150,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--backing-stack-space",
+    "category": "Mix and Groups",
+    "name": "Backing Stack Space",
+    "description": "High-passed backing voices with gentle glue, width and depth.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1type": 0,
+          "b1freq": 160,
+          "b1slope": 1,
+          "b2gain": -2,
+          "b2freq": 180,
+          "b3freq": 300,
+          "b3gain": -2.5,
+          "b3q": 1.2,
+          "b5freq": 3200,
+          "b5gain": 2.5,
+          "b5q": 0.9,
+          "b7freq": 11000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Backing stack - even bed",
+        "values": {
+          "threshold": -26,
+          "ratio": 4,
+          "knee": 10,
+          "attack": 12,
+          "release": 200,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 140,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Backing stack - soft top",
+        "values": {
+          "frequency": 6500,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Vocal stack - moderate expansion",
+        "values": {
+          "width": 135,
+          "bassMono": 170,
+          "output": -0.5
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Backing stack - distant room",
+        "values": {
+          "room size": 0.65,
+          "damping": 0.55,
+          "width": 1,
+          "wet level": 0.1,
+          "dry level": 0.45,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--guitar-group-firm",
+    "category": "Mix and Groups",
+    "name": "Guitar Group Firm",
+    "description": "Tames guitar low-mid buildup and glues doubled rhythm parts.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Electric guitar",
+        "values": {
+          "b1on": 1,
+          "b1freq": 90,
+          "b3freq": 350,
+          "b3gain": -2,
+          "b4freq": 350,
+          "b4gain": -2,
+          "b4q": 1.2,
+          "b6freq": 3000,
+          "b6gain": 2,
+          "b7freq": 8000,
+          "b7gain": -1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 2.5,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Mix glue",
+        "values": {
+          "type": 0,
+          "drive": 3,
+          "tone": 0,
+          "output": 0,
+          "mix": 12
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--keys-group-air",
+    "category": "Mix and Groups",
+    "name": "Keys Group Air",
+    "description": "Low-cut cleanup and gentle compression with restrained high-end sheen.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Piano",
+        "values": {
+          "b2freq": 120,
+          "b2gain": 1.5,
+          "b4freq": 500,
+          "b4gain": -2,
+          "b4q": 1,
+          "b6freq": 3000,
+          "b6gain": 1.5,
+          "b7freq": 10000,
+          "b7gain": 1,
+          "output": 0,
+          "b1on": 1,
+          "b1freq": 70
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "A bit wider",
+        "values": {
+          "width": 130,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--parallel-group-impact",
+    "category": "Mix and Groups",
+    "name": "Parallel Group Impact",
+    "description": "A blended compression chain for extra group density.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Parallel punch",
+        "values": {
+          "threshold": -28,
+          "ratio": 8,
+          "knee": 2,
+          "attack": 5,
+          "release": 80,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 0,
+          "scHpf": 80,
+          "mix": 25
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Mix glue",
+        "values": {
+          "type": 0,
+          "drive": 3,
+          "tone": 0,
+          "output": 0,
+          "mix": 10
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--dark-dub-group",
+    "category": "Mix and Groups",
+    "name": "Dark Dub Group",
+    "description": "Filtered group color with a deliberately audible stereo delay.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": 1,
+          "output": 0,
+          "b8on": 1,
+          "b8freq": 7000
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 18
+        }
+      },
+      {
+        "type": "s4000delay",
+        "name": "Delay",
+        "setting": "Dark dub",
+        "values": {
+          "sync": 6,
+          "feedback": 25,
+          "pingPong": 1,
+          "lowCut": 500,
+          "highCut": 1800,
+          "mix": 16
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--lo-fi-music-bed",
+    "category": "Mix and Groups",
+    "name": "Lo-Fi Music Bed",
+    "description": "Sampler texture and darker tonal shaping for an intentionally dusty bed.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": -2,
+          "output": 0,
+          "b8on": 1,
+          "b8freq": 9000
+        }
+      },
+      {
+        "type": "s4000crusher",
+        "name": "Bit Crusher",
+        "setting": "Lo-fi sampler",
+        "values": {
+          "bits": 12,
+          "downsample": 4,
+          "mix": 20,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Tape warmth",
+        "values": {
+          "type": 0,
+          "drive": 8,
+          "tone": -15,
+          "output": 0,
+          "mix": 15
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 1.5,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--mono-check-and-glue",
+    "category": "Mix and Groups",
+    "name": "Mono Check and Glue",
+    "description": "Collapses stereo to mono with mild bus compression for compatibility work.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mono",
+        "values": {
+          "width": 0,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--air-and-soft-peaks",
+    "category": "Mix and Groups",
+    "name": "Air and Soft Peaks",
+    "description": "A restrained high shelf followed by gentle peak control.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Air",
+        "values": {
+          "b7freq": 12000,
+          "b7gain": 1.5,
+          "b7q": 0.6,
+          "b6gain": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Mix bus gentle",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.3,
+          "knee": 12,
+          "attack": 30,
+          "release": 250,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 40,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Mix sample safety -1 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "mix-and-groups--small-room-group",
+    "category": "Mix and Groups",
+    "name": "Small Room Group",
+    "description": "Quiet shared ambience and slow compression for a cohesive group.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Mix bus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b2freq": 100,
+          "b2gain": 0.8,
+          "b4freq": 400,
+          "b4gain": -1,
+          "b6freq": 8000,
+          "b6gain": 0.8,
+          "b7freq": 12000,
+          "b7gain": 0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 1.5,
+          "knee": 10,
+          "attack": 30,
+          "release": 300,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 60,
+          "mix": 100
+        }
+      },
+      {
+        "type": "reverb",
+        "name": "Reverb",
+        "setting": "Small room",
+        "values": {
+          "room size": 0.2,
+          "damping": 0.6,
+          "width": 0.7,
+          "wet level": 0.045,
+          "dry level": 0.5,
+          "mode": 0
+        }
+      },
+      {
+        "type": "s4000hardlimit",
+        "name": "Hard Limiter",
+        "setting": "Vocal sample safety -2 dBFS",
+        "values": {
+          "input": 0,
+          "ceiling": -2
+        }
+      }
+    ]
+  }
+]

@@ -10,7 +10,7 @@ describe("version label", () => {
   });
 
   it("keeps the notes short and grouped", () => {
-    expect(WHATS_NEW.map((g) => g.title)).toEqual(["Record and convert", "Clips", "Tracks", "Export", "Sessions", "Effects", "Phone"]);
+    expect(WHATS_NEW.map((g) => g.title)).toEqual(["Keep the takes coming", "Find your vocal sound", "Edit with confidence", "A smoother session", "Make it yours"]);
     const lines = WHATS_NEW.flatMap((g) => g.items);
     expect(lines.length).toBeGreaterThanOrEqual(16);
     expect(lines.every((line) => line.length < 90)).toBe(true);

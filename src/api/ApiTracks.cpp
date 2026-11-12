@@ -1,4 +1,6 @@
 #include "Api.h"
+#include "../Convert.h"
+#include "../MonoSum.h"
 
 namespace s3
 {
@@ -333,6 +335,28 @@ void registerTrackApi (AppEngine& app)
         return var (copy->itemID.toString());
     });
 
+    rpc.add ("track.bounce", K::write, "Bakes a track and its effects to a new audio track directly below it", "{id,tailSeconds?:0..30,muteSource?:true}", [&app] (const var& p)
+    {
+        auto& edit = app.edit();
+        if (edit.getTransport().isRecording()) throw RpcError ("Stop recording before bouncing a track");
+        auto& source = app.audioTrack (reqStr (p, "id"));
+        if (source.getClips().isEmpty()) throw RpcError ("This track has no clips to bounce");
+        if (edit.getTransport().isPlaying()) edit.getTransport().stop (false, true);
+        double start = std::numeric_limits<double>::max(), end = 0;
+        for (auto* clip : source.getClips()) { start = std::min (start, clip->getPosition().getStart().inSeconds()); end = std::max (end, clip->getPosition().getEnd().inSeconds()); }
+        auto file = bounceTrackToWav (app, source, { seconds (start), seconds (end) }, source.getName() + " printed", num (p, "tailSeconds", 4), true);
+        te::AudioFile audio (app.getEngine(), file);
+        if (! audio.isValid()) throw RpcError ("The bounced audio could not be read");
+        auto dest = createTrack (app, TrackKind::audio, source.getName() + " printed", &source, source.getParentFolderTrack(), nullptr, 2);
+        auto* track = dynamic_cast<te::AudioTrack*> (dest.get());
+        if (track == nullptr) throw RpcError ("Could not create the bounced track");
+        auto clip = track->insertWaveClip (file.getFileNameWithoutExtension(), file, { { seconds (start), duration (audio.getLength()) } }, false);
+        if (clip == nullptr) { edit.deleteTrack (track); throw RpcError ("Could not insert the bounced clip"); }
+        track->setColour (source.getColour());
+        if (flag (p, "muteSource", true)) source.state.setProperty (te::IDs::mute, true, &edit.getUndoManager());
+        return Obj().set ("trackId", track->itemID.toString()).set ("clipId", clip->itemID.toString()).set ("file", file.getFullPathName());
+    });
+
     rpc.add ("track.move", K::write, "Moves a track after another, or into a group", "{id, afterId?, parentId?}", [&app] (const var& p)
     {
         auto& t = app.track (reqStr (p, "id"));
@@ -376,6 +400,7 @@ void registerTrackApi (AppEngine& app)
         if (has (p, "role"))    t.state.setProperty ("s3role", str (p, "role"), &app.edit().getUndoManager());
         if (has (p, "automationMode"))  t.automationMode = automationModeFromName (str (p, "automationMode"));
 
+        if (has (p, "sumToMono")) setSumToMono (app, t.pluginList, flag (p, "sumToMono"));
         te::VolumeAndPanPlugin* vp = nullptr;
 
         if (auto* at = dynamic_cast<te::AudioTrack*> (&t))      vp = at->getVolumePlugin();
@@ -535,6 +560,7 @@ void registerTrackApi (AppEngine& app)
 
     rpc.add ("master.set", K::write, "Master fader", "{volumeDb?, pan?}", [&app] (const var& p)
     {
+        if (has (p, "sumToMono")) setSumToMono (app, app.edit().getMasterPluginList(), flag (p, "sumToMono"));
         if (auto vp = app.edit().getMasterVolumePlugin())
         {
             if (has (p, "volumeDb"))  vp->setVolumeDb (juce::jlimit (-100.0f, 15.0f, (float) num (p, "volumeDb")));

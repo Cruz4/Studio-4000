@@ -5,6 +5,7 @@ import { beginPluginReorder, FX_COPY } from "../pluginReorder";
 import { act, openPlugin, toast, useStore } from "../store";
 import type { Plugin } from "../types";
 import { cx } from "../util";
+import { CHAIN_CATEGORIES, TRACK_CHAINS } from "../trackChains";
 import { askText } from "./Ask";
 import { openMenu } from "./ContextMenu";
 import { CompactEditor } from "./fx/CompactEditor";
@@ -318,10 +319,12 @@ export function EffectsRack() {
             const name = e.target.value;
             if (!name) return;
             if (scope === "clip" && !audio) return toast("Select an audio clip first", "warning");
+            if (name.startsWith("factory:")) { useStore.setState({ chainPreset: { id: name.slice(8), trackId: track.id, ...(scope === "clip" && audio ? { clipId: audio.clip.id } : {}) } }); return; }
             act("chain.load", { ...target, name });
           }}>
           <option value="">Load chain…</option>
-          {chains.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          {CHAIN_CATEGORIES.map((category) => <optgroup key={category} label={category}>{TRACK_CHAINS.filter((p) => p.category === category).map((p) => <option key={p.id} value={`factory:${p.id}`}>{p.name}</option>)}</optgroup>)}
+          {chains.length > 0 && <optgroup label="Your saved chains">{chains.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}</optgroup>}
         </select>
         <button className="btn sm" disabled={scope === "clip" && !audio}
           onClick={() => useStore.setState({ picker: scope === "clip" && audio ? { trackId: audio.track.id, clipId: audio.clip.id } : { trackId: track.id } })}>

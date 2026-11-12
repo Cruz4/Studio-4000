@@ -54,6 +54,7 @@ Apply-IfMissing "tracktion-automation-modifier-lifetime.patch" "modules\tracktio
 Apply-IfMissing "tracktion-recording-arm-flush.patch" "modules\tracktion_engine\playback\devices\tracktion_InputDevice.h" "Studio 4000: flush queued arm/routing changes"
 
 Apply-IfMissing "tracktion-clip-automation-destination.patch" "modules\tracktion_engine\model\automation\tracktion_AutomationCurveList.cpp" "Studio 4000: preserve an exact destination"
+Apply-IfMissing "tracktion-loop-take-timeline.patch" "modules\tracktion_engine\playback\devices\tracktion_InputDevice.h" "Studio 4000: map a scheduled pass"
 
 $juce = Join-Path $dest "modules\juce\CMakeLists.txt"
 if (-not (Test-Path $juce)) {

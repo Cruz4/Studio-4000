@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { on, rpc } from "../bridge";
 import { RecordingClip } from "./RecordingClip";
+import { MonoButton } from "./MonoButton";
 import { mergeRecording, type RecordingPreview } from "../recording";
 import { startSelectionDrag } from "../selectionDrag"; // Studio 4000 selection scrolling fix
 import { reportHover, useCollab } from "../collab";
@@ -9,6 +10,7 @@ import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } fro
 import { useMeterCanvas } from "../meters";
 import { act, armLoopRange, live, loadDevices, refreshProject, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
 import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleAutomation } from "../trackMenu";
+import { rangeSelectionItems } from "../rangeSelection";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
@@ -74,7 +76,7 @@ export async function uploadAndImport(files: File[], trackId: string | undefined
 
 /* ------------------------------------------------------------------ ruler */
 
-function Ruler({ project, pps, view, grid }: { project: Project; pps: number; view: { left: number; width: number }; grid: Grid }) {
+function Ruler({ project, pps, view, grid, onTimeSelection }: { project: Project; pps: number; view: { left: number; width: number }; grid: Grid; onTimeSelection: (v: { a: number; b: number } | null) => void }) {
   const headerW = useHeaderWidth((s) => s.w);
   const theme = useThemeName();
   const ref = useRef<HTMLCanvasElement>(null);
@@ -122,19 +124,23 @@ function Ruler({ project, pps, view, grid }: { project: Project; pps: number; vi
   return (
     <div className="ruler-canvas" style={{ width: Math.max(view.width, 1), position: "sticky", left: headerW }}
       onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
         const el = e.currentTarget;
-        const y = e.clientY - el.getBoundingClientRect().top;
         const t = snap(timeAt(e.clientX, el), grid, project, e.altKey);
-        if (y < 12) {
-          const a = t;
-          let b = t;
-          startDrag(e, (_dx, _dy, ev) => { b = snap(timeAt(ev.clientX, el), grid, project, ev.altKey); setLoopPreview([Math.min(a, b), Math.max(a, b)]); },
-            () => { setLoopPreview(null); if (Math.abs(b - a) > 0.05) { armLoopRange(); act("transport.setLoop", { start: Math.min(a, b), end: Math.max(a, b), enabled: true }); } });
-        } else {
-          act("transport.setPosition", { time: t });
-          startDrag(e, (_dx, _dy, ev) => act("transport.setPosition", { time: snap(timeAt(ev.clientX, el), grid, project, ev.altKey) }));
-        }
-      }}>
+        let b = t, dragged = false;
+        startDrag(e, (dx, _dy, ev) => {
+          if (Math.abs(dx) > 3) dragged = true;
+          if (!dragged) return;
+          b = snap(timeAt(ev.clientX, el), grid, project, ev.altKey);
+          const a = Math.min(t, b), end = Math.max(t, b);
+          setLoopPreview([a, end]); onTimeSelection({ a, b: end });
+        }, () => {
+          setLoopPreview(null); onTimeSelection(null);
+          if (dragged && Math.abs(b - t) > .05) { armLoopRange(); act("transport.setLoop", { start: Math.min(t, b), end: Math.max(t, b), enabled: true }); }
+          else if (!dragged) act("transport.setPosition", { time: t });
+        });
+      }} onContextMenu={(e) => { const items = rangeSelectionItems(); if (items.length) openMenu(e, items); else e.preventDefault(); }}>
       <canvas ref={ref} style={{ position: "absolute", left: 0, top: 0, width: view.width, height: 34 }} />
       <LoopBar project={project} pps={pps} viewLeft={view.left} grid={grid} />
       {project.markers.map((m) => (
@@ -186,6 +192,7 @@ function LoopBar({ project, pps, viewLeft, grid }: { project: Project; pps: numb
         ev.stopPropagation();
         armLoopRange();
         openMenu(ev, [
+          ...rangeSelectionItems(),
           { label: project.looping ? "Turn looping off" : "Turn looping on", run: () => act("transport.setLooping", { enabled: !project.looping }) },
           { label: "Clear range", icon: "trash", danger: true, keys: "Del", run: () => { void act("transport.setLoop", { start: 0, end: 0, enabled: false }); } },
         ]);
@@ -242,16 +249,18 @@ function placedAudio(project: Project, preview: DragPreview | null) {
   project.tracks.forEach((track, index) => {
     for (const clip of track.clips) {
       if (clip.kind !== "audio") continue;
+      const copying = preview?.copy && preview.ids.includes(clip.id);
+      if (copying) out.push({ id: clip.id, trackId: track.id, start: clip.start, end: clip.end, fadeIn: clip.fadeIn ?? 0, fadeOut: clip.fadeOut ?? 0, prevStart: clip.start, prevEnd: clip.end });
       const shown = shownClip(clip, preview, null);
       let trackId = track.id;
-      if (preview && !preview.copy && preview.mode === "move" && preview.ids.includes(clip.id) && preview.trackDelta) {
+      if (preview && preview.mode === "move" && preview.ids.includes(clip.id) && preview.trackDelta) {
         const dest = project.tracks[index + preview.trackDelta];
         if (dest?.kind === "audio") trackId = dest.id;
       }
       out.push({
-        id: clip.id, trackId, start: shown.start, end: shown.end,
+        id: copying ? `copy:${clip.id}` : clip.id, trackId, start: shown.start, end: shown.end,
         fadeIn: clip.fadeIn ?? 0, fadeOut: clip.fadeOut ?? 0,
-        prevStart: clip.start, prevEnd: clip.end,
+        prevStart: copying ? Infinity : clip.start, prevEnd: copying ? -Infinity : clip.end,
       });
     }
   });
@@ -267,7 +276,7 @@ function overlapFades(project: Project, preview: DragPreview) {
   }
   const fades = new Map<string, { fadeIn: number; fadeOut: number }>();
   for (const list of byTrack.values())
-    for (const [id, fade] of crossfadeOverlaps(list, new Set(preview.ids))) fades.set(id, fade);
+    for (const [id, fade] of crossfadeOverlaps(list, new Set(preview.ids.map((id) => preview.copy ? `copy:${id}` : id)))) fades.set(id, fade);
   return fades;
 }
 
@@ -373,8 +382,9 @@ function publishClipGain(force: boolean, lastSent: { t: number }) {
   else void act("batch.run", { label: "Clip gain", calls });
 }
 
-const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, settled, view, onDown, trackIndex, timeAt, onTime }: {
+const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, fadePreview, settled, view, onDown, trackIndex, timeAt, onTime }: {
   clip: Clip; track: Track; pps: number; selected: boolean; preview: DragPreview | null; settled: SettledClip[] | null; view: { left: number; width: number };
+  fadePreview: DragPreview | null;
   onDown: (e: React.PointerEvent, clip: Clip, mode: DragPreview["mode"]) => void; trackIndex: number;
   timeAt: (clientX: number) => number;
   onTime: (e: React.PointerEvent) => void;
@@ -386,10 +396,15 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
   const shown = shownClip(clip, preview, settled);
   const { start, end, fadeIn: storedFadeIn, fadeOut: storedFadeOut, offset } = shown;
   let fadeIn = storedFadeIn, fadeOut = storedFadeOut;
-  if (clip.kind === "audio" && preview && !preview.copy && (preview.mode === "move" || preview.mode === "l" || preview.mode === "r")) {
+  let autoFadeIn = false, autoFadeOut = false;
+  if (clip.kind === "audio" && fadePreview && (fadePreview.mode === "move" || fadePreview.mode === "l" || fadePreview.mode === "r")) {
     const project = useStore.getState().project;
-    const fade = project ? overlapFades(project, preview).get(clip.id) : undefined;
-    if (fade) { fadeIn = fade.fadeIn; fadeOut = fade.fadeOut; }
+    const fade = project ? overlapFades(project, fadePreview).get(preview?.copy ? `copy:${clip.id}` : clip.id) : undefined;
+    if (fade) {
+      autoFadeIn = Math.abs(fade.fadeIn - (clip.fadeIn ?? 0)) > .001;
+      autoFadeOut = Math.abs(fade.fadeOut - (clip.fadeOut ?? 0)) > .001;
+      fadeIn = fade.fadeIn; fadeOut = fade.fadeOut;
+    }
   }
   const affected = preview != null && preview.ids.includes(clip.id);
   const colour = clip.colour || track.colour;
@@ -414,8 +429,8 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
     fadeInBend: inBend, fadeOutBend: outBend,
     gainPoints: gainSource?.map(([t, db]) => [t - offsetDelta, db] as [number, number]),
   };
-  const inFade = fadeInPaths((fadeIn / Math.max(0.001, end - start)) * 100, inBend, clip.fadeInType);
-  const outFade = fadeOutPaths((1 - fadeOut / Math.max(0.001, end - start)) * 100, outBend, clip.fadeOutType);
+  const inFade = fadeInPaths((fadeIn / Math.max(0.001, end - start)) * 100, autoFadeIn ? undefined : inBend, autoFadeIn ? "scurve" : clip.fadeInType);
+  const outFade = fadeOutPaths((1 - fadeOut / Math.max(0.001, end - start)) * 100, autoFadeOut ? undefined : outBend, autoFadeOut ? "scurve" : clip.fadeOutType);
   const notes = clip.notes ?? [];
   const pitches = notes.map((n) => n[0]);
   const lo = Math.min(...pitches, 60) - 2, hi = Math.max(...pitches, 72) + 2;
@@ -451,6 +466,7 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, s
         const here = timeAt(e.clientX);
         openMenu(e, [
           { label: "Open in editor", icon: clip.kind === "midi" ? "piano" : "wave", keys: "E", run: () => useStore.setState({ editorClip: clip.id, bottom: "editor" }) },
+          ...rangeSelectionItems(here),
           { separator: true },
           { label: "Split here", icon: "scissors", run: () => splitClipAt(clip.id, here) },
           { label: "Split at playhead", icon: "scissors", keys: "S", run: splitAtPlayhead },
@@ -642,6 +658,7 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
     <>
       <button className={cx("toggle mute", track.mute && "on")} title="Mute" onClick={() => act("track.set", { id: track.id, mute: !track.mute })}>M</button>
       <button className={cx("toggle solo", track.solo && "on")} title="Solo" onClick={() => act("track.set", { id: track.id, solo: !track.solo })}>S</button>
+      <MonoButton id={track.id} on={track.sumToMono} />
       {recordable && <button className={cx("toggle arm", track.armed && "on")} title="Arm for recording" onClick={() => act("track.arm", { id: track.id, armed: !track.armed })}>●</button>}
       {recordable && (
         <button className={cx("toggle mon", track.monitor === "on" && "on", track.live && "live")}
@@ -874,6 +891,7 @@ function MasterRow({ laneW }: { laneW: number }) {
           <div className="row name-line" style={{ gap: 6, paddingRight: 6 }}>
             <span className="name">Master</span>
             <span className="kind">MASTER</span>
+            <MonoButton id="master" on={project.master.sumToMono} />
           </div>
           <div className="io-row">
             {outs.length > 1 ? (
@@ -1163,6 +1181,7 @@ export function Arrange() {
       const all = p.tracks.flatMap((t) => t.clips.map((c) => ({ c, t })));
       const calls: { method: string; params: Record<string, unknown> }[] = [];
       const held: SettledClip[] = [];
+      const fades = last.mode === "move" || last.mode === "l" || last.mode === "r" ? overlapFades(p, last) : new Map<string, { fadeIn: number; fadeOut: number }>();
       for (const id of last.ids) {
         const hit = all.find((x) => x.c.id === id);
         if (!hit) continue;
@@ -1174,7 +1193,13 @@ export function Arrange() {
           const target = p.tracks[clamp(ti, 0, p.tracks.length - 1)];
           const compatible = (target.kind === "instrument") === (c.kind === "midi") || target.kind === "audio" && c.kind === "audio";
           const trackId = last.trackDelta !== 0 && compatible ? target.id : undefined;
-          if (last.copy) calls.push({ method: "clip.duplicate", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
+          if (last.copy) {
+            const fade = fades.get(`copy:${id}`);
+            calls.push({ method: "clip.duplicate", params: { id, start: edge.start, ...(trackId ? { trackId } : {}),
+              ...(fade && Math.abs(fade.fadeIn - (c.fadeIn ?? 0)) > .001 ? { fadeIn: fade.fadeIn } : {}),
+              ...(fade && Math.abs(fade.fadeOut - (c.fadeOut ?? 0)) > .001 ? { fadeOut: fade.fadeOut } : {}),
+            } });
+          }
           else calls.push({ method: "clip.move", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
         } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: edge.start } });
         else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: edge.end } });
@@ -1182,8 +1207,9 @@ export function Arrange() {
         else if (last.mode === "fo") calls.push({ method: "clip.set", params: { id, fadeOut: edge.fadeOut, fadeOutBend: last.fadeBend ?? c.fadeOutBend ?? bendOfFade(c.fadeOutType) } });
         else if (last.mode === "slip") calls.push({ method: "clip.slip", params: { id, offset: edge.offset } });
       }
-      if (!last.copy && (last.mode === "move" || last.mode === "l" || last.mode === "r")) {
-        for (const [id, fade] of overlapFades(p, last)) {
+      if (last.mode === "move" || last.mode === "l" || last.mode === "r") {
+        for (const [id, fade] of fades) {
+          if (id.startsWith("copy:")) continue;
           const clip = all.find((item) => item.c.id === id)?.c;
           const params: Record<string, unknown> = { id };
           if (clip && Math.abs(fade.fadeIn - (clip.fadeIn ?? 0)) > 0.001) { params.fadeIn = fade.fadeIn; params.fadeInType = "scurve"; }
@@ -1302,6 +1328,12 @@ export function Arrange() {
     const copiedFx = e.dataTransfer.getData(FX_COPY);
     const media = e.dataTransfer.getData("application/x-s3-media");
     const chain = e.dataTransfer.getData("application/x-s3-chain");
+    const factoryChain = e.dataTransfer.getData("application/x-s3-factory-chain");
+    if (factoryChain) {
+      const id = track?.id ?? (await act("track.add", { kind: "audio" }))?.[0];
+      if (id) useStore.setState({ chainPreset: { id: factoryChain, trackId: id } });
+      return;
+    }
     if (copiedFx) {
       const { ids } = JSON.parse(copiedFx) as { ids: string[] };
       let target = track?.id;
@@ -1345,7 +1377,7 @@ export function Arrange() {
 
   const dragOver = (e: React.DragEvent, id: string) => {
     const types = e.dataTransfer.types;
-    if (types.includes("Files") || types.includes("application/x-s3-plugin") || types.includes(FX_COPY) || types.includes("application/x-s3-media") || types.includes("application/x-s3-chain")) {
+    if (types.includes("Files") || types.includes("application/x-s3-plugin") || types.includes(FX_COPY) || types.includes("application/x-s3-media") || types.includes("application/x-s3-chain") || types.includes("application/x-s3-factory-chain")) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
       if (dropLane !== id) setDropLane(id);
@@ -1422,7 +1454,7 @@ export function Arrange() {
               <button className="btn sm ghost icon" title="Smaller tracks (Ctrl+wheel over the track names)" onClick={() => resizeAllTracks(-16)}>−</button>
               <button className="btn sm ghost icon" title="Taller tracks (Ctrl+wheel over the track names)" onClick={() => resizeAllTracks(16)}>+</button>
             </div>
-            <Ruler project={project} pps={pps} view={view} grid={grid} />
+            <Ruler project={project} pps={pps} view={view} grid={grid} onTimeSelection={setTimeDrag} />
           </div>
 
           {tracks.map((track, i) => {
@@ -1440,6 +1472,7 @@ export function Arrange() {
                     onContextMenu={(e) => {
                       const t = timeAtClient(e.clientX);
                       openMenu(e, [
+                        ...rangeSelectionItems(t),
                         ...(track.kind === "instrument" ? [{ label: "New MIDI clip here", icon: "piano", run: () => addMidiClip(track.id, t) }] : []),
                         ...(track.kind === "audio" ? [{ label: "Import audio here…", icon: "folder", run: () => importAudio(track.id, snap(t, grid, project)) }] : []),
                         { label: "Paste", icon: "copy", keys: "Ctrl+V", run: () => pasteClips(snap(t, grid, project), track.id) },
@@ -1454,11 +1487,11 @@ export function Arrange() {
                     onDragOver={(e) => dragOver(e, track.id)}
                     onDrop={(e) => onDrop(e, track)}>
                     {track.clips.map((c) => (
-                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview?.copy ? null : preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
+                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview?.copy ? null : preview} fadePreview={preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
                     ))}
                     {preview?.copy && track.clips.filter((c) => preview.ids.includes(c.id)).map((c) => (
                       <div key={"ghost:" + c.id} className="duplicate-ghost">
-                        <ClipView clip={c} track={track} pps={pps} selected preview={preview} settled={null} view={view} onDown={() => {}} trackIndex={i} timeAt={timeAtClient} onTime={() => {}} />
+                        <ClipView clip={c} track={track} pps={pps} selected preview={preview} fadePreview={preview} settled={null} view={view} onDown={() => {}} trackIndex={i} timeAt={timeAtClient} onTime={() => {}} />
                       </div>
                     ))}
                     {recordings.filter((take) => take.trackId === track.id && !track.clips.some((clip) => clip.file === take.file)).map((take) => (
@@ -1483,7 +1516,7 @@ export function Arrange() {
           </div>
 
           {loopVisible && project.looping && (
-            <div style={{ position: "absolute", top: 34, bottom: 0, left: headerW + project.loop[0] * pps, width: (project.loop[1] - project.loop[0]) * pps, background: "rgba(124,92,255,.06)", borderLeft: "1px solid rgba(124,92,255,.4)", borderRight: "1px solid rgba(124,92,255,.4)", pointerEvents: "none", zIndex: 1 }} />
+            <div className="loop-selection" style={{ left: headerW + project.loop[0] * pps, width: (project.loop[1] - project.loop[0]) * pps }} />
           )}
           <div className="marker-lines" style={{ left: view.left + headerW, width: Math.max(0, laneW - view.left) }} aria-hidden="true">
             {project.markers.map((m) => <div key={m.id} className="marker-line" style={{ left: m.time * pps - view.left }} />)}

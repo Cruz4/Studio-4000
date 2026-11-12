@@ -7,89 +7,36 @@ export interface WhatsNewGroup {
 }
 
 export const WHATS_NEW: WhatsNewGroup[] = [
-  {
-    title: "Record and convert",
-    color: "#21e6a5",
-    items: [
-      "Audio to MIDI (Ctrl+Shift+M) turns a hummed or sung clip into notes.",
-      "Print to audio (Ctrl+Shift+B) plays MIDI through the instrument.",
-      "Capture MIDI (Ctrl+Shift+L) keeps notes you already played.",
-      "Loop + Record stacks MIDI takes the same way as a vocal.",
-      "Guests hear Click + cue: a click on their computer, not the late mix.",
-      "The C button on a track adds it to that guest cue.",
-      "The assistant sees your selection and can edit the session.",
-      "With no model key, the assistant still runs Smart Mix.",
-    ],
-  },
-  {
-    title: "Clips",
-    color: "#ffc857",
-    items: [
-      "Double-click any clip and the Editor opens.",
-      "Hover either end and the pointer becomes trim arrows.",
-      "IN sits under the name, after the L. OUT lines up on the right.",
-      "Hold IN or OUT and the fade follows your drag, from steep to quiet.",
-      "Clips that overlap crossfade.",
-      "A yellow gain line and a blue pan line, on the clip and in the Editor.",
-      "The track name row has a pan knob. Double-click it for center.",
-      "Snap on: a clip catches the next clip's start or end, and any marker.",
-      "Alt-drag shows a live ghost copy and keeps the original visible.",
-      "Markers cross all tracks. Ctrl-drag catches them when Snap is off.",
-      "Drag either end of the purple bar to change the loop.",
-      "Delete clears that bar if you moved it last. Right-click it too.",
-    ],
-  },
-  {
-    title: "Tracks",
-    color: "#7ee7ff",
-    items: [
-      "Live recording waveforms stay still as the take grows.",
-      "The CPU badge no longer pushes toolbar buttons around.",
-      "35 colour palettes in Settings; the top Light/Dark toggle keeps its defaults.",
-      "A new audio track or bus can be stereo or mono.",
-      "Track effects and clip effects each have their own dry/wet.",
-      "Drag the bottom-left of a clip to change its volume.",
-    ],
-  },
-  {
-    title: "Export",
-    color: "#c4b5ff",
-    items: [
-      "Export asks where to save, then writes the file.",
-      "Choose WAV, MP3, or MP3 and WAV together.",
-    ],
-  },
-  {
-    title: "Sessions",
-    color: "#ff8ab8",
-    items: [
-      "People hosts a session and hands you one code.",
-      "Paste the code to join from any network.",
-      "End closes it for everyone. Leave returns to join.",
-    ],
-  },
-  {
-    title: "Effects",
-    color: "#3ee0a0",
-    items: [
-      "New Vocal Leveler, Hard Limiter, Tube-style Compressor, Dynamics and Enhancer.",
-      "Factory defaults for every bundled effect, plus 355 curated presets.",
-      "Save your own effect presets; preset changes reset leftover controls.",
-      "Parametric EQ shows the live spectrum while audio plays.",
-      "Classic EQ is Tracktion's 4-band. It draws the curve.",
-      "Few knobs, the full editor, or its own window.",
-      "Save a chain and load it on a track or a clip.",
-    ],
-  },
-  {
-    title: "Phone",
-    color: "#9ad7ff",
-    items: [
-      "The public page fits a phone, with every control in reach.",
-      "The start page scrolls, and the cards take a tap.",
-      "Sound and recording still need the Windows app.",
-    ],
-  },
+  { title: "Keep the takes coming", color: "#ff72df", items: [
+    "Right-click Record to set up automatic loop takes on new tracks.",
+    "Choose a take count or keep going. Mute earlier takes or layer over them.",
+    "Live waveforms stay steady, with driver latency compensation and ASIO support.",
+  ] },
+  { title: "Find your vocal sound", color: "#7ee7ff", items: [
+    "96 complete track chains, including 36 vocal sounds. Preview them in Chains.",
+    "12 chains per category for vocals, drum hits, drum buses, bass and instruments.",
+    "New vocal processors, 355 effect presets, and factory defaults for every effect.",
+  ] },
+  { title: "Edit with confidence", color: "#ff92c9", items: [
+    "Fuchsia clip selection and a clearer time highlight show exactly what you picked.",
+    "Drag anywhere on the ruler to select time, whichever tool is active.",
+    "Right-click a selected range to split all tracks at both boundaries.",
+    "Alt-drag previews a duplicate and crossfades overlaps immediately.",
+  ] },
+  { title: "A smoother session", color: "#8cddbc", items: [
+    "Markers extend through every track and catch dragged clips magnetically.",
+    "History has readable rows, step counts and clear Undo and Redo sections.",
+    "Bounce with Effects to New Track prints your sound directly below the source.",
+    "Bus meters show the summed signal, including nested buses.",
+    "Check mono playback with a Mono toggle on tracks, buses and the master.",
+    "The shorter CPU badge stays still, with room around the search button.",
+  ] },
+  { title: "Make it yours", color: "#f2cf87", items: [
+    "Studio Sessions is the default dark theme, with fuchsia Effects headings.",
+    "Find the original dark look as Dark Night, plus 35 color palettes in Settings.",
+    "The top-right switch takes you between Light and Studio Sessions.",
+    "Light mode has darker, stronger text and readable EQ type buttons.",
+  ] },
 ];
 
 const SEEN_KEY = "studio4000-seen-notes";

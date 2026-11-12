@@ -62,6 +62,8 @@ interface State {
   guideOpen: boolean;
   aboutOpen: boolean;
   historyOpen: boolean;
+  loopTakeSetupOpen: boolean;
+  chainPreset: { id: string; trackId: string; clipId?: string } | null;
   toasts: Toast[];
   approvals: Approval[];
   render: RenderState | null;
@@ -137,6 +139,8 @@ export const useStore = create<State>((set) => ({
   guideOpen: false,
   aboutOpen: false,
   historyOpen: false,
+  loopTakeSetupOpen: false,
+  chainPreset: null,
   toasts: [],
   approvals: [],
   render: null,

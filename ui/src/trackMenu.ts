@@ -57,6 +57,8 @@ export function trackMenu(track: Track, chains: { name: string }[] = []): MenuIt
     ...(track.kind === "audio" ? [{ label: "Import audio here…", icon: "folder", run: () => importAudio(track.id) }] : []),
     ...(track.kind === "instrument" ? [{ label: "New MIDI clip at playhead", icon: "piano", run: () => addMidiClip(track.id) }] : []),
     { label: "Duplicate track", icon: "copy", run: () => act("track.duplicate", { id: track.id }) },
+    ...(track.kind === "audio" || track.kind === "instrument" ? [{ label: "Bounce with Effects to New Track", icon: "wave", run: async () => { const result = await act("track.bounce", { id: track.id }); if (result?.trackId) useStore.setState({ selectedTrack: result.trackId, selectedClips: [result.clipId] }); } }] : []),
+    { label: "Browse complete track chains", icon: "layers", run: () => useStore.setState({ selectedTrack: track.id, browserOpen: true, browserTab: "chains" }) },
     { label: autoOpen ? "Hide automation" : "Show automation", icon: "automation", run: () => toggleAutomation(track) },
     { label: track.cue ? "Remove from guest cue mix" : "Add to guest cue mix", icon: "headphones", run: () => act("track.setCue", { id: track.id, cue: !track.cue }) },
     ...(track.kind === "instrument" ? [{ label: "Capture MIDI you already played", icon: "piano" as const, run: () => runCommand("captureMidi") }] : []),

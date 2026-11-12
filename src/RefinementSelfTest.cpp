@@ -2,6 +2,7 @@
 #include "StudioFx.h"
 #include "ProjectState.h"
 #include "api/Api.h"
+#include "MonoSum.h"
 #include <iostream>
 #include <set>
 
@@ -70,6 +71,50 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             }
         check ("curated presets use valid real units and parameter IDs", presetCount >= 300, String (presetCount));
 
+        const auto chainCatalogue = juce::JSON::parse (manifest.getSiblingFile ("track-chains.test.json").loadFileAsString());
+        check ("track chain catalogue has 96 complete chains", chainCatalogue.isArray() && chainCatalogue.size() == 96);
+        auto chainTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Chain validation"))[0].toString();
+        int chainCount = 0;
+        std::map<String, int> categories;
+        if (auto* chains = chainCatalogue.getArray()) for (auto& chain : *chains)
+        {
+            auto result = call ("chain.applyPreset", Obj().set ("trackId", chainTrack).set ("name", chain["name"]).set ("plugins", chain["plugins"]).set ("replace", true));
+            bool settingsMatch = result["ids"].size() == chain["plugins"].size();
+            for (int i = 0; i < result["ids"].size(); ++i)
+            {
+                auto& effect = app.plugin (result["ids"][i].toString());
+                auto spec = chain["plugins"][i];
+                settingsMatch = settingsMatch && effect.getPluginType() == spec["type"].toString();
+                if (auto* values = spec["values"].getDynamicObject()) for (auto& item : values->getProperties())
+                {
+                    auto param = effect.getAutomatableParameterByID (item.name.toString());
+                    const double value = (double) item.value;
+                    settingsMatch = settingsMatch && param != nullptr && std::abs (param->getCurrentValue() - value) <= std::max (.001, std::abs (value) * .00001);
+                }
+            }
+            check ("track chain applies real native settings: " + chain["name"].toString(), settingsMatch);
+            ++chainCount; ++categories[chain["category"].toString()];
+        }
+        bool countsMatch = categories.size() == 8;
+        for (auto& count : categories) countsMatch = countsMatch && count.second == 12;
+        check ("every track-chain category contains twelve presets", chainCount == 96 && countsMatch);
+        auto oldEffects = describeTrack (app, app.track (chainTrack))["plugins"];
+        app.edit().getUndoManager().clearUndoHistory();
+        call ("chain.applyPreset", Obj().set ("trackId", chainTrack).set ("plugins", chainCatalogue[0]["plugins"]).set ("replace", true));
+        call ("edit.undo");
+        check ("replacing a chain undoes as one step", juce::JSON::toString (describeTrack (app, app.track (chainTrack))["plugins"]) == juce::JSON::toString (oldEffects));
+        call ("edit.redo");
+        const auto beforeInvalid = juce::JSON::toString (describeTrack (app, app.track (chainTrack))["plugins"]);
+        auto invalid = juce::JSON::parse ("[{\"type\":\"s4000comp\",\"values\":{\"notAParameter\":1}}]");
+        auto rejected = app.rpc.call ("chain.applyPreset", Obj().set ("trackId", chainTrack).set ("plugins", invalid).set ("replace", true), "selftest");
+        check ("invalid chain never removes the existing effects", !(bool) rejected["ok"] && beforeInvalid == juce::JSON::toString (describeTrack (app, app.track (chainTrack))["plugins"]));
+        auto instrumentChainTrack = call ("track.add", Obj().set ("kind", "instrument").set ("name", "Instrument chain validation"))[0].toString();
+        auto synthID = call ("plugin.add", Obj().set ("trackId", instrumentChainTrack).set ("plugin", "4osc"))["id"].toString();
+        call ("chain.applyPreset", Obj().set ("trackId", instrumentChainTrack).set ("plugins", chainCatalogue[0]["plugins"]).set ("replace", true));
+        check ("factory chains preserve the instrument", app.plugin (synthID).isSynth());
+        call ("track.remove", Obj().set ("id", chainTrack));
+        call ("track.remove", Obj().set ("id", instrumentChainTrack));
+
         auto make = [&] (const char* type) { return app.edit().getPluginCache().createNewPlugin (type, {}); };
         auto set = [&] (te::Plugin& p, const char* id, float v)
         {
@@ -94,6 +139,16 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         for (double rate : { 32000.0, 44100.0, 48000.0, 96000.0 })
         {
             const auto label = String ((int) rate) + " Hz ";
+            auto mono = make ("s4000utility"); set (*mono, "mono", 1);
+            juce::AudioBuffer<float> stereoCheck (2, 256);
+            for (int i = 0; i < 256; ++i) { stereoCheck.setSample (0, i, .4f); stereoCheck.setSample (1, i, -.2f); }
+            process (*mono, stereoCheck, rate);
+            bool averaged = true;
+            for (int i = 0; i < 256; ++i) for (int ch = 0; ch < 2; ++ch) averaged = averaged && std::abs (stereoCheck.getSample (ch, i) - .1f) < .000001f;
+            check (label + "mono check averages L and R into both outputs", averaged);
+            for (int i = 0; i < 256; ++i) { stereoCheck.setSample (0, i, .3f); stereoCheck.setSample (1, i, -.3f); }
+            process (*mono, stereoCheck, rate);
+            check (label + "mono check reveals opposite-polarity cancellation", stereoCheck.getMagnitude (0, 256) < .000001f);
             auto limiter = make ("s4000hardlimit"); set (*limiter, "input", 18); set (*limiter, "ceiling", -6);
             auto loud = tone (rate, 700, 4); process (*limiter, loud, rate);
             check (label + "hard limiter enforces sample ceiling", loud.getMagnitude (0, loud.getNumSamples()) <= std::pow (10.0f, -.3f) + .00001f);
@@ -188,6 +243,77 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         check ("audio Alt-drag leaves original in place", std::abs (app.clip (audio).getPosition().getStart().inSeconds() - 2) < .00001);
         call ("edit.undo"); check ("audio drop undoes as one action", app.audioTrack (destination).getClips().isEmpty());
         call ("edit.redo"); check ("audio drop redoes as one action", app.audioTrack (destination).getClips().size() == 12);
+
+        auto fadedCopy = call ("clip.duplicate", Obj().set ("id", audio).set ("trackId", destination).set ("start", 2.5).set ("fadeIn", .7).set ("fadeOut", .6)).toString();
+        auto faded = describeClip (app.clip (fadedCopy));
+        check ("copy drop immediately stores its overlap fades", std::abs ((double) faded["fadeIn"] - .7) < .0001 && std::abs ((double) faded["fadeOut"] - .6) < .0001);
+        check ("copy overlap fades do not change the original", std::abs ((double) describeClip (app.clip (audio))["fadeIn"] - .2) < .0001);
+
+        auto splitTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Split range audio"))[0].toString();
+        call ("clip.importAudio", Obj().set ("trackId", splitTrack).set ("file", audioFile.getFullPathName()).set ("start", 2));
+        auto splitMidi = call ("track.add", Obj().set ("kind", "instrument").set ("name", "Split range MIDI"))[0].toString();
+        call ("clip.addMidi", Obj().set ("trackId", splitMidi).set ("start", 1).set ("end", 6));
+        app.edit().getUndoManager().clearUndoHistory();
+        calls.clear();
+        for (double boundary : { 4.0, 3.0 }) calls.add (Obj().set ("method", "clip.splitAt").set ("params", Obj().set ("time", boundary)));
+        call ("batch.run", Obj().set ("label", "Split at selection boundaries").set ("calls", calls));
+        check ("selection boundaries split audio and MIDI across tracks", app.audioTrack (splitTrack).getClips().size() == 3 && app.audioTrack (splitMidi).getClips().size() == 3);
+        check ("splitting an existing boundary is a no-op", (int) call ("clip.splitAt", Obj().set ("time", 3)) == 0);
+        call ("edit.undo");
+        check ("both selection boundaries undo as one action", app.audioTrack (splitTrack).getClips().size() == 1 && app.audioTrack (splitMidi).getClips().size() == 1);
+        call ("edit.redo");
+
+        auto bus = call ("track.add", Obj().set ("kind", "group").set ("name", "Print bus"))[0].toString();
+        auto printSource = call ("track.add", Obj().set ("kind", "audio").set ("name", "Print source").set ("parentId", bus))[0].toString();
+        auto printClip = call ("clip.importAudio", Obj().set ("trackId", printSource).set ("file", audioFile.getFullPathName()).set ("start", 1)).toString();
+        dynamic_cast<te::WaveAudioClip&> (app.clip (printClip)).setUsesProxy (false);
+        auto printEQ = call ("plugin.add", Obj().set ("trackId", printSource).set ("plugin", "s4000eq"))["id"].toString();
+        call ("plugin.setParam", Obj().set ("id", printEQ).set ("paramId", "output").set ("value", -6));
+        auto busEQ = call ("plugin.add", Obj().set ("trackId", bus).set ("plugin", "s4000eq"))["id"].toString();
+        call ("plugin.setParam", Obj().set ("id", busEQ).set ("paramId", "output").set ("value", -12));
+        call ("track.set", Obj().set ("id", printSource).set ("volumeDb", -3));
+        call ("track.set", Obj().set ("id", bus).set ("volumeDb", -5));
+        app.edit().getUndoManager().clearUndoHistory();
+        auto printed = call ("track.bounce", Obj().set ("id", printSource).set ("tailSeconds", .5));
+        auto& printedTrack = app.audioTrack (printed["trackId"].toString());
+        check ("bounce creates a track directly under its source", printedTrack.state.getParent() == app.track (printSource).state.getParent() && printedTrack.state.getParent().indexOf (printedTrack.state) == printedTrack.state.getParent().indexOf (app.track (printSource).state) + 1);
+        check ("bounce has no duplicate insert chain and mutes the editable source", describeTrack (app, printedTrack)["plugins"].size() == 0 && app.track (printSource).isMuted (false));
+        check ("bounce preserves the source timeline position", std::abs (app.clip (printed["clipId"].toString()).getPosition().getStart().inSeconds() - 1) < .0001);
+        std::unique_ptr<juce::AudioFormatReader> printedReader (app.getEngine().getAudioFileFormatManager().readFormatManager.createReaderFor (juce::File (printed["file"].toString())));
+        bool rendered = printedReader && printedReader->lengthInSamples > 48000;
+        double levelDb = -100;
+        if (rendered)
+        {
+            juce::AudioBuffer<float> renderedSamples (2, 24000);
+            printedReader->read (&renderedSamples, 0, 24000, 24000, true, true);
+            levelDb = juce::Decibels::gainToDecibels (renderedSamples.getRMSLevel (0, 0, 24000) / (.2f / std::sqrt (2.0f)));
+            rendered = std::abs (levelDb + 9) < .5;
+        }
+        check ("bounce bakes track EQ and fader without baking the parent twice", rendered, String (levelDb, 3) + " dB");
+        check ("bounce restores the parent effects", app.plugin (busEQ).isEnabled());
+        call ("edit.undo");
+        check ("bounce undoes as one step", app.findTrack (printed["trackId"].toString()) == nullptr && !app.track (printSource).isMuted (false), "track removed=" + String (app.findTrack (printed["trackId"].toString()) == nullptr ? 1 : 0) + " source muted=" + String (app.track (printSource).isMuted (false) ? 1 : 0));
+        call ("edit.redo");
+        check ("bounce redo restores its rendered track", app.findTrack (printed["trackId"].toString()) != nullptr);
+
+        auto monoReturn = call ("track.add", Obj().set ("kind", "return").set ("name", "Mono return"))[0].toString();
+        for (auto id : { printSource, splitMidi, bus, monoReturn })
+        {
+            const auto before = describeTrack (app, app.track (id));
+            call ("track.set", Obj().set ("id", id).set ("sumToMono", true));
+            const auto on = describeTrack (app, app.track (id));
+            check ("mono check is available on " + on["kind"].toString() + " tracks", (bool) on["sumToMono"] && before["channels"] == on["channels"] && before["plugins"].size() == on["plugins"].size());
+            call ("track.set", Obj().set ("id", id).set ("sumToMono", false));
+            check ("mono check restores stereo on " + on["kind"].toString() + " tracks", !sumsToMono (app.track (id).pluginList));
+        }
+        call ("master.set", Obj().set ("sumToMono", true));
+        check ("master mono check is exposed in the session", (bool) call ("project.get")["master"]["sumToMono"]);
+        call ("master.set", Obj().set ("sumToMono", false));
+        check ("master mono check restores stereo", !sumsToMono (app.edit().getMasterPluginList()));
+        call ("track.set", Obj().set ("id", printSource).set ("sumToMono", true));
+        call ("chain.applyPreset", Obj().set ("trackId", printSource).set ("plugins", chainCatalogue[0]["plugins"]).set ("replace", true));
+        check ("replacing effects preserves the independent mono check", sumsToMono (app.track (printSource).pluginList));
+        call ("track.set", Obj().set ("id", printSource).set ("sumToMono", false));
 
     }
     catch (const std::exception& e) { check ("refinement test completes", false, e.what()); }

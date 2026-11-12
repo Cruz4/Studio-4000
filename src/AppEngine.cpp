@@ -1,5 +1,6 @@
 #include "AppEngine.h"
 #include "RecordingPreview.h"
+#include "LoopTakeRecorder.h"
 #include "LoudnessMeterPlugin.h"
 #include "ChainMix.h"
 #include "LimiterPlugin.h"
@@ -276,10 +277,14 @@ AppEngine::AppEngine (bool isolated)
     auto& dm = engine->getDeviceManager().deviceManager;
     dm.setCurrentAudioDeviceType (props->getValue ("audioDeviceType", dm.getCurrentAudioDeviceType()), true);
     liveMidi = std::make_unique<LiveMidi> (*this);
+    loopTakeRecorder = std::make_unique<LoopTakeRecorder> (*this);
 
     // Continuous gestures (fader, knob, slider drags) arrive as many identical calls; they share one undo step.
     rpc.beforeWrite = [this, last = std::make_shared<std::pair<String, juce::uint32>>()] (const String& method, const var& params, const String&)
     {
+        if (loopTakeRecorder->isActive() && loopTakeRecorder->hasTrack (params["id"].toString())
+            && (method == "track.remove" || method == "track.arm" || method == "track.setInput"))
+            throw RpcError ("Stop loop-take recording before changing its recording tracks");
         if (editPtr == nullptr || batchDepth != 0)
             return;
 
@@ -567,6 +572,8 @@ void AppEngine::detachEdit()
     if (editPtr == nullptr)
         return;
 
+    loopTakeRecorder->reset();
+
     clearMeterTaps();
     editPtr->getTransport().stop (false, true);
     if (liveMidi != nullptr)
@@ -748,7 +755,7 @@ void AppEngine::scanPlugins()
 void AppEngine::clearMeterTaps()
 {
     for (auto& tap : meterTaps)
-        if (auto* meter = tap->track->getLevelMeterPlugin())
+        if (auto* meter = dynamic_cast<te::LevelMeterPlugin*> (tap->plugin.get()))
             meter->measurer.removeClient (tap->client);
 
     meterTaps.clear();
@@ -761,16 +768,26 @@ void AppEngine::rebuildMeterTaps()
     if (editPtr == nullptr)
         return;
 
-    for (auto* t : te::getAudioTracks (*editPtr))
+    editPtr->visitAllTracksRecursive ([&] (te::Track& track)
     {
-        if (auto* meter = t->getLevelMeterPlugin())
+        auto* meter = track.pluginList.findFirstPluginOfType<te::LevelMeterPlugin>();
+        if (meter == nullptr)
+            if (auto* folder = dynamic_cast<te::FolderTrack*> (&track); folder != nullptr && folder->isSubmixFolder())
+            {
+                auto plugin = editPtr->getPluginCache().createNewPlugin (te::LevelMeterPlugin::xmlTypeName, {});
+                track.pluginList.insertPlugin (plugin, -1, nullptr);
+                meter = dynamic_cast<te::LevelMeterPlugin*> (plugin.get());
+            }
+        if (meter != nullptr)
         {
             auto tap = std::make_unique<MeterTap>();
-            tap->track = t;
+            tap->track = &track;
+            tap->plugin = meter;
             meter->measurer.addClient (tap->client);
             meterTaps.push_back (std::move (tap));
         }
-    }
+        return true;
+    });
 
     meterTapsDirty = false;
 }
@@ -812,7 +829,12 @@ void AppEngine::sendTick()
     emit ("tick", tick);
     // Ten waveform updates per second, with bounded data per input, keeps the UI responsive on long takes.
     if (transport.isRecording() && tickCount % 3 == 0)
-        emit ("recordings", recordingPreviews (e));
+        emit ("recordings", recordingSnapshot());
+}
+
+var AppEngine::recordingSnapshot (const var& request)
+{
+    return recordingPreviews (edit(), request, loopTakeRecorder->targets());
 }
 
 void AppEngine::autosaveIfNeeded()
@@ -853,6 +875,8 @@ void AppEngine::timerCallback()
 {
     if (editPtr == nullptr)
         return;
+
+    loopTakeRecorder->poll();
 
     if (meterTapsDirty)
         rebuildMeterTaps();

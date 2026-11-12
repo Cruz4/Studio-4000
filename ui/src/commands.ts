@@ -503,7 +503,7 @@ export function installShortcuts() {
   const handler = (e: KeyboardEvent) => {
     if (typingTarget(e.target)) return;
     const s = S();
-    if (s.paletteOpen || s.settingsOpen || s.exportOpen) return;
+    if (s.paletteOpen || s.settingsOpen || s.exportOpen || s.loopTakeSetupOpen || s.chainPreset) return;
     if (e.key.startsWith("Arrow") && nudgeSelection(e.key, e.shiftKey)) { e.preventDefault(); return; }
     const c = map.get(keyName(e).toUpperCase());
     if (!c || (c.when && !c.when())) return;

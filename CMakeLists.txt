@@ -45,6 +45,8 @@ target_sources(Studio4000 PRIVATE
     src/VocalFx.cpp
     src/Instruments.cpp
     src/LiveMidi.cpp
+    src/LoopTakeRecorder.cpp
+    src/MonoSum.cpp
     src/Convert.cpp
     src/api/ApiProject.cpp
     src/api/ApiTransport.cpp

@@ -638,6 +638,52 @@ void registerPluginApi (AppEngine& app)
         return var (true);
     });
 
+    rpc.add ("chain.applyPreset", K::write, "Applies a validated multi-effect chain in one undo step", "{trackId|clipId,name,plugins:[{type,values}],replace?}", [&app] (const var& p)
+    {
+        if (app.edit().getTransport().isRecording()) throw RpcError ("Stop recording before replacing a track's effect chain");
+        auto& list = pluginTarget (app, p);
+        auto* specs = p["plugins"].getArray();
+        if (specs == nullptr || specs->isEmpty() || specs->size() > 12) throw RpcError ("A chain needs 1 to 12 effects");
+        const auto catalogue = builtInPluginCatalogue();
+        std::vector<te::Plugin::Ptr> prepared, removed;
+        for (auto& spec : *specs)
+        {
+            const auto type = reqStr (spec, "type");
+            bool allowed = false;
+            for (auto& entry : *catalogue.getArray()) if (entry["id"].toString() == type && ! (bool) entry["synth"]) allowed = true;
+            if (! allowed) throw RpcError ("Chain processor is not a bundled effect: " + type);
+            auto effect = app.edit().getPluginCache().createNewPlugin (type, {});
+            if (effect == nullptr) throw RpcError ("Could not create chain effect: " + type);
+            auto* values = spec["values"].getDynamicObject();
+            if (values == nullptr) throw RpcError ("The effect settings are missing");
+            for (auto& item : values->getProperties())
+            {
+                auto param = effect->getAutomatableParameterByID (item.name.toString());
+                const float value = (float) (double) item.value;
+                if (param == nullptr || ! std::isfinite (value) || value < param->valueRange.start || value > param->valueRange.end)
+                    throw RpcError ("Invalid setting for " + type + ": " + item.name.toString());
+                param->setParameter (value, juce::sendNotification);
+            }
+            prepared.push_back (effect);
+        }
+        if (flag (p, "replace", true))
+            for (auto* effect : list) if (! effect->isSynth() && ! isChannelStripPlugin (*effect)) removed.emplace_back (effect);
+        const int capacity = str (p, "trackId") == "master" ? 12 : 24;
+        if (list.size() - (int) removed.size() + (int) prepared.size() > capacity) throw RpcError ("This chain would exceed the track's effect capacity");
+        for (auto& effect : removed) effect->deleteFromParent();
+        juce::Array<var> ids;
+        for (auto& effect : prepared)
+        {
+            list.insertPlugin (effect, anchorIndex (list), nullptr);
+            if (list.indexOf (effect.get()) < 0) throw RpcError ("The track's effect capacity was exceeded");
+            ids.add (effect->itemID.toString());
+        }
+        if (flag (p, "replace", true))
+            for (auto* effect : list) if (effect->state["s4chain"].toString() == "wet")
+                if (auto mix = effect->getAutomatableParameterByID ("mix")) mix->setParameter (100, juce::sendNotification);
+        return Obj().set ("ids", ids).set ("name", str (p, "name"));
+    });
+
     rpc.add ("chain.save", K::read, "Saves a track or audio clip insert chain as a reusable preset", "{trackId | clipId, name}", [&app] (const var& p)
     {
         auto& list = pluginTarget (app, p);

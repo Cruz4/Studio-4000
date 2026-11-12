@@ -1,0 +1,67 @@
+--- a/modules/tracktion_engine/playback/devices/tracktion_InputDevice.h
++++ b/modules/tracktion_engine/playback/devices/tracktion_InputDevice.h
+@@ -229,6 +229,9 @@
+ 
+     /** Returns true if there are any active recordings for this device. */
+     virtual bool isRecording() = 0;
++
++    // Studio 4000: map a scheduled pass from the unlooped capture clock to the visible loop.
++    virtual void setRecordingTimelineStart (EditItemID, TimePosition) {}
+ 
+     /** Returns the File that the given target is currently recording to. */
+     virtual juce::File getRecordingFile (EditItemID) const     { return {}; }
+--- a/modules/tracktion_engine/playback/devices/tracktion_WaveInputDevice.cpp
++++ b/modules/tracktion_engine/playback/devices/tracktion_WaveInputDevice.cpp
+@@ -668,6 +668,17 @@
+             getRecordStopper().addTargetToStop (targetID);
+     }
+ 
++    // Studio 4000: scheduled loop passes retain native capture/latency compensation.
++    void setRecordingTimelineStart (EditItemID targetID, TimePosition start) override
++    {
++        TRACKTION_ASSERT_MESSAGE_THREAD
++        if (auto* rc = getContextForID (targetID))
++        {
++            rc->timelineStart = start;
++            if (rc->thumbnail != nullptr) rc->thumbnail->punchInTime = start;
++        }
++    }
++
+     juce::File getRecordingFile (EditItemID targetID) const override
+     {
+         const std::shared_lock sl (contextLock);
+@@ -693,6 +704,7 @@
+         TimeRange muteTimes;            /**< The Edit time range that the destination track should be muted for. */
+         TimeRange recordingBlockRange;  /**< The Edit time range that blocks should be recorded for.
+                                              This might be different to the punch range as it accounts for device and graph latency. */
++        std::optional<TimePosition> timelineStart; // Studio 4000: destination on the visible timeline
+         TimePosition unloopedStopTime;  /**< When the reecording is stopped, this should be the end time. */
+         TimeDuration adjustDurationAtStart;
+         std::atomic<bool> hasHitThreshold { false }, isWaitingToClose { false };
+@@ -787,12 +799,20 @@
+ 
+         // Never loop or punch record to slots
+         const bool isClipSlot = dynamic_cast<ClipSlot*> (clipOwner) != nullptr;
+-        const bool wasPunchRecording = isClipSlot ? false : edit.recordingPunchInOut;
+-        const bool wasLoopRecording = isClipSlot ? false : isLooping;
+-
+-        return applyLastRecording (*rc, recordedFile, *clipOwner,
+-                                   { rc->punchTimes.getStart(), unloopedEndTime },
+-                                   wasLoopRecording, wasPunchRecording, loopRange.getEnd());
++        const bool wasPunchRecording = isClipSlot || rc->timelineStart ? false : edit.recordingPunchInOut;
++        const bool wasLoopRecording = isClipSlot || rc->timelineStart ? false : isLooping;
++
++        auto result = applyLastRecording (*rc, recordedFile, *clipOwner,
++                                         { rc->punchTimes.getStart(), unloopedEndTime },
++                                         wasLoopRecording, wasPunchRecording, loopRange.getEnd());
++        if (rc->timelineStart && result)
++            for (auto* clip : result.value())
++            {
++                auto position = clip->getPosition();
++                position.time = { *rc->timelineStart, position.time.getLength() };
++                clip->setPosition (position);
++            }
++        return result;
+     }
+ 
+     tl::expected<Clip::Array, juce::String> applyLastRecording (const WaveRecordingContext& rc,

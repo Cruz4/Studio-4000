@@ -15,6 +15,9 @@ private:
     std::function<void (int)> finished;
     juce::File workDir;
     int scenario = 0, stage = 0, failures = 0;
+    int loopScenario = 0;
+    String innerBus, outerBus;
+    float innerBusPeak[2] { -100, -100 }, outerBusPeak[2] { -100, -100 };
     juce::uint32 started = 0;
     String recordTrack, inputName, recordingFile;
     bool sawPreview = false, stablePreview = true;
@@ -29,5 +32,8 @@ private:
     void enableInput();
     void beginRecording();
     void inspectRecording();
+    void beginLoopScenario();
+    void inspectLoopScenario();
+    void beginBusScenario();
 };
 }

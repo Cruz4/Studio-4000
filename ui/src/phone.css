@@ -199,11 +199,8 @@
   html[data-shell="web"] .toasts { left: 8px; right: 8px; align-items: stretch; }
   html[data-shell="web"] .toast { min-width: 0; max-width: none; }
   html[data-shell="web"] .history {
-    left: 8px;
-    right: 8px;
-    top: 8px;
-    width: auto;
-    max-height: min(70dvh, 520px);
+    right: auto;
+    width: min(320px, calc(100vw - 24px));
   }
   html[data-shell="web"] .fx-window {
     left: 8px !important;

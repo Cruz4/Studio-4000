@@ -1,4 +1,6 @@
 #include "ProjectState.h"
+#include "LoopTakeRecorder.h"
+#include "MonoSum.h"
 #include "AppEngine.h"
 #include "LoudnessMeterPlugin.h"
 #include "Instruments.h"
@@ -16,6 +18,7 @@ String getTrackKind (const te::Track& t)
 
 bool isChannelStripPlugin (const te::Plugin& p)
 {
+    if ((bool) p.state["s4sumToMono"]) return true;
     return dynamic_cast<const te::VolumeAndPanPlugin*> (&p) != nullptr
         || dynamic_cast<const te::LevelMeterPlugin*> (&p) != nullptr
         || dynamic_cast<const te::AuxSendPlugin*> (&p) != nullptr
@@ -670,6 +673,7 @@ var describeTrack (AppEngine& app, te::Track& t)
      .set ("channels", (int) t.state.getProperty ("s4channels", 2) <= 1 ? 1 : 2)
      .set ("colour", colourToString (t.getColour()))
      .set ("mute", t.isMuted (false))
+     .set ("sumToMono", sumsToMono (t.pluginList))
      .set ("solo", t.isSolo (false))
      .set ("parent", t.getParentFolderTrack() != nullptr ? var (t.getParentFolderTrack()->itemID.toString()) : var())
      .set ("automationMode", automationModeName (t.automationMode.get()))
@@ -739,6 +743,11 @@ var describeTrack (AppEngine& app, te::Track& t)
         if (auto own = at->state.getProperty ("s4monitor").toString(); own.isNotEmpty())
             monitor = own;
 
+        if (app.loopTakes().isActive() && app.loopTakes().hasTrack (at->itemID.toString()))
+        {
+            inputName = app.loopTakes().getInputName();
+            armed = app.loopTakes().currentTrack() == at->itemID.toString();
+        }
         o.set ("input", inputName).set ("armed", armed).set ("monitor", monitor).set ("live", live)
          .set ("cue", (bool) at->state.getProperty ("s4cue"));
 
@@ -821,6 +830,7 @@ var buildProjectSnapshot (AppEngine& app)
             masterPlugins.add (describePlugin (*p));
 
     master.set ("plugins", masterPlugins);
+    master.set ("sumToMono", sumsToMono (edit.getMasterPluginList()));
 
     if (auto vp = edit.getMasterVolumePlugin())
         master.set ("volumeDb", vp->getVolumeDb())
@@ -858,6 +868,7 @@ var buildProjectSnapshot (AppEngine& app)
                 .set ("punch", edit.recordingPunchInOut.get())
                 .set ("loop", var (juce::Array<var> { punch.getStart().inSeconds(), punch.getEnd().inSeconds() }))
                 .set ("looping", transport.looping.get())
+                .set ("loopTakes", app.loopTakes().state())
                 .set ("canUndo", um.canUndo())
                 .set ("canRedo", um.canRedo())
                 .set ("undoName", um.getUndoDescription())

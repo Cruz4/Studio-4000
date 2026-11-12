@@ -120,7 +120,7 @@ export function TopBar() {
         <div className="seg">
           <button className="btn ghost icon" title={project.undoName ? `Undo ${project.undoName} (Ctrl+Z)` : "Undo (Ctrl+Z)"} disabled={!project.canUndo} onClick={() => act("edit.undo")}><Icon name="undo" /></button>
           <button className="btn ghost icon" title={project.redoName ? `Redo ${project.redoName} (Ctrl+Y)` : "Redo (Ctrl+Y)"} disabled={!project.canRedo} onClick={() => act("edit.redo")}><Icon name="redo" /></button>
-          <button className={cx("btn ghost", historyOpen && "on")} title="History" onClick={() => useStore.setState((s) => ({ historyOpen: !s.historyOpen }))}>History</button>
+          <button className={cx("btn ghost", historyOpen && "on")} title="History" data-history-toggle aria-expanded={historyOpen} aria-controls="edit-history" onClick={() => useStore.setState((s) => ({ historyOpen: !s.historyOpen }))}>History</button>
         </div>
       </div>
 
@@ -131,7 +131,8 @@ export function TopBar() {
           <button className={cx("tbtn play", playing && !recording && "on")} title="Play / Stop (Space)" onClick={() => act(playing ? "transport.stop" : "transport.play")}>
             <Icon name={playing ? "stop" : "play"} size={18} />
           </button>
-          <button className={cx("tbtn rec", recording && "on")} title="Record (R). Arms the selected track if nothing is armed" onClick={toggleRecord}><Icon name="record" size={18} /></button>
+          <button className={cx("tbtn rec", recording && "on")} title={project.loopTakes?.active ? `Recording take ${project.loopTakes.take}${project.loopTakes.takeCount ? ` of ${project.loopTakes.takeCount}` : ""}. Click to stop. Right-click for loop-take settings.` : `Record (R)${project.loopTakes?.enabled ? " - loop takes enabled" : ""}. Right-click for loop-take settings.`}
+            onClick={toggleRecord} onContextMenu={(e) => { e.preventDefault(); useStore.setState({ loopTakeSetupOpen: true }); }}><Icon name="record" size={18} /></button>
           <button className="tbtn" title="Forward one bar (.)" onClick={() => act("transport.nudge", { bars: 1 })}><Icon name="forward" size={15} /></button>
           <div className="sep" />
           <button className={cx("tbtn", project.looping && "on")} title="Loop (L). Recording while looping stacks takes" onClick={() => runCommand("loop")}><Icon name="loop" /></button>

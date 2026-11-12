@@ -3,7 +3,7 @@
 namespace s3
 {
 // Fixed sample bins keep completed waveform history stationary as the take grows.
-inline var recordingPreviews (te::Edit& edit, const var& request = {})
+inline var recordingPreviews (te::Edit& edit, const var& request = {}, const juce::Array<te::EditItemID>& extraTargets = {})
 {
     juce::Array<var> previews;
     const double rate = edit.engine.getDeviceManager().getSampleRate();
@@ -11,7 +11,9 @@ inline var recordingPreviews (te::Edit& edit, const var& request = {})
     for (auto* input : edit.getAllInputDevices())
     {
         if (input->getInputDevice().isMidi()) continue;
-        for (auto target : input->getTargets())
+        auto targets = input->getTargets();
+        for (auto id : extraTargets) targets.addIfNotAlreadyThere (id);
+        for (auto target : targets)
         {
             if (! input->isRecording (target)) continue;
             const auto file = input->getRecordingFile (target);

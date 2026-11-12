@@ -17,6 +17,8 @@ import { ExportDialog } from "./components/ExportDialog";
 import { Guide } from "./components/Guide";
 import { KeysStrip } from "./components/Keys";
 import { History } from "./components/History";
+import { LoopTakeSetup } from "./components/LoopTakeSetup";
+import { TrackChainPreset } from "./components/TrackChainPreset";
 import { MenuBar } from "./components/MenuBar";
 import { EffectsRack } from "./components/EffectsRack";
 import { Mixer } from "./components/Mixer";
@@ -172,6 +174,8 @@ function StatusBar() {
 
 export function App() {
   const project = useStore((s) => s.project);
+  const loopTakeSetupOpen = useStore((s) => s.loopTakeSetupOpen);
+  const chainPreset = useStore((s) => s.chainPreset);
   const browserOpen = useStore((s) => s.browserOpen);
   const view = useStore((s) => s.view);
 
@@ -224,6 +228,8 @@ export function App() {
       <Settings />
       <ExportDialog />
       <History />
+      {loopTakeSetupOpen && project && <LoopTakeSetup />}
+      {chainPreset && project && <TrackChainPreset key={chainPreset.id + chainPreset.trackId} />}
       <Guide />
       <About />
       <Shortcuts />

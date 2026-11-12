@@ -6,6 +6,7 @@ namespace s3
 {
 class LoudnessMeterPlugin;
 class LiveMidi;
+class LoopTakeRecorder;
 
 class AppEngine : private juce::Timer,
                   private juce::ValueTree::Listener,
@@ -21,6 +22,8 @@ public:
     te::Edit& edit() const;
     te::SelectionManager& getSelection()                    { return *selection; }
     LiveMidi& midi()                                        { return *liveMidi; }
+    LoopTakeRecorder& loopTakes()                           { return *loopTakeRecorder; }
+    var recordingSnapshot (const var& request = {});
 
     Rpc rpc;
 
@@ -80,6 +83,7 @@ private:
     std::unique_ptr<te::SelectionManager> selection;
     std::unique_ptr<juce::PropertiesFile> props;
     std::unique_ptr<LiveMidi> liveMidi;
+    std::unique_ptr<LoopTakeRecorder> loopTakeRecorder;
     juce::File editFile;
 
     bool snapshotPending = false;
@@ -91,7 +95,8 @@ private:
 
     struct MeterTap
     {
-        te::AudioTrack::Ptr track;
+        te::Track::Ptr track;
+        te::Plugin::Ptr plugin;
         te::LevelMeasurer::Client client;
     };
     std::vector<std::unique_ptr<MeterTap>> meterTaps;

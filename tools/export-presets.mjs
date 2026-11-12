@@ -13,4 +13,5 @@ const types = { s4000eq:'EQ', '4bandEq':'CLASSIC_EQ', s4000comp:'COMP', compress
 const banks = { ...GENERIC_PRESETS };
 for (const [type, bank] of Object.entries(types)) banks[type] = presets[bank + '_PRESETS'];
 writeFileSync(new URL('../effect-presets.test.json', import.meta.url), JSON.stringify(banks, null, 2));
+writeFileSync(new URL('../track-chains.test.json', import.meta.url), readFileSync(new URL('../ui/src/data/trackChains.json', import.meta.url), 'utf8'));
 console.log('Exported', Object.values(banks).reduce((n,b) => n+b.length, 0), 'actual presets.');

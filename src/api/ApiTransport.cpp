@@ -1,5 +1,6 @@
 #include "Api.h"
 #include "../RecordingPreview.h"
+#include "../LoopTakeRecorder.h"
 
 namespace s3
 {
@@ -22,7 +23,8 @@ namespace
 void registerTransportApi (AppEngine& app)
 {
     auto& rpc = app.rpc;
-    rpc.add ("recording.peaks", K::read, "Backfills fixed waveform bins of an active recording", "{file, fromBin}", [&app] (const var& p) { return recordingPreviews (app.edit(), p); });
+    rpc.add ("recording.peaks", K::read, "Backfills fixed waveform bins of an active recording", "{file, fromBin}", [&app] (const var& p) { return app.recordingSnapshot (p); });
+    rpc.add ("recording.loopTakes.configure", K::read, "Configures loop takes on separate audio tracks; takeCount 0 means until stopped", "{enabled?,takeCount?:0..99,mutePrevious?}", [&app] (const var& p) { return app.loopTakes().configure (p); });
 
     rpc.add ("transport.play", K::read, "Starts playback", "{from?}", [&app] (const var& p)
     {
@@ -85,6 +87,8 @@ void registerTransportApi (AppEngine& app)
         if (! anyArmed)
             throw RpcError ("Arm a track before recording");
 
+        if (app.loopTakes().isEnabled()) { app.loopTakes().start(); return var (true); }
+
         t.record (false);
         if (! t.isRecording())
             throw RpcError ("Could not start recording. Check the audio device and track input.");
@@ -99,12 +103,14 @@ void registerTransportApi (AppEngine& app)
 
     rpc.add ("transport.setPosition", K::read, "Moves the playhead", "{time}", [&app] (const var& p)
     {
+        if (app.loopTakes().isActive()) throw RpcError ("Stop loop-take recording before moving the playhead");
         app.edit().getTransport().setPosition (seconds (reqNum (p, "time")));
         return var (true);
     });
 
     rpc.add ("transport.nudge", K::read, "Moves the playhead by a number of bars", "{bars}", [&app] (const var& p)
     {
+        if (app.loopTakes().isActive()) throw RpcError ("Stop loop-take recording before moving the playhead");
         auto& edit = app.edit();
         auto& t = edit.getTransport();
         auto& ts = edit.tempoSequence;
@@ -118,6 +124,7 @@ void registerTransportApi (AppEngine& app)
 
     rpc.add ("transport.jumpMarker", K::read, "Jumps to the next or previous marker", "{direction: 1|-1}", [&app] (const var& p)
     {
+        if (app.loopTakes().isActive()) throw RpcError ("Stop loop-take recording before moving the playhead");
         auto& t = app.edit().getTransport();
         const auto now = t.getPosition().inSeconds();
         const bool forward = num (p, "direction", 1.0) > 0;
@@ -144,6 +151,7 @@ void registerTransportApi (AppEngine& app)
     rpc.add ("transport.setLoop", K::write, "Sets the loop/punch range and optionally enables looping", "{start, end, enabled?}",
              [&app] (const var& p)
     {
+        if (app.loopTakes().isActive()) throw RpcError ("Stop loop-take recording before changing its range");
         auto& t = app.edit().getTransport();
         const auto s = reqNum (p, "start"), e = reqNum (p, "end");
 
@@ -166,6 +174,7 @@ void registerTransportApi (AppEngine& app)
     rpc.add ("transport.setLooping", K::read, "Turns cycle/loop playback on or off. Loop recording stacks takes", "{enabled}",
              [&app] (const var& p)
     {
+        if (app.loopTakes().isActive()) throw RpcError ("Stop loop-take recording before changing its range");
         app.edit().getTransport().looping = flag (p, "enabled");
         app.markProjectChanged();
         return var (true);

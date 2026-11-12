@@ -1,8 +1,10 @@
 // Modified for the recording and device fixes: audio round-trip tests without physical hardware.
 #include "RecordingSelfTest.h"
 #include "ProjectState.h"
+#include "LoopTakeRecorder.h"
 #include <atomic>
 #include <iterator>
+#include <set>
 
 namespace s3
 {
@@ -192,6 +194,7 @@ void RecordingSelfTest::check (const String& name, bool ok, const String& detail
 
 void RecordingSelfTest::beginScenario()
 {
+    call ("recording.loopTakes.configure", Obj().set ("enabled", false));
     const auto s = scenarios[scenario];
     auto& tdm = app.getEngine().getDeviceManager();
     auto& dm = tdm.deviceManager;
@@ -357,11 +360,143 @@ void RecordingSelfTest::inspectRecording()
               << scenarios[scenario].block << " samples" << std::endl;
 }
 
+void RecordingSelfTest::beginLoopScenario()
+{
+    std::cout << "Begin loop scenario " << loopScenario << std::endl;
+    auto dir = workDir.getChildFile ("loop-" + String (loopScenario));
+    dir.createDirectory();
+    call ("project.new", Obj().set ("dir", dir.getFullPathName()).set ("name", "Loop takes").set ("template", "empty"));
+    std::cout << "Loop project created" << std::endl;
+    const auto file = app.getAudioDir().getChildFile ("loop-pulses.wav");
+    sourceBuffers.emplace_back (file.getFullPathName().toStdString(), writePulses (file, 48000.0));
+    const auto& source = sourceBuffers.back();
+    app.getEngine().getAudioFileManager().registerMemoryBuffer (source.first,
+        choc::buffer::createInterleavedView (static_cast<const float*> (source.second.data()), 2, source.second.size() / 2), 48000.0);
+    auto backing = call ("track.add", Obj().set ("kind", "audio").set ("name", "Backing"))[0].toString();
+    auto id = call ("clip.importAudio", Obj().set ("trackId", backing).set ("file", file.getFullPathName()).set ("start", 0.0)).toString();
+    dynamic_cast<te::WaveAudioClip&> (app.clip (id)).setUsesProxy (false);
+    recordTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Loop Vocal").set ("channels", loopScenario == 1 ? 1 : 2))[0].toString();
+    call ("track.setInput", Obj().set ("id", recordTrack).set ("input", inputName));
+    call ("track.setMonitor", Obj().set ("id", recordTrack).set ("mode", "off"));
+    call ("track.set", Obj().set ("id", recordTrack).set ("volumeDb", -3.0).set ("pan", -.2));
+    auto effect = call ("plugin.add", Obj().set ("trackId", recordTrack).set ("plugin", "s4000comp"))["id"].toString();
+    call ("plugin.setParam", Obj().set ("id", effect).set ("paramId", "ratio").set ("value", 2.5));
+    call ("track.arm", Obj().set ("id", recordTrack).set ("armed", true));
+    call ("transport.setCountIn", Obj().set ("mode", "none"));
+    call ("transport.setClick", Obj().set ("enabled", false));
+    call ("transport.setLoop", Obj().set ("start", .5).set ("end", 3.5).set ("enabled", true));
+    call ("recording.loopTakes.configure", Obj().set ("enabled", true).set ("takeCount", loopScenario == 0 ? 3 : loopScenario == 1 ? 0 : 1).set ("mutePrevious", loopScenario != 1));
+    std::cout << "Loop inputs and range configured" << std::endl;
+    sawPreview = false;
+    app.sendEvent = [this] (const String& type, const var& payload)
+    {
+        if (type == "recordings") if (auto* list = payload.getArray())
+            for (auto& p : *list) if (p["trackId"].toString() != recordTrack && (double) p["length"] > .2) sawPreview = true;
+        if (type == "toast") std::cout << "Loop message: " << juce::JSON::toString (payload, true) << std::endl;
+    };
+    call ("transport.record");
+    check ("loop takes enter recording", app.edit().getTransport().isRecording());
+    started = juce::Time::getMillisecondCounter();
+}
+
+void RecordingSelfTest::inspectLoopScenario()
+{
+    const int expected = loopScenario == 0 ? 3 : loopScenario == 1 ? 2 : 1;
+    auto snapshot = call ("project.get");
+    auto* tracks = snapshot["tracks"].getArray();
+    int takes = 0;
+    std::set<String> files, pluginIDs;
+    if (tracks) for (auto& track : *tracks)
+    {
+        if (! track["name"].toString().startsWith ("Loop Vocal")) continue;
+        ++takes;
+        check ("loop track retains channel format", (int) track["channels"] == (loopScenario == 1 ? 1 : 2));
+        check ("loop track retains mixer and input setup", std::abs ((double) track["volumeDb"] + 3) < .01 && std::abs ((double) track["pan"] + .2) < .01 && track["input"].toString() == inputName && track["monitor"].toString() == "off");
+        auto* plugins = track["plugins"].getArray();
+        check ("loop track retains its compressor", plugins && plugins->size() == 1 && (*plugins)[0]["type"].toString() == "s4000comp");
+        if (plugins && ! plugins->isEmpty()) pluginIDs.insert ((*plugins)[0]["id"].toString());
+        auto* clips = track["clips"].getArray();
+        check ("one separate clip per take track", clips && clips->size() == 1);
+        if (! clips || clips->size() != 1) continue;
+        const auto clip = (*clips)[0];
+        check ("loop take begins at the selected range", std::abs ((double) clip["start"] - .5) < 1.0 / 48000);
+        const double duration = (double) clip["end"] - (double) clip["start"];
+        check ("loop take stays within the selected range", duration > .1 && duration <= 3.0001, String (duration, 6));
+        if (loopScenario != 1 || takes == 1) check ("completed loop take has the exact range length", std::abs (duration - 3.0) < .002, String (duration, 6));
+        check ("previous take mute policy is respected", (bool) clip["muted"] == (loopScenario != 1 && takes < expected));
+        files.insert (clip["file"].toString());
+        auto reader = std::unique_ptr<juce::AudioFormatReader> (app.getEngine().getAudioFileFormatManager().readFormatManager.createReaderFor (juce::File (clip["file"].toString())));
+        bool captured = reader && reader->lengthInSamples > 1000;
+        if (captured && reader->numChannels >= 2)
+        {
+            juce::AudioBuffer<float> samples (2, 128);
+            reader->read (&samples, 0, 128, 0, true, true);
+            for (int i = 0; i < 128; ++i) captured = captured && std::abs (samples.getSample (1, i) - .25f) < .001;
+        }
+        check ("each scheduled pass preserves its first microphone samples", captured);
+    }
+    check ("loop take count and empty-track cleanup", takes == expected, String (takes));
+    check ("loop takes have independent files and effects", (int) files.size() == expected && (int) pluginIDs.size() == expected);
+    check ("live preview follows the new take track", expected == 1 || sawPreview);
+    check ("loop take recording stops cleanly", ! app.edit().getTransport().isRecording() && ! app.loopTakes().isActive());
+    call ("recording.loopTakes.configure", Obj().set ("enabled", false));
+}
+
+void RecordingSelfTest::beginBusScenario()
+{
+    auto dir = workDir.getChildFile ("bus-meters"); dir.createDirectory();
+    call ("project.new", Obj().set ("dir", dir.getFullPathName()).set ("name", "Bus meters").set ("template", "empty"));
+    auto file = app.getAudioDir().getChildFile ("meter-tone.wav");
+    juce::AudioBuffer<float> tone (2, 96000);
+    std::vector<float> interleaved (192000);
+    for (int i = 0; i < 96000; ++i)
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            const float value = .1f * std::sin ((float) (juce::MathConstants<double>::twoPi * 220 * i / 48000.0));
+            tone.setSample (ch, i, value); interleaved[(size_t) i * 2 + ch] = value;
+        }
+    {
+        juce::WavAudioFormat format;
+        std::unique_ptr<juce::OutputStream> stream (file.createOutputStream().release());
+        auto writer = format.createWriterFor (stream, juce::AudioFormatWriterOptions{}.withSampleRate (48000).withNumChannels (2).withBitsPerSample (24));
+        if (writer == nullptr || ! writer->writeFromAudioSampleBuffer (tone, 0, 96000)) throw RpcError ("Could not write bus-meter fixture");
+    }
+    sourceBuffers.emplace_back (file.getFullPathName().toStdString(), std::move (interleaved));
+    auto& memory = sourceBuffers.back();
+    app.getEngine().getAudioFileManager().registerMemoryBuffer (memory.first,
+        choc::buffer::createInterleavedView (static_cast<const float*> (memory.second.data()), 2, 96000), 48000.0);
+    outerBus = call ("track.add", Obj().set ("kind", "group").set ("name", "Outer bus"))[0].toString();
+    innerBus = call ("track.add", Obj().set ("kind", "group").set ("name", "Inner bus").set ("parentId", outerBus))[0].toString();
+    for (int i = 0; i < 2; ++i)
+    {
+        auto track = call ("track.add", Obj().set ("kind", "audio").set ("name", "Tone " + String (i + 1)).set ("parentId", innerBus))[0].toString();
+        auto clip = call ("clip.importAudio", Obj().set ("trackId", track).set ("file", file.getFullPathName()).set ("start", 0)).toString();
+        dynamic_cast<te::WaveAudioClip&> (app.clip (clip)).setUsesProxy (false);
+    }
+    call ("track.set", Obj().set ("id", innerBus).set ("volumeDb", -6));
+    call ("track.set", Obj().set ("id", outerBus).set ("volumeDb", -6));
+    call ("transport.setLooping", Obj().set ("enabled", false));
+    call ("transport.setClick", Obj().set ("enabled", false));
+    app.sendEvent = [this] (const String& type, const var& payload)
+    {
+        if (type != "tick") return;
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            if (auto* levels = payload["meters"][juce::Identifier (innerBus)].getArray(); levels && levels->size() > ch)
+                innerBusPeak[ch] = std::max (innerBusPeak[ch], (float) (double) (*levels)[ch]);
+            if (auto* levels = payload["meters"][juce::Identifier (outerBus)].getArray(); levels && levels->size() > ch)
+                outerBusPeak[ch] = std::max (outerBusPeak[ch], (float) (double) (*levels)[ch]);
+        }
+    };
+    call ("transport.play", Obj().set ("from", 0));
+    started = juce::Time::getMillisecondCounter();
+}
+
 void RecordingSelfTest::timerCallback()
 {
     try
     {
-        if (juce::Time::getMillisecondCounter() - started > 20000)
+        if (juce::Time::getMillisecondCounter() - started > 30000)
             throw RpcError ("Loopback scenario timed out");
         if (stage == 0)
         {
@@ -400,10 +535,36 @@ void RecordingSelfTest::timerCallback()
             }
             else
             {
-                stopTimer();
-                std::cout << (failures ? "RECORDING SELFTEST FAILED" : "RECORDING SELFTEST PASSED") << std::endl;
-                finished (failures ? 1 : 0);
+                stage = 10;
+                started = juce::Time::getMillisecondCounter();
             }
+        }
+        else if (stage == 10) { beginLoopScenario(); stage = 11; }
+        else if (stage == 11)
+        {
+            if (loopScenario == 1 && app.loopTakes().isActive())
+                if (auto* c = app.edit().getTransport().getCurrentPlaybackContext())
+                    if (c->getUnloopedPosition().inSeconds() > 5.0) app.edit().getTransport().stop (false, true);
+            app.loopTakes().poll();
+            if (! app.loopTakes().isActive() && ! app.edit().getTransport().isRecording())
+            { stage = 12; started = juce::Time::getMillisecondCounter(); }
+        }
+        else if (stage == 12 && juce::Time::getMillisecondCounter() - started > 300)
+        {
+            inspectLoopScenario(); app.sendEvent = nullptr;
+            if (++loopScenario < 3) { stage = 10; started = juce::Time::getMillisecondCounter(); }
+            else { stage = 13; started = juce::Time::getMillisecondCounter(); }
+        }
+        else if (stage == 13) { beginBusScenario(); stage = 14; }
+        else if (stage == 14 && juce::Time::getMillisecondCounter() - started > 1600)
+        {
+            call ("transport.stop"); app.sendEvent = nullptr;
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                check ("bus meter receives the summed post-fader signal, channel " + String (ch + 1), std::abs (innerBusPeak[ch] + 20) < 1, String (innerBusPeak[ch], 2) + " dBFS");
+                check ("nested bus meter follows its output gain, channel " + String (ch + 1), std::abs (outerBusPeak[ch] + 26) < 1, String (outerBusPeak[ch], 2) + " dBFS");
+            }
+            stopTimer(); std::cout << (failures ? "RECORDING SELFTEST FAILED" : "RECORDING SELFTEST PASSED") << std::endl; finished (failures ? 1 : 0);
         }
     }
     catch (const std::exception& e)
