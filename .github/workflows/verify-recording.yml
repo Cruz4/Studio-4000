@@ -1,0 +1,32 @@
+# Modified for the Studio 4000 recording fixes: verify the branch before publication.
+name: Verify recording fixes
+on:
+  push:
+    branches: [fix/recording-and-selection]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch audio and WebView2 dependencies
+        shell: pwsh
+        run: .\tools\fetch-deps.ps1
+      - name: Build Windows app with ASIO
+        shell: pwsh
+        run: .\build.ps1 -RequireAsio
+      - name: Test UI
+        working-directory: ui
+        run: npm test
+      - name: Test recorded timing and live waveforms
+        shell: pwsh
+        run: .\tools\test-recording.ps1
+      - name: Preserve recording test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recording-test-logs
+          path: recording-test.*
+          if-no-files-found: ignore

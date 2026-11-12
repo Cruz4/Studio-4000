@@ -3,6 +3,7 @@
 #include "SessionRelay.h"
 #include "MainWindow.h"
 #include "SelfTest.h"
+#include "RecordingSelfTest.h" // Studio 4000 recording regression test
 #include "Updater.h"
 
 #include <atomic>
@@ -22,6 +23,16 @@ public:
             return;
 
         engine = std::make_unique<AppEngine> (isSelfTest (commandLine));
+
+        if (commandLine.contains ("--selftest-recording"))
+        {
+            recordingSelfTest = std::make_unique<RecordingSelfTest> (*engine, [this] (int result)
+            {
+                setApplicationReturnValue (result);
+                quit();
+            });
+            return;
+        }
 
         if (isSelfTest (commandLine))
         {
@@ -52,6 +63,7 @@ public:
         window.reset();
         agent.reset();
         relay.reset();
+        recordingSelfTest.reset();
         selfTest.reset();
         engine.reset();
     }
@@ -137,6 +149,7 @@ private:
     std::unique_ptr<SessionRelay> relay;
     std::unique_ptr<MainWindow> window;
     std::unique_ptr<SelfTest> selfTest;
+    std::unique_ptr<RecordingSelfTest> recordingSelfTest;
 };
 }
 

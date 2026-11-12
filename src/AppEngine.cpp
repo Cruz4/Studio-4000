@@ -11,6 +11,47 @@ namespace s3
 {
 namespace
 {
+
+    // Studio 4000 recording fix: use the live thumbnail, whose samples are already
+    // latency-compensated by the engine. Never try to reopen an unfinished WAV.
+    var recordingPreviews (te::Edit& edit)
+    {
+        juce::Array<var> previews;
+        for (auto* input : edit.getAllInputDevices())
+        {
+            if (input->getInputDevice().isMidi()) continue;
+            for (auto target : input->getTargets())
+            {
+                if (! input->isRecording (target)) continue;
+                const auto file = input->getRecordingFile (target);
+                if (file == juce::File()) continue;
+                const auto thumbnail = edit.engine.getRecordingThumbnailManager().getThumbnailFor (file);
+                const auto& thumb = *thumbnail->thumb;
+                const double length = thumb.getTotalLength();
+                const int channels = juce::jlimit (1, 2, thumb.getNumChannels());
+                const int bins = juce::jlimit (1, 2048, (int) std::ceil (length * 100.0));
+                juce::Array<var> data;
+                data.ensureStorageAllocated (bins * channels * 2);
+                for (int bin = 0; bin < bins; ++bin)
+                    for (int channel = 0; channel < channels; ++channel)
+                    {
+                        float low = 0.0f, high = 0.0f;
+                        thumb.getApproximateMinMax (length * bin / bins, length * (bin + 1) / bins, channel, low, high);
+                        data.add ((int) std::lround (juce::jlimit (-1.0f, 1.0f, low) * 127.0f));
+                        data.add ((int) std::lround (juce::jlimit (-1.0f, 1.0f, high) * 127.0f));
+                    }
+                previews.add (Obj().set ("trackId", target.toString())
+                                  .set ("file", file.getFullPathName())
+                                  .set ("start", thumbnail->punchInTime.inSeconds())
+                                  .set ("length", length)
+                                  .set ("channels", channels)
+                                  .set ("binsPerSecond", length > 0 ? bins / length : 100.0)
+                                  .set ("data", data));
+            }
+        }
+        return previews;
+    }
+
     // Loads plug-ins saved under a type name from before the rename; the state is retyped so it saves under the new one.
     template <typename Type>
     struct LegacyPluginType : public te::PluginManager::BuiltInType
@@ -807,6 +848,9 @@ void AppEngine::sendTick()
     }
 
     emit ("tick", tick);
+    // Ten waveform updates per second, with bounded data per input, keeps the UI responsive on long takes.
+    if (transport.isRecording() && tickCount % 3 == 0)
+        emit ("recordings", recordingPreviews (e));
 }
 
 void AppEngine::autosaveIfNeeded()

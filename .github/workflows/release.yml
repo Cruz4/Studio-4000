@@ -20,7 +20,16 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: .\build.ps1
+        run: .\build.ps1 -RequireAsio
+
+      # Studio 4000 recording fixes: a failed timing test must never reach a published release.
+      - name: Test UI
+        working-directory: ui
+        run: npm test
+
+      - name: Test recorded timing and live waveforms
+        shell: pwsh
+        run: .\tools\test-recording.ps1
 
       - name: Package
         shell: pwsh

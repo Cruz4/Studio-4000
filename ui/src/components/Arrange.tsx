@@ -1,5 +1,8 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
-import { rpc } from "../bridge";
+import { on, rpc } from "../bridge";
+import { RecordingClip } from "./RecordingClip";
+import type { RecordingPreview } from "../recording";
+import { startSelectionDrag } from "../selectionDrag"; // Studio 4000 selection scrolling fix
 import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, runCommand, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
@@ -922,6 +925,19 @@ export function Arrange() {
   const selectedClips = useStore((s) => s.selectedClips);
   const automationOpen = useStore((s) => s.automationOpen);
   const recording = useStore((s) => s.transport.recording);
+  const [recordings, setRecordings] = useState<RecordingPreview[]>([]);
+  const selecting = useRef(false);
+  const cancelSelection = useRef<(() => void) | null>(null);
+  useEffect(() => on("recordings", (items: RecordingPreview[]) => {
+    if (live.tick.recording) setRecordings(items);
+  }), []);
+  useEffect(() => { setRecordings([]); }, [project.file]);
+  useEffect(() => {
+    if (recording) return;
+    const timer = window.setTimeout(() => setRecordings([]), 400);
+    return () => window.clearTimeout(timer);
+  }, [recording]);
+  useEffect(() => () => cancelSelection.current?.(), []);
   const body = useRef<HTMLDivElement>(null);
   const playhead = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ left: 0, width: 1200 });
@@ -964,6 +980,7 @@ export function Arrange() {
   const viewport = Math.max(view.width, 1);
   let far = Math.max(project.length, live.tick.t, 0);
   for (const t of tracks) for (const c of t.clips) far = Math.max(far, c.end);
+  for (const take of recordings) far = Math.max(far, take.start + take.length);
   const sparePx = Math.max(viewport * 1.25, 480);
   const totalSec = far + secondsPerBar(project) * 8;
   const laneW = Math.ceil(Math.max(totalSec * pps, view.left + viewport + sparePx));
@@ -991,7 +1008,7 @@ export function Arrange() {
         // Scrolled behind the sticky track-name column: hide it rather than draw it over the names.
         playhead.current.style.visibility = el && t.t * pps < el.scrollLeft - 1 ? "hidden" : "";
       }
-      if (el && follow && t.playing) {
+      if (el && follow && t.playing && !selecting.current) {
         const x = t.t * pps;
         if (x > el.scrollLeft + el.clientWidth - headerRef.current - 60 || x < el.scrollLeft) el.scrollLeft = Math.max(0, x - 80);
       }
@@ -1204,7 +1221,9 @@ export function Arrange() {
     const additive = e.shiftKey || e.ctrlKey || e.metaKey;
     const base = additive ? useStore.getState().selectedClips : [];
     if (!extendTracks) selectTrack(track.id);
-    startDrag(e, (dx, dy, ev) => {
+    cancelSelection.current?.();
+    selecting.current = true;
+    cancelSelection.current = startSelectionDrag(e.nativeEvent, body.current!, () => headerRef.current, (dx, dy, ev) => {
       if (!dragged && Math.abs(dx) + Math.abs(dy) < 4) return;
       dragged = true;
       const box = origin();
@@ -1212,15 +1231,24 @@ export function Arrange() {
       const r = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
       setRubber(r);
       const sel = new Set(base);
-      document.querySelectorAll<HTMLElement>(".arrange [data-clip]").forEach((el) => {
-        const b = el.getBoundingClientRect();
-        const bx = b.left - box.left, by = b.top - box.top;
-        if (bx < r.x + r.w && bx + b.width > r.x && by < r.y + r.h && by + b.height > r.y) sel.add(el.dataset.clip!);
+      // Offscreen clips are culled from the DOM. Select from project geometry so they remain selected as the view scrolls.
+      tracks.forEach((item, index) => {
+        const lane = host.querySelector<HTMLElement>(`[data-lane-index="${index}"]`);
+        if (!lane) return;
+        const b = lane.getBoundingClientRect();
+        const by = b.top - box.top + 4;
+        for (const clip of item.clips) {
+          const bx = b.left - box.left + clip.start * pps;
+          const width = Math.max(2, (clip.end - clip.start) * pps);
+          if (bx < r.x + r.w && bx + width > r.x && by < r.y + r.h && by + b.height - 8 > r.y) sel.add(clip.id);
+        }
       });
       useStore.setState({ selectedClips: [...sel] });
-    }, (ev) => {
+    }, (ev, cancelled) => {
+      selecting.current = false;
+      cancelSelection.current = null;
       setRubber(null);
-      if (!dragged) {
+      if (!dragged && !cancelled) {
         if (extendTracks) selectTrack(track.id, "toggle");
         else if (!additive) useStore.setState({ selectedClips: [] });
         act("transport.setPosition", { time: snap(timeAtClient(ev.clientX), useStore.getState().grid, project, ev.altKey) });
@@ -1390,6 +1418,9 @@ export function Arrange() {
                     onDrop={(e) => onDrop(e, track)}>
                     {track.clips.map((c) => (
                       <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
+                    ))}
+                    {recordings.filter((take) => take.trackId === track.id && !track.clips.some((clip) => clip.file === take.file)).map((take) => (
+                      <RecordingClip key={take.file} preview={take} track={track} project={project} pps={pps} view={view} />
                     ))}
                     {track.armed && recording && <div style={{ position: "absolute", inset: 0, background: "rgba(255,59,92,.05)", pointerEvents: "none" }} />}
                   </div>

@@ -11,10 +11,10 @@ import { cx } from "../util";
 type TabId = "audio" | "plugins" | "ai" | "agent" | "collab" | "general";
 
 interface Devices {
-  type: string; input: string; output: string;
+  type: string; input: string; output: string; asioSupported?: boolean;
   types: { name: string; inputs: string[]; outputs: string[] }[];
   current: { sampleRate?: number; bufferSize?: number; sampleRates?: number[]; bufferSizes?: number[]; inputLatencyMs?: number; outputLatencyMs?: number; hasControlPanel?: boolean };
-  waveInputs: { name: string; enabled: boolean; stereo: boolean }[];
+  waveInputs: { name: string; enabled: boolean; stereo: boolean; recordAdjustmentMs?: number }[];
   midiInputs: { name: string; enabled: boolean }[];
 }
 
@@ -31,13 +31,20 @@ function AudioTab() {
   if (!d) return <div className="empty"><Spinner /></div>;
   const type = d.types.find((t) => t.name === d.type);
   const latency = (d.current.inputLatencyMs ?? 0) + (d.current.outputLatencyMs ?? 0);
+  // Studio 4000 driver fix: expose each ASIO interface directly in the main driver list.
+  const driverValue = JSON.stringify([d.type, d.type.includes("ASIO") ? d.output : ""]);
 
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="row" style={{ alignItems: "flex-end" }}>
         <label className="field grow"><span>Driver</span>
-          <select className="input" value={d.type} disabled={busy} onChange={(e) => set({ type: e.target.value })}>
-            {d.types.map((t) => <option key={t.name}>{t.name}</option>)}
+          <select className="input" value={driverValue} disabled={busy} onChange={(e) => {
+            const [backend, device] = JSON.parse(e.target.value) as [string, string];
+            void set(device ? { type: backend, input: device, output: device } : { type: backend });
+          }}>
+            {d.types.flatMap((t) => t.name.includes("ASIO") && t.outputs.length
+              ? t.outputs.map((device) => <option key={`${t.name}:${device}`} value={JSON.stringify([t.name, device])}>{device} (ASIO)</option>)
+              : [<option key={t.name} value={JSON.stringify([t.name, ""])} disabled={t.name.includes("ASIO") && !t.outputs.length}>{t.name}{t.name.includes("ASIO") && !t.outputs.length ? " — no installed driver found" : ""}</option>])}
           </select>
         </label>
         {busy && <Spinner />}
@@ -46,7 +53,7 @@ function AudioTab() {
         <div className="pill warn" style={{ alignSelf: "flex-start" }}><Icon name="bolt" size={11} /> ASIO is available, and it gives the lowest latency for recording.</div>
       )}
       <div className="row">
-        <label className="field grow"><span>Output</span>
+        <label className="field grow"><span>{d.type.includes("ASIO") ? "Audio interface (input and output)" : "Output"}</span>
           <select className="input" value={d.output} disabled={busy} onChange={(e) => set({ output: e.target.value })}>
             {type?.outputs.map((o) => <option key={o}>{o}</option>)}
           </select>
@@ -67,12 +74,13 @@ function AudioTab() {
           </select>
         </label>
         <label className="field grow"><span>Buffer size</span>
-          <select className="input" value={d.current.bufferSize ?? ""} disabled={busy} onChange={(e) => set({ bufferSize: Number(e.target.value) })}>
+          <select className="input" value={d.current.bufferSize ?? ""} disabled={busy || (d.current.bufferSizes?.length ?? 0) < 2} onChange={(e) => set({ bufferSize: Number(e.target.value) })}>
             {d.current.bufferSizes?.map((b) => <option key={b} value={b}>{b} samples ({((b / (d.current.sampleRate || 48000)) * 1000).toFixed(1)} ms)</option>)}
           </select>
         </label>
         <div className="stat"><b>{latency.toFixed(1)}</b><span>ms round trip</span></div>
       </div>
+      {(d.current.bufferSizes?.length ?? 0) < 2 && <p className="small dim">This audio mode exposes a fixed buffer size. Choose your interface's ASIO driver or Windows Exclusive Mode to change it.</p>}
       <div className="row">
         {d.current.hasControlPanel && <button className="btn" onClick={() => call("devices.controlPanel").then(load)}>Driver control panel</button>}
         <button className="btn" onClick={() => call("devices.showPanel")}><Icon name="window" size={13} /> Advanced device window</button>
@@ -80,15 +88,29 @@ function AudioTab() {
       </div>
 
       <div className="col">
-        <span className="section-title">Inputs</span>
+        <span className="section-title">Inputs and recording timing</span>
+        <p className="small dim">Driver latency is compensated automatically. Timing correction adds an offset for an input: positive values move new recordings earlier, negative values move them later. Leave it at 0 unless a loopback test shows a remaining offset.</p>
         {d.waveInputs.map((w) => (
-          <div key={w.name} className="row">
+          <div key={w.name} className="col" style={{ gap: 6 }}>
+            <div className="row">
             <label className="row grow" style={{ cursor: "pointer" }}>
               <input type="checkbox" checked={w.enabled} onChange={(e) => call("devices.setInput", { name: w.name, enabled: e.target.checked }).then(load)} />
               <span className="ellipsis">{w.name}</span>
             </label>
             <label className="row small dim" style={{ cursor: "pointer" }} title="Off splits the pair into two mono inputs">
               <input type="checkbox" checked={w.stereo} onChange={(e) => call("devices.setInput", { name: w.name, stereo: e.target.checked }).then(load)} /> Stereo pair
+            </label>
+            </div>
+            <label className="row small dim">Timing correction (ms)
+              <input key={`${d.type}:${w.name}:${w.recordAdjustmentMs ?? 0}`} className="input sm" type="number" min={-500} max={500} step={0.1}
+                style={{ width: 100 }} defaultValue={w.recordAdjustmentMs ?? 0}
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                onBlur={(e) => {
+                  const ms = e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber;
+                  if (Number.isFinite(ms) && ms >= -500 && ms <= 500 && ms !== (w.recordAdjustmentMs ?? 0))
+                    void call("devices.setInput", { name: w.name, recordAdjustmentMs: ms }).then(load);
+                  else e.currentTarget.value = String(w.recordAdjustmentMs ?? 0);
+                }} />
             </label>
           </div>
         ))}

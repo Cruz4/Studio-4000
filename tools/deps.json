@@ -3,5 +3,9 @@
     "url": "https://github.com/Tracktion/tracktion_engine.git",
     "commit": "38d5a27"
   },
-  "webview2": "1.0.3485.44"
+  "webview2": "1.0.3485.44",
+  "asio": {
+    "version": "2.3.4",
+    "url": "https://download.steinberg.net/sdk_downloads/ASIO-SDK_2.3.4_2025-10-15.zip"
+  }
 }

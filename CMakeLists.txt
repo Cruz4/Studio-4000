@@ -55,18 +55,23 @@ target_sources(Studio4000 PRIVATE
     src/api/ApiSmart.cpp
     src/api/ApiAi.cpp
     src/api/ApiDevices.cpp
+    src/RecordingSelfTest.cpp # Studio 4000 recording regression test
     src/SelfTest.cpp
     src/Updater.cpp)
 
 target_include_directories(Studio4000 PRIVATE src)
 
-# The ASIO SDK is Steinberg's and is not in the public repo. Builds without it still play through WASAPI.
+# Studio 4000 driver fix: fetch-deps supplies the official SDK. Release builds require ASIO.
+option(STUDIO_REQUIRE_ASIO "Fail configuration if ASIO support is unavailable" OFF)
 set(STUDIO_ASIO 0)
 if (EXISTS "${STUDIO_EXTERNAL}/asiosdk/common/iasiodrv.h")
     set(STUDIO_ASIO 1)
     target_include_directories(Studio4000 PRIVATE ${STUDIO_EXTERNAL}/asiosdk/common)
     message(STATUS "ASIO: on")
 else()
+    if (STUDIO_REQUIRE_ASIO)
+        message(FATAL_ERROR "ASIO SDK missing. Run tools/fetch-deps.ps1 before building a release.")
+    endif()
     message(STATUS "ASIO: off (no SDK at ${STUDIO_EXTERNAL}/asiosdk)")
 endif()
 

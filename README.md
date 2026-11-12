@@ -48,7 +48,7 @@ Windows, Visual Studio 2022 with the C++ workload, CMake, and Node.js 18 or newe
 .\tools\package.ps1 -Install
 ```
 
-`fetch-deps.ps1` clones [Tracktion Engine](https://github.com/Tracktion/tracktion_engine) at the commit this app is written against and applies one small monitor patch. The ASIO SDK and the WebView2 package are not in this repository. The script tells you where to put them. Details are in the how-to.
+`fetch-deps.ps1` clones [Tracktion Engine](https://github.com/Tracktion/tracktion_engine) at the commit this app is written against and applies one small monitor patch. The script also downloads the official ASIO SDK and the WebView2 package. Windows releases require ASIO support. Details are in the how-to.
 
 ## Notices
 

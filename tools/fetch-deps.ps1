@@ -52,10 +52,21 @@ if (-not (Test-Path $juce)) {
     if ($LASTEXITCODE -ne 0) { throw "Could not fetch the JUCE submodule" }
 }
 
-$asio = Join-Path $root "external\asiosdk\common"
-if (-not (Test-Path $asio)) {
-    Write-Host "ASIO SDK is not in external\asiosdk. Download it from Steinberg and keep their license with it. VST3 hosting still builds; ASIO drivers need this folder."
+# Studio 4000 driver fix: fetch the official, version-pinned SDK on clean CI machines too.
+$asioDir = Join-Path $root "external\asiosdk"
+if (-not (Test-Path (Join-Path $asioDir "common\iasiodrv.h"))) {
+    $asioArchive = Join-Path $env:TEMP "Studio4000-ASIO-$($deps.asio.version).zip"
+    $asioUnpack = Join-Path $root "external\asio-download"
+    Write-Host "Downloading the official ASIO SDK $($deps.asio.version)..."
+    Invoke-WebRequest $deps.asio.url -OutFile $asioArchive
+    Expand-Archive -LiteralPath $asioArchive -DestinationPath $asioUnpack -Force
+    $header = Get-ChildItem -LiteralPath $asioUnpack -Filter "iasiodrv.h" -Recurse -File | Select-Object -First 1
+    if (-not $header) { throw "ASIO SDK archive did not contain common/iasiodrv.h" }
+    $sdkRoot = Split-Path (Split-Path $header.FullName -Parent) -Parent
+    New-Item -ItemType Directory -Force $asioDir | Out-Null
+    Copy-Item -Path (Join-Path $sdkRoot "*") -Destination $asioDir -Recurse -Force
 }
+if (-not (Test-Path (Join-Path $asioDir "common\iasiodrv.h"))) { throw "ASIO SDK setup failed" }
 $wv = Join-Path $root "external\webview2"
 $wvPkg = Join-Path $wv "Microsoft.Web.WebView2.$($deps.webview2)"
 if (-not (Test-Path (Join-Path $wvPkg "build\native\include\WebView2.h"))) {

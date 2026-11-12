@@ -2,6 +2,7 @@ param(
     [ValidateSet("Release", "Debug", "RelWithDebInfo")]
     [string]$Config = "Release",
     [switch]$SkipUi,
+    [switch]$RequireAsio, # Studio 4000 release builds must include the hardware ASIO backend
     [switch]$Clean
 )
 
@@ -33,6 +34,7 @@ if (-not $SkipUi) {
     Push-Location "$root\ui"
     if (-not (Test-Path node_modules)) { npm install --no-audit --no-fund }
     npm run build
+    if ($LASTEXITCODE -ne 0) { Pop-Location; throw "UI build failed" }
     Pop-Location
 
     foreach ($pkg in "mcp", "server") {
@@ -44,7 +46,7 @@ if (-not $SkipUi) {
 
 if ($Clean -and (Test-Path $buildDir)) { Remove-Item -Recurse -Force $buildDir }
 
-cmake -S $root -B $buildDir -G Ninja "-DCMAKE_BUILD_TYPE=$Config"
+cmake -S $root -B $buildDir -G Ninja "-DCMAKE_BUILD_TYPE=$Config" "-DSTUDIO_REQUIRE_ASIO=$($RequireAsio.IsPresent)"
 if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
 cmake --build $buildDir --config $Config -- -k 0

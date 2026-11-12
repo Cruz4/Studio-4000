@@ -7,6 +7,13 @@ namespace
 {
     using K = Rpc::Kind;
 
+    // Studio 4000 timing fix: changing device clocks or input routing mid-take invalidates latency compensation.
+    void requireStoppedRecording (AppEngine& app)
+    {
+        if (auto* edit = app.currentEdit(); edit != nullptr && edit->getTransport().isRecording())
+            throw RpcError ("Stop recording before changing audio device settings");
+    }
+
     var toList (const juce::StringArray& a)
     {
         juce::Array<var> list;
@@ -46,7 +53,8 @@ void registerDeviceApi (AppEngine& app)
             type->scanForDevices();
             types.add (Obj().set ("name", type->getTypeName())
                             .set ("inputs", toList (type->getDeviceNames (true)))
-                            .set ("outputs", toList (type->getDeviceNames (false))));
+                            .set ("outputs", toList (type->getDeviceNames (false)))
+                            .set ("separateInputs", type->hasSeparateInputsAndOutputs()));
         }
 
         Obj current;
@@ -69,7 +77,8 @@ void registerDeviceApi (AppEngine& app)
 
         for (int i = 0; i < tdm.getNumWaveInDevices(); ++i)
             if (auto* w = tdm.getWaveInDevice (i))
-                waveInputs.add (Obj().set ("name", w->getName()).set ("enabled", w->isEnabled()).set ("stereo", w->isStereoPair()));
+                waveInputs.add (Obj().set ("name", w->getName()).set ("enabled", w->isEnabled()).set ("stereo", w->isStereoPair())
+                                         .set ("recordAdjustmentMs", w->getRecordAdjustmentMs()));
 
         for (int i = 0; i < tdm.getNumWaveOutDevices(); ++i)
             if (auto* w = tdm.getWaveOutDevice (i))
@@ -82,7 +91,9 @@ void registerDeviceApi (AppEngine& app)
 
         auto* defaultOut = tdm.getDefaultWaveOutDevice();
 
-        return var (Obj().set ("type", dm.getCurrentAudioDeviceType())
+        return var (Obj().set ("asioSupported", JUCE_ASIO != 0)
+                         .set ("recordAdjustmentMs", tdm.getRecordAdjustmentMs())
+                         .set ("type", dm.getCurrentAudioDeviceType())
                          .set ("input", setup.inputDeviceName)
                          .set ("output", setup.outputDeviceName)
                          .set ("types", types)
@@ -141,19 +152,32 @@ void registerDeviceApi (AppEngine& app)
     rpc.add ("devices.set", K::read, "Changes the audio driver or device settings", "{type?, input?, output?, sampleRate?, bufferSize?}",
              [&app] (const var& p)
     {
+        requireStoppedRecording (app);
         auto& dm = app.getEngine().getDeviceManager().deviceManager;
 
-        if (has (p, "type") && str (p, "type") != dm.getCurrentAudioDeviceType())
+        if (has (p, "type"))
         {
-            dm.setCurrentAudioDeviceType (str (p, "type"), true);
-            app.settings().setValue ("audioDeviceType", str (p, "type"));
-            app.settings().saveIfNeeded();
+            const auto requested = str (p, "type");
+            bool found = false;
+            for (auto* type : dm.getAvailableDeviceTypes())
+                found = found || type->getTypeName() == requested;
+            if (! found) throw RpcError ("Audio driver not available: " + requested);
+            if (requested != dm.getCurrentAudioDeviceType())
+                dm.setCurrentAudioDeviceType (requested, true);
+            if (dm.getCurrentAudioDeviceType() != requested)
+                throw RpcError ("Could not open audio driver: " + requested);
         }
 
         auto setup = dm.getAudioDeviceSetup();
 
         if (has (p, "input"))       setup.inputDeviceName = str (p, "input");
-        if (has (p, "output"))      setup.outputDeviceName = str (p, "output");
+        if (has (p, "output"))
+        {
+            setup.outputDeviceName = str (p, "output");
+            // ASIO is one full-duplex interface: input and output must name the same device.
+            if (auto* type = dm.getCurrentDeviceTypeObject(); type != nullptr && ! type->hasSeparateInputsAndOutputs())
+                setup.inputDeviceName = setup.outputDeviceName;
+        }
         if (has (p, "sampleRate"))  setup.sampleRate = num (p, "sampleRate");
         if (has (p, "bufferSize"))  setup.bufferSize = integer (p, "bufferSize");
 
@@ -165,12 +189,16 @@ void registerDeviceApi (AppEngine& app)
         if (error.isNotEmpty())
             throw RpcError (error);
 
+        // Save only a successfully selected backend.
+        app.settings().setValue ("audioDeviceType", dm.getCurrentAudioDeviceType());
+        app.settings().saveIfNeeded();
         app.markProjectChanged();
         return var (true);
     });
 
     rpc.add ("devices.controlPanel", K::read, "Opens the driver's own control panel (ASIO)", "{}", [&app] (const var&)
     {
+        requireStoppedRecording (app);
         if (auto* d = app.getEngine().getDeviceManager().deviceManager.getCurrentAudioDevice())
             if (d->hasControlPanel())
                 return var (d->showControlPanel());
@@ -195,9 +223,10 @@ void registerDeviceApi (AppEngine& app)
         return var (true);
     });
 
-    rpc.add ("devices.setInput", K::read, "Enables a physical input or splits a stereo pair into mono inputs", "{name, enabled?, stereo?}",
+    rpc.add ("devices.setInput", K::read, "Enables a physical input or splits a stereo pair into mono inputs", "{name, enabled?, stereo?, recordAdjustmentMs?}",
              [&app] (const var& p)
     {
+        requireStoppedRecording (app);
         auto& tdm = app.getEngine().getDeviceManager();
         auto name = reqStr (p, "name");
 
@@ -207,6 +236,13 @@ void registerDeviceApi (AppEngine& app)
             {
                 if (has (p, "enabled"))  w->setEnabled (flag (p, "enabled"));
                 if (has (p, "stereo"))   w->setStereoPair (flag (p, "stereo"));
+                if (has (p, "recordAdjustmentMs"))
+                {
+                    const double ms = reqNum (p, "recordAdjustmentMs");
+                    if (! std::isfinite (ms) || ms < -500.0 || ms > 500.0)
+                        throw RpcError ("Timing correction must be between -500 and 500 ms");
+                    w->setRecordAdjustmentMs (ms);
+                }
                 app.markProjectChanged();
                 return var (true);
             }

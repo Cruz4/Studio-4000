@@ -20,6 +20,14 @@ foreach ($dir in "ui", "mcp", "server") { Copy-Item -Recurse (Join-Path $built $
 foreach ($name in @("README.md", "LICENSE", "DISCLAIMER.md", "PRIVACY.md", "NOTICE.md")) {
     Copy-Item (Join-Path $root $name) (Join-Path $stage $name)
 }
+# Studio 4000 ASIO build: preserve the SDK's notices with the packaged application.
+$asioNotices = Join-Path $root "external\asiosdk"
+if (Test-Path $asioNotices) {
+    $asioNoticeDest = Join-Path $stage "ThirdParty\ASIO"
+    New-Item -ItemType Directory -Force $asioNoticeDest | Out-Null
+    Get-ChildItem -LiteralPath $asioNotices -File | Where-Object { $_.Name -match "license|licence|copying|guideline" } |
+        Copy-Item -Destination $asioNoticeDest
+}
 Copy-Item (Join-Path $root "docs\HOW-TO.md") (Join-Path $stage "HOW-TO.md")
 $commit = ""
 try { $commit = (git -C $root rev-parse HEAD).Trim() } catch { $commit = "" }

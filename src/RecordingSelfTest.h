@@ -1,0 +1,28 @@
+#pragma once
+// Modified for the recording and device fixes: deterministic loopback regression checks.
+#include "AppEngine.h"
+
+namespace s3
+{
+class RecordingSelfTest : private juce::Timer
+{
+public:
+    RecordingSelfTest (AppEngine&, std::function<void (int)>);
+    ~RecordingSelfTest() override;
+
+private:
+    AppEngine& app;
+    std::function<void (int)> finished;
+    juce::File workDir;
+    int scenario = 0, stage = 0, failures = 0;
+    juce::uint32 started = 0;
+    String recordTrack;
+    bool sawPreview = false;
+
+    void timerCallback() override;
+    void check (const String&, bool, const String& = {});
+    var call (const String&, const var& = {});
+    void beginScenario();
+    void inspectRecording();
+};
+}
