@@ -40,7 +40,7 @@ Voice and screen share are in the same panel. An optional password can lock the 
 ## First session
 
 1. Pick **Vocal recording**, **Band tracking**, **Beat making**, **Podcast / voice**, or **Empty session**.
-2. On the Audio card, click **Set up** and choose the driver. ASIO is listed when an ASIO driver is installed.
+2. On the Audio card, click **Set up** and choose the driver. Installed ASIO interfaces appear directly in the Driver list, for example **Focusrite USB ASIO (ASIO)** for a Scarlett interface. ASIO uses the same interface for input and output.
 3. Select a track, press **Shift+R** to arm it, then **R** to record. **Space** stops.
 
 **Ctrl+K** searches every command. **?** lists shortcuts. Projects are saved under `Music\Studio 4000\<project name>`. The app autosaves beside the project and can offer that copy after a crash. Settings → General changes how often.
@@ -58,6 +58,12 @@ Arrow keys nudge a selected clip. Shift nudges by a bar. The tools above the arr
 ## Recording and MIDI
 
 The dot arms a track. The monitor button cycles Auto, On, and Off. Auto hears the input only while that track is actually recording.
+
+The clip grows while you record, with a waveform drawn from the captured audio. It appears before you stop, including when monitoring is Off.
+
+Settings → Audio shows the input and output latency reported by the driver. Recording compensates for that latency automatically. If a hardware loopback measurement still places a pulse late by 10 ms, set that input's **Timing correction** to **+10 ms**. If the pulse is early by 10 ms, use **−10 ms**. The correction affects new takes; it does not move existing clips. Leave the correction at 0 unless you have measured a remaining offset.
+
+With the Move tool, drag empty track space to select clips. Holding the pointer at any edge scrolls the tracks in that direction, and clips beyond the original view stay included in the selection.
 
 Instrument tracks play from a MIDI keyboard, and from the computer keyboard while the piano roll is open or musical typing is on (**Shift+K**). A to L are the white keys. The row above is the black keys. Z and X change octave.
 
@@ -107,6 +113,7 @@ Other checks:
 
 ```powershell
 .\build.ps1 -Config Debug
+.\tools\test-recording.ps1
 "build\Studio4000_artefacts\Release\Studio 4000.exe" --selftest
 cd ui; npm test
 cd ui; npm run dev
@@ -115,13 +122,13 @@ node tools\ui-screens.mjs
 
 `npm run dev` opens the interface in a browser with a stand-in engine. `ui-screens.mjs` refreshes the pictures in `docs/screenshots`. The app hosts live sessions itself. The browser preview has no relay, so a picture of a connected session still needs `node server\index.mjs`.
 
-### Dependencies the script does not download
+### Dependencies
 
 **Tracktion Engine** is cloned from GitHub at the commit in `tools/deps.json`, then `patches/tracktion-input-monitor.patch` is applied. That patch makes a track's own monitor setting win, and makes Auto hear the input only while that track is recording. If `external/tracktion_engine` is already there and the patch is present, the script leaves it alone.
 
-**ASIO SDK.** Steinberg's license does not allow this repository to ship the SDK. Download the ASIO SDK from Steinberg and place it so `external/asiosdk/common` exists. Hosting VST3 does not need it. ASIO device drivers do. The SDK is their license, or GPL-3.0, as their own `LICENSE.txt` describes. This project's free-use license does not replace that.
+**ASIO SDK.** `fetch-deps.ps1` downloads the pinned official Steinberg SDK into `external/asiosdk` when its headers are missing. Published Windows builds require ASIO support. The SDK stays outside this source repository, and its license and usage notices are copied into the portable package. The SDK has its own Steinberg or GPL-3.0 license, as its `LICENSE.txt` describes; this project's free-use license does not replace those terms.
 
-**WebView2.** The native window uses Microsoft WebView2. Put the `Microsoft.Web.WebView2` package at `external/webview2` (the layout JUCE expects: a folder whose child is `Microsoft.Web.WebView2.<version>`). Version 1.0.3485.44 is the one this tree was built with.
+**WebView2.** The native window uses Microsoft WebView2. `fetch-deps.ps1` downloads the package into `external/webview2`, using the version in `tools/deps.json`.
 
 **VST2.** Hosting old VST2 plug-ins needs Steinberg's VST2 SDK, which cannot be redistributed. Place it at `external/vst2sdk` if you have the right to use it. Without it, the app still hosts VST3.
 

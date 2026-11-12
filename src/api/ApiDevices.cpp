@@ -189,6 +189,8 @@ void registerDeviceApi (AppEngine& app)
         if (error.isNotEmpty())
             throw RpcError (error);
 
+        // Apply the new clock, buffer and input layout before acknowledging the change.
+        app.getEngine().getDeviceManager().dispatchPendingUpdates();
         // Save only a successfully selected backend.
         app.settings().setValue ("audioDeviceType", dm.getCurrentAudioDeviceType());
         app.settings().saveIfNeeded();
@@ -244,6 +246,7 @@ void registerDeviceApi (AppEngine& app)
                         throw RpcError ("Timing correction must be between -500 and 500 ms");
                     w->setRecordAdjustmentMs (ms);
                 }
+                tdm.dispatchPendingUpdates();
                 app.markProjectChanged();
                 return var (true);
             }

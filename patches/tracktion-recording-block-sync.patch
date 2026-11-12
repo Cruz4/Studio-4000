@@ -1,0 +1,73 @@
+diff --git a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.h b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.h
+--- a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.h
++++ b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.h
+@@ -222,7 +222,7 @@
+     std::atomic<int> activelyRecordingInputDevices { 0 };
+ 
+     void createNode();
+-    void nextBlockStarted();
++    void nextBlockStarted (int numSamples);
+     void fillNextNodeBlock (float* const* allChannels, int numChannels, int numSamples);
+ 
+     JUCE_DECLARE_WEAK_REFERENCEABLE (EditPlaybackContext)
+diff --git a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
+--- a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
++++ b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
+@@ -956,24 +956,27 @@
+ }
+ 
+ //==============================================================================
+-void EditPlaybackContext::nextBlockStarted()
+-{
+-    CRASH_TRACER
+-
+-    if (edit.isRendering())
+-        return;
+-
+-    SCOPED_REALTIME_CHECK
+-    if (! nodePlaybackContext)
+-        return;
+-
+-    nodePlaybackContext->nextBlockStarted();
+-}
+-
+-void EditPlaybackContext::fillNextNodeBlock (float* const* allChannels, int numChannels, int numSamples)
+-{
+-    nodePlaybackContext->updateReferenceSampleRange (numSamples);
+-
++void EditPlaybackContext::nextBlockStarted (int numSamples)
++{
++    CRASH_TRACER
++
++    SCOPED_REALTIME_CHECK
++    if (! nodePlaybackContext)
++        return;
++
++    // Studio 4000: align capture and playback to the same block before dispatching play.
++    // Advancing the reference range after input capture made a start-up position reset
++    // shift recorded audio by one buffer, depending on which callback saw the reset.
++    nodePlaybackContext->updateReferenceSampleRange (numSamples);
++
++    if (edit.isRendering())
++        return;
++
++    nodePlaybackContext->nextBlockStarted();
++}
++
++void EditPlaybackContext::fillNextNodeBlock (float* const* allChannels, int numChannels, int numSamples)
++{
+     // Sync this playback context with a master context
+     if (nodeContextToSyncTo && nodePlaybackContext->playHead.isPlaying() && nodeContextToSyncTo->getNodePlayHead() != nullptr)
+     {
+diff --git a/modules/tracktion_engine/playback/tracktion_DeviceManager.cpp b/modules/tracktion_engine/playback/tracktion_DeviceManager.cpp
+--- a/modules/tracktion_engine/playback/tracktion_DeviceManager.cpp
++++ b/modules/tracktion_engine/playback/tracktion_DeviceManager.cpp
+@@ -1391,7 +1391,7 @@
+                 const std::shared_lock sl (contextLock);
+ 
+                 for (auto c : activeContexts)
+-                    c->nextBlockStarted();
++                    c->nextBlockStarted (numSamples);
+ 
+                 for (auto wi : waveInputs)
+                     wi->consumeNextAudioBlock (inputChannelData, numInputChannels, numSamples, streamTime);

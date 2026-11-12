@@ -67,6 +67,9 @@ void registerTransportApi (AppEngine& app)
             return var (false);
         }
 
+        // Studio 4000 timing fix: finish pending clock/input rebuilds before the recording context
+        // snapshots its latency and input devices. A later rebuild can otherwise interrupt the take.
+        app.getEngine().getDeviceManager().dispatchPendingUpdates();
         bool anyArmed = false;
 
         for (auto* in : app.edit().getAllInputDevices())
@@ -77,6 +80,8 @@ void registerTransportApi (AppEngine& app)
             throw RpcError ("Arm a track before recording");
 
         t.record (false);
+        if (! t.isRecording())
+            throw RpcError ("Could not start recording. Check the audio device and track input.");
         return var (true);
     });
 

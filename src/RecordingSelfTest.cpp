@@ -9,11 +9,12 @@ namespace s3
 namespace
 {
     constexpr const char* deviceName = "Studio loopback test";
-    struct Scenario { double rate; int block; double extraMs; double correctionMs; };
+    struct Scenario { double rate; int block; double extraMs; double correctionMs; bool immediateChange = false; };
     constexpr Scenario scenarios[] {
         { 48000.0, 128, 0.0, 0.0 },
         { 44100.0, 512, 0.0, 0.0 },
-        { 48000.0, 256, 20.0, 20.0 }
+        { 48000.0, 256, 20.0, 20.0 },
+        { 48000.0, 512, 0.0, 0.0, true }
     };
 
     // A real callback stream with a known output-to-input delay. Never opens a physical device.
@@ -117,9 +118,9 @@ namespace
     {
         juce::AudioBuffer<float> buffer (2, (int) (4 * sr));
         buffer.clear();
-        for (double t : { 1.5, 2.0, 2.5 })
+        for (double t : { 1.25, 1.5, 2.0, 2.5 })
             for (int ch = 0; ch < 2; ++ch)
-                for (int i = 0; i < 16; ++i)
+                for (int i = 0; i < (t == 1.25 ? 128 : 16); ++i)
                     buffer.setSample (ch, (int) std::llround (t * sr) + i, 0.5f);
         juce::WavAudioFormat format;
         auto stream = file.createOutputStream();
@@ -175,7 +176,7 @@ void RecordingSelfTest::beginScenario()
     dm.closeAudioDevice();
     setup.inputDeviceName = setup.outputDeviceName = deviceName;
     setup.sampleRate = s.rate;
-    setup.bufferSize = s.block;
+    setup.bufferSize = s.immediateChange ? 128 : s.block;
     setup.useDefaultInputChannels = setup.useDefaultOutputChannels = true;
     const auto error = dm.setAudioDeviceSetup (setup, true);
     if (error.isNotEmpty()) throw RpcError (error);
@@ -210,6 +211,8 @@ void RecordingSelfTest::enableInput()
 
 void RecordingSelfTest::beginRecording()
 {
+    if (scenarios[scenario].immediateChange)
+        call ("devices.set", Obj().set ("bufferSize", scenarios[scenario].block));
     call ("devices.setInput", Obj().set ("name", inputName)
                                   .set ("recordAdjustmentMs", scenarios[scenario].correctionMs));
     call ("track.setInput", Obj().set ("id", recordTrack).set ("input", inputName));
@@ -268,7 +271,7 @@ void RecordingSelfTest::inspectRecording()
     if (reader == nullptr) throw RpcError ("Cannot read the recorded file");
     juce::AudioBuffer<float> buffer (1, (int) reader->lengthInSamples);
     reader->read (&buffer, 0, buffer.getNumSamples(), 0, true, false);
-    for (double expected : { 1.5, 2.0, 2.5 })
+    for (double expected : { 1.25, 1.5, 2.0, 2.5 })
     {
         const double sourceTime = expected - pos.getStart().inSeconds() + pos.getOffset().inSeconds();
         const int centre = (int) std::llround (sourceTime * reader->sampleRate);
