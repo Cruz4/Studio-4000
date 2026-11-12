@@ -35,7 +35,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Studio Sessions is the default dark theme, with fuchsia Effects headings.",
     "Find the original dark look as Dark Night, plus 35 color palettes in Settings.",
     "The top-right switch takes you between Light and Studio Sessions.",
-    "Light mode has darker, stronger text and readable EQ type buttons.",
+    "Light mode keeps its original gray appearance, with slightly darker, bolder text and readable EQ labels.",
   ] },
 ];
 

@@ -1,5 +1,8 @@
 Updates from November 11–12, 2026
 
+### Light mode restored
+Restored the original gray backgrounds, toolbar gradients, FX panels and graph styling. Kept the requested slightly darker, bolder main text and readable EQ type labels.
+
 ### Keep the takes coming
 Right-click Record for loop takes on separate tracks. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
 
@@ -25,4 +28,4 @@ Every track, bus and the master has a Mono toggle for checking left/right compat
 ### Make it yours
 Studio Sessions is the default dark theme, with fuchsia Effects headings. The original dark appearance is available as Dark Night. Plotting has its shorter name, and all 35 supplied palettes remain in Settings. The top-right switch alternates between Light and Studio Sessions.
 
-Light mode has brighter surfaces, stronger dark text, readable EQ type buttons and purple Effects browser headings. Active track FX badges are fuchsia in Studio Sessions.
+Light mode retains its original gray surfaces, with slightly stronger dark text, readable EQ type labels and purple Effects browser headings. Active track FX badges are fuchsia in Studio Sessions.

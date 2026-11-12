@@ -35,16 +35,16 @@
 :root[data-theme="light"] {
   --primary-rgb: 91, 63, 214;
   --secondary-rgb: 10, 116, 148;
-  --bg: #d5dce6;
-  --bg1: #e7ecf3;
-  --bg2: #f2f5f9;
-  --bg3: #dfe6ef;
-  --bg4: #cbd5e1;
+  --bg: #5c646e;
+  --bg1: #707880;
+  --bg2: #868e97;
+  --bg3: #9aa2aa;
+  --bg4: #656d77;
   --line: rgba(8, 10, 14, 0.9);
   --line2: #0c0e12;
-  --text: #101722;
-  --dim: #202c3d;
-  --faint: #344155;
+  --text: #080b10;
+  --dim: #1a2030;
+  --faint: #2a3140;
   --violet: #5b3fd6;
   --violet2: #3f2ca8;
   --cyan: #0a7494;
@@ -1053,30 +1053,10 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 
 :root[data-palette] .browser[data-browser-tab="fx"] .b-group.section-title { color: var(--effects-heading); }
 
-/* Default-theme contrast and a consistent active FX cue. */
-:root[data-theme="light"] body { font-weight: 500; -webkit-font-smoothing: auto; }
-:root[data-theme="light"] .browser { background: var(--bg1); }
-:root[data-theme="light"] .browser-head { background: var(--bg2); }
-:root[data-theme="light"] .topbar { background: linear-gradient(var(--bg2), var(--bg3)); }
-:root[data-theme="light"] .lcd { background: var(--bg2); color: var(--text); }
-:root[data-theme="light"] .fx-window,
-:root[data-theme="light"] .fx-col,
-:root[data-theme="light"] .fx-col.open { background: var(--bg2); }
-:root[data-theme="light"] .fx-window-head,
-:root[data-theme="light"] .fx-col-head { background: var(--bg3); }
-:root[data-theme="light"] .fx-canvas { background: var(--bg1); }
-:root[data-theme="light"] .fx-row.knobs,
-:root[data-theme="light"] .fx-generic .fx-section { background: rgba(16,23,34,.035); }
-:root[data-theme="light"] .fx-seg,
-:root[data-theme="light"] .fx-toggle,
-:root[data-theme="light"] .fx-band-tab { background: var(--bg2); }
+/* Keep the original Light surfaces and borders; improve text only. */
+:root[data-theme="light"] body { font-weight: 500; }
 :root[data-theme="light"] .fx-seg button { color: var(--text); font-weight: 600; }
-:root[data-theme="light"] .fx-seg button.on,
-:root[data-theme="light"] .fx-seg button.on:hover { color: #fff; background: var(--violet); box-shadow: none; }
 :root[data-theme="light"] .fx-eq-detail-head .fx-seg .glyph { color: inherit; }
-:root[data-theme="light"] .fx-band-tab.off { opacity: 1; }
-:root[data-theme="light"] .fx-band-tab.off .num { opacity: 1; color: var(--faint); border-color: var(--faint); }
-:root[data-theme="light"] .fx-band-tab .glyph { color: var(--text); }
 :root[data-theme="light"] .fx-label,
 :root[data-theme="light"] .fx-knob-label,
 :root[data-theme="light"] .fx-section-head,
@@ -1084,6 +1064,5 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-theme="light"] .fx-window-badge,
 :root[data-theme="light"] .fx-card-kind,
 :root[data-theme="light"] .fx-live { color: var(--text); }
-:root[data-theme="light"] .fx-knob.disabled { opacity: .7; }
 :root[data-theme="light"] .browser[data-browser-tab="fx"] .b-group.section-title { color: var(--violet); font-weight: 700; }
 :root[data-palette="studio-sessions"] .track-head .toggle.fx.on { background: #ff00ff; color: #18091a; box-shadow: 0 0 0 1px rgba(255,0,255,.4); }

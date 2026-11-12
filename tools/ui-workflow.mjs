@@ -139,13 +139,12 @@ try {
  if(!loop.enabled||loop.takeCount!==4||loop.mutePrevious)throw new Error("Loop-take settings not saved: "+JSON.stringify(loop));
  await page.eval(()=>{const{store,theme,vocal}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null});theme.applyPalette("light");const p=store.useStore.getState().project.tracks.find(t=>t.id===vocal).plugins.find(p=>p.type==="s4000eq");store.openPlugin(p.id);});await sleep(450);await page.shot("light-eq-readable");
  const colours=await page.eval(async()=>{
-  const{contrast}=await import("/src/palettes.ts");const root=getComputedStyle(document.documentElement);const rgbHex=s=>"#"+(s.match(/[\d.]+/g)||[]).slice(0,3).map(n=>Math.round(+n).toString(16).padStart(2,"0")).join("");
+  const root=getComputedStyle(document.documentElement);
   const active=document.querySelector(".fx-eq-detail .fx-seg button.on"),style=getComputedStyle(active);
   const heading=getComputedStyle(document.querySelector('.browser[data-browser-tab="fx"] .section-title')).color;
   const badge=getComputedStyle(document.querySelector(".track-head .toggle.fx.on")).backgroundColor;
-  const text=[];for(const bg of["--bg","--bg1","--bg2","--bg3","--bg4"])for(const ink of["--text","--dim","--faint"])text.push(contrast(root.getPropertyValue(bg).trim(),root.getPropertyValue(ink).trim()));
-  return{eqContrast:contrast(rgbHex(style.color),rgbHex(style.backgroundColor)),minTextContrast:Math.min(...text),heading,badge,weight:getComputedStyle(document.body).fontWeight};
- });if(colours.eqContrast<4.5||colours.minTextContrast<4.5||colours.heading!==colours.badge)throw new Error("Light-theme readability failure: "+JSON.stringify(colours));
+  return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,badge,weight:getComputedStyle(document.body).fontWeight};
+ });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.heading!==colours.badge)throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
  await page.eval(async()=>{const{store}=window.__test;store.useStore.setState({openPlugins:[]});await store.act("track.add",{kind:"group",name:"Mono check bus"});window.__test.formats=Object.fromEntries(store.useStore.getState().project.tracks.map(t=>[t.id,t.channels]));});await sleep(120);
  const monoControls=await page.eval(()=>document.querySelectorAll(".track-head .sum-mono").length);
  const trackCount=await page.eval(()=>window.__test.store.useStore.getState().project.tracks.length);
