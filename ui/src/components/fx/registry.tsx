@@ -12,6 +12,11 @@ import { TuneEditor } from "./TuneEditor";
 export interface EditorEntry { render: (fx: Fx, id: string, type?: string) => ReactNode; width: number; accent: string; kind: string }
 
 export const EDITORS: Record<string, EditorEntry> = {
+  s4000leveler: { kind: "Vocals", accent: COLORS.green, width: 780, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> },
+  s4000hardlimit: { kind: "Dynamics", accent: COLORS.red, width: 640, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> },
+  s4000tubecomp: { kind: "Vocals", accent: COLORS.amber, width: 860, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> },
+  s4000vocaldynamics: { kind: "Vocals", accent: COLORS.green, width: 860, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> },
+  s4000vocalenhancer: { kind: "Vocals", accent: COLORS.cyan, width: 780, render: (fx, _id, type) => <GenericEditor fx={fx} type={type} /> },
   s4000eq: { kind: "EQ", accent: COLORS.violet2, width: 940, render: (fx, id) => <EqEditor fx={fx} pluginId={id} /> },
   "4bandEq": { kind: "EQ", accent: COLORS.violet2, width: 860, render: (fx, id) => <EqEditor fx={fx} pluginId={id} classic /> },
   s4000comp: { kind: "Dynamics", accent: COLORS.amber, width: 900, render: (fx, id) => <CompressorEditor fx={fx} pluginId={id} /> },
@@ -49,6 +54,7 @@ export const EDITORS: Record<string, EditorEntry> = {
 };
 
 const SHORT_NAMES: Record<string, string> = {
+  s4000leveler: "Level", s4000hardlimit: "Hard", s4000tubecomp: "Tube", s4000vocaldynamics: "V.Dyn", s4000vocalenhancer: "V.Enh",
   s4000eq: "EQ", "4bandEq": "EQ", s4000comp: "Comp", compressor: "Comp", s4000limiter: "Limit", s4000gate: "Gate", s4000deesser: "De-ess",
   s4000transient: "Punch", s4000tune: "Tune", s4000saturator: "Sat", s4000crusher: "Crush", s4000delay: "Delay", s4000doubler: "Double",
   s4000width: "Width", s4000tremolo: "Trem", chorus: "Chorus", reverb: "Verb",

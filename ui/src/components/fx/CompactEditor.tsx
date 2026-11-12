@@ -6,6 +6,11 @@ import { knobLook } from "./knobLook";
 
 /** The controls worth keeping when the card is small. Anything else waits for the open card. */
 const PRIMARY: Record<string, string[]> = {
+  s4000leveler: ["target", "range", "floor", "release"],
+  s4000hardlimit: ["input", "ceiling"],
+  s4000tubecomp: ["threshold", "ratio", "attack", "release", "drive", "makeup"],
+  s4000vocaldynamics: ["threshold", "ratio", "expandThreshold", "range", "ceiling"],
+  s4000vocalenhancer: ["highpass", "presence", "air", "excite", "output"],
   s4000eq: ["b2gain", "b4gain", "b6gain", "output"],
   "4bandEq": ["Low-pass gain", "Mid gain 1", "Mid gain 2", "High-pass gain"],
   s4000comp: ["threshold", "ratio", "attack", "release"],

@@ -1,0 +1,13 @@
+--- a/modules/tracktion_engine/model/automation/tracktion_AutomationCurveList.cpp
++++ b/modules/tracktion_engine/model/automation/tracktion_AutomationCurveList.cpp
+@@ -689,7 +689,9 @@
+ 
+     // If the curve is targeted to a plugin on a different clip,
+     // update it to the new one if possible
+-    if (oldPlugin->getOwnerClip() != nullptr)
++    // Studio 4000: preserve an exact destination already owned by this clip.
++    // Matching by type first merged separate fade and gain/pan volume processors.
++    if (oldPlugin->getOwnerClip() != nullptr && oldPlugin->getOwnerClip() != &clip)
+         if (auto pluginList = clip.getPluginList())
+             for (auto newPlugin : *pluginList)
+                 if (detail::areEquivalentPlugins (*oldPlugin, *newPlugin))

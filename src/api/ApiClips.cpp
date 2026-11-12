@@ -256,9 +256,12 @@ void registerClipApi (AppEngine& app)
         if (! std::isfinite (start) || start < 0) throw RpcError ("Invalid copy position");
         // Include nested automation modifier IDs, and avoid moving a live copy
         // through graph listeners from the source position to its destination.
-        auto snapshot = te::ClipCopy::fromClip (*source).withNewItemID (app.edit());
-        auto state = snapshot.getState();
+        auto state = source->state.createCopy();
+        // One remapping pass updates both declarations and their references.
+        // Reassigning modifier IDs again would orphan the copied gain/pan curves.
+        te::EditItemID::remapIDs (state, nullptr, app.edit());
         state.setProperty (te::IDs::start, start, nullptr);
+        auto snapshot = te::ClipCopy::fromClipboardState (state, source->getClipSlot() != nullptr);
         te::Clip::Ptr copy (te::insertClipCopy (*destination, snapshot));
         if (copy == nullptr) throw RpcError ("Could not duplicate the clip");
         return var (copy->itemID.toString());

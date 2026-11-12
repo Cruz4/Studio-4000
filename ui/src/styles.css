@@ -994,3 +994,11 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-palette] .section-title { color: var(--violet2); }
 :root[data-palette] .tabs button.on { color: var(--violet); border-color: var(--violet); }
 :root[data-palette] ::selection { background: var(--secondary-fill); color: var(--secondary-ink); }
+
+:root[data-palette] .view-switch span.on { background: var(--primary-fill); color: var(--primary-ink); }
+:root[data-palette] .view-switch.is-mixer span.on { background: var(--secondary-fill); color: var(--secondary-ink); }
+:root[data-palette] .track-row.selected .track-head,
+:root[data-palette] .track-row.reorder-held .track-head,
+:root[data-palette] .strip.selected,
+:root[data-palette] .strip.reorder-held { background: var(--bg3); }
+:root[data-palette] .track-row.selected .track-head { box-shadow: inset 0 0 0 1px var(--violet); }

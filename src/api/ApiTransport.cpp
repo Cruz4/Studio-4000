@@ -72,6 +72,10 @@ void registerTransportApi (AppEngine& app)
         // Studio 4000 timing fix: finish pending clock/input rebuilds before the recording context
         // snapshots its latency and input devices. A later rebuild can otherwise interrupt the take.
         app.getEngine().getDeviceManager().dispatchPendingUpdates();
+        app.edit().dispatchPendingUpdatesSynchronously();
+        for (auto* in : app.edit().getAllInputDevices())
+            if (! in->getTargets().isEmpty()) in->flushPendingRecordingStatus();
+        app.edit().dispatchPendingUpdatesSynchronously();
         bool anyArmed = false;
 
         for (auto* in : app.edit().getAllInputDevices())

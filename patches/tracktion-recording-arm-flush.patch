@@ -1,0 +1,18 @@
+--- a/modules/tracktion_engine/playback/devices/tracktion_InputDevice.h
++++ b/modules/tracktion_engine/playback/devices/tracktion_InputDevice.h
+@@ -127,6 +127,15 @@
+         If the transport is currently recording, this will start a punch-in recording.
+     */
+     void setRecordingEnabled (EditItemID, bool);
++
++    // Studio 4000: flush queued arm/routing changes before a fresh recording.
++    // A stale status update would otherwise stop the new recording on the next message.
++    void flushPendingRecordingStatus()
++    {
++        TRACKTION_ASSERT_MESSAGE_THREAD
++        recordStatusUpdater.handleUpdateNowIfNeeded();
++    }
++
+ 
+     /** Should return true if this input is currently actively recording into a track
+         and it wants the existing track contents to be muted.

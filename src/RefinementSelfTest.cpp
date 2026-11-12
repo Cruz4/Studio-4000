@@ -1,5 +1,6 @@
 #include "RefinementSelfTest.h"
 #include "StudioFx.h"
+#include "ProjectState.h"
 #include "api/Api.h"
 #include <iostream>
 #include <set>
@@ -175,7 +176,11 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             auto& copy = app.clip (copies[i].toString());
             collectIDs (copy.state);
             auto* ac = dynamic_cast<te::AudioClipBase*> (&copy);
-            valid = valid && ac != nullptr && std::abs (ac->getGainDB() + 3) < .001
+            const auto description = describeClip (copy);
+            valid = valid && ac != nullptr && description["gainPoints"].size() == 3 && description["panPoints"].size() == 2
+                && std::abs ((double) description["fadeIn"] - .2) < .001
+                && std::abs ((double) description["fadeInBend"] - .4) < .001
+                && std::abs (ac->getGainDB() + 3) < .001
                 && std::abs (copy.getPosition().getLength().inSeconds() - 3) < .001
                 && copy.getClipTrack()->itemID.toString() == (i % 2 ? destination : track);
         }

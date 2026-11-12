@@ -1,4 +1,4 @@
-Recording waveforms now use fixed sample bins and a stable canvas, so previously drawn audio stays still. The audio engine load badge has a fixed width and tabular digits, keeping toolbar buttons stationary.
+Arming and immediately starting recording now flushes pending routing changes before capture, preventing a queued update from interrupting the new take. Recording waveforms now use fixed sample bins and a stable canvas, so previously drawn audio stays still. The audio engine load badge has a fixed width and tabular digits, keeping toolbar buttons stationary.
 
 Alt-drag shows the original clip and a live ghost copy before the drop, including moves to compatible tracks. Copies have independent clip, effect and automation IDs. Cached automation sources retain their curve objects during deletion and undo, preventing the dangling-reference crash reproduced with audio clips containing fades and envelopes. Markers now draw through every track above clips. Clip edges magnetically catch markers with Snap on; with Snap off, Ctrl-drag temporarily enables the marker catch. Drag farther to release it. Ctrl+wheel track-height zoom is unchanged.
 

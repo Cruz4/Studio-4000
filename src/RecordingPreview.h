@@ -30,7 +30,11 @@ inline var recordingPreviews (te::Edit& edit, const var& request = {})
                 for (int channel = 0; channel < channels; ++channel)
                 {
                     float low = 0, high = 0;
-                    thumb.getApproximateMinMax (bin / bps, (bin + 1) / bps, channel, low, high);
+                    // JUCE's end thumbnail index is inclusive and rounded up.
+                    // Query inside the bin's first sample so the next, growing bin
+                    // cannot change this completed bin's peaks.
+                    thumb.getApproximateMinMax ((bin * 1024.0 + .125) / rate,
+                                                (bin * 1024.0 + .25) / rate, channel, low, high);
                     data.add ((int) std::lround (juce::jlimit (-1.0f, 1.0f, low) * 127));
                     data.add ((int) std::lround (juce::jlimit (-1.0f, 1.0f, high) * 127));
                 }

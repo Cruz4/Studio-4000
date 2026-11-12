@@ -161,10 +161,6 @@ RecordingSelfTest::RecordingSelfTest (AppEngine& a, std::function<void (int)> do
     workDir = juce::File::getSpecialLocation (juce::File::tempDirectory)
                   .getNonexistentChildFile ("Studio4000 recording test", "", false);
     workDir.createDirectory();
-    // The synthetic device uses a normal-priority thread, not a hardware real-time
-    // driver. Cold-start scheduling can inflate JUCE's CPU estimate and trigger
-    // overload muting, which is unrelated to the recording alignment under test.
-    app.getEngine().getDeviceManager().setCpuLimitBeforeMuting (std::numeric_limits<double>::max());
     auto& dm = app.getEngine().getDeviceManager().deviceManager;
     dm.closeAudioDevice();
     dm.addAudioDeviceType (std::make_unique<LoopbackType>());

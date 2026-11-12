@@ -122,6 +122,25 @@ try {
   }, drag);
   if (drop.ghosts) throw new Error("Duplicate ghost remains after drop");
   await page.shot("duplicate-dropped");
+  const presetId = await page.eval(async () => {
+    const { store } = window.__test;
+    const plugin = store.useStore.getState().project.tracks.flatMap((t) => t.plugins).find((p) => p.type === "s4000eq");
+    await store.act("plugin.setParam", { id: plugin.id, paramId: "b6gain", value: 12 });
+    store.openPlugin(plugin.id);
+    return plugin.id;
+  });
+  await sleep(600);
+  await page.eval(() => {
+    const picker = document.querySelector(".fx-window .fx-presets select");
+    picker.value = "Air"; picker.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await sleep(250);
+  const preset = await page.eval(async (id) => {
+    const params = await window.__test.store.act("plugin.params", { id });
+    window.__test.store.useStore.setState({ openPlugins: [] });
+    return { leftover: params.find((p) => p.id === "b6gain").value, air: params.find((p) => p.id === "b7gain").value };
+  }, presetId);
+  if (preset.leftover !== 0 || preset.air !== 4.5) throw new Error("Preset leaked the previous band's boost: " + JSON.stringify(preset));
   await page.eval(() => { window.__test.theme.applyPalette("plotting"); window.__test.store.useStore.setState({ settingsOpen: "general" }); });
   await page.shot("plotting-settings");
   const count = await page.eval(() => [...document.querySelectorAll("select")].find((s) => [...s.options].some((o) => o.text === "Plotting (Default)"))?.options.length);
@@ -134,7 +153,7 @@ try {
   const toggle = await page.eval(() => ({ mode: document.documentElement.dataset.theme, palette: document.documentElement.dataset.palette ?? null }));
   if (toggle.mode !== "light" || toggle.palette !== null) throw new Error("Toolbar toggle must select default Light");
   await page.shot("default-light");
-  console.log(JSON.stringify({ geometry, drag, drop, themes: count, toggle }, null, 2));
+  console.log(JSON.stringify({ geometry, drag, drop, preset, themes: count, toggle }, null, 2));
   console.log("UI REFINEMENT CHECKS PASSED");
   page.close();
 } finally { browser.kill(); }
