@@ -169,9 +169,9 @@ try {
   const root=getComputedStyle(document.documentElement);
   const active=document.querySelector(".fx-eq-detail .fx-seg button.on"),style=getComputedStyle(active);
   const heading=getComputedStyle(document.querySelector('.browser[data-browser-tab="fx"] .section-title')).color;
-  const badge=getComputedStyle(document.querySelector(".track-head .toggle.fx.on")).backgroundColor;
-  return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,badge,weight:getComputedStyle(document.body).fontWeight};
- });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.heading!==colours.badge)throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
+  const headings=[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>({color:getComputedStyle(el).color,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,children:[...el.children].map(c=>getComputedStyle(c).color)}));
+  return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,headings,weight:getComputedStyle(document.body).fontWeight};
+ });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.headings.some(h=>h.color!=="rgb(16, 11, 29)"||h.weight!=="700"||h.size!=="11px"||h.children.some(c=>c!==h.color)))throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
  await page.eval(async()=>{const{store}=window.__test;store.useStore.setState({openPlugins:[]});await store.act("track.add",{kind:"group",name:"Mono check bus"});window.__test.formats=Object.fromEntries(store.useStore.getState().project.tracks.map(t=>[t.id,t.channels]));});await sleep(120);
  const monoControls=await page.eval(()=>document.querySelectorAll(".track-head .sum-mono").length);
  const trackCount=await page.eval(()=>window.__test.store.useStore.getState().project.tracks.length);

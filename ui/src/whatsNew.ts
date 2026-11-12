@@ -39,6 +39,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "The top-right switch takes you between Light and Studio Sessions.",
     "Light mode keeps its original gray appearance, with slightly darker, bolder text.",
     "EQ type labels stay readable.",
+    "Light-mode browser headings use darker, bolder text against the original gray.",
   ] },
 ];
 

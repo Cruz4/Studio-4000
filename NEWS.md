@@ -3,6 +3,8 @@ Updates from November 11–12, 2026
 ### Light mode restored
 Restored the original gray backgrounds, toolbar gradients, FX panels and graph styling. Kept the requested slightly darker, bolder main text and readable EQ type labels.
 
+Browser section headings, arrows and counts now use bold, slightly larger near-black plum text for clearer contrast against the original gray. This applies across Effects, Instruments, Media and Chains.
+
 ### Keep the takes coming
 Right-click Record to set up and arm loop takes without starting recording. A LOOP badge on Record shows the mode is enabled. Click Record or press R when you're ready, or right-click again to change settings or turn the mode off. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
 
