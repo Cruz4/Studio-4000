@@ -68,6 +68,8 @@ namespace
         int getInputLatencyInSamples() override { return block * 2; }
 
         static inline std::atomic<double> extraMs { 0.0 };
+        static inline std::atomic<int> probeSerial { 0 };
+        static inline std::atomic<double> firstOutputMs { -1.0 };
 
     private:
         bool opened = false;
@@ -81,16 +83,32 @@ namespace
             const int delay = block * 5 + (int) std::llround (extraMs.load() * rate / 1000.0);
             juce::AudioBuffer<float> ring (2, delay), input (2, block), output (2, block);
             ring.clear();
-            int cursor = 0;
+            int cursor = 0, serial = -1;
+            juce::int64 probeSamples = 0;
             auto next = juce::Time::getMillisecondCounterHiRes();
             while (! threadShouldExit())
             {
+                const int currentSerial = probeSerial.load();
+                if (currentSerial != serial)
+                {
+                    serial = currentSerial;
+                    probeSamples = 0;
+                    firstOutputMs = -1.0;
+                }
                 for (int ch = 0; ch < 2; ++ch)
                     for (int i = 0; i < block; ++i)
                         input.setSample (ch, i, ring.getSample (ch, (cursor + i) % delay));
                 output.clear();
                 callback->audioDeviceIOCallbackWithContext (input.getArrayOfReadPointers(), 2,
                                                            output.getArrayOfWritePointers(), 2, block, {});
+                if (firstOutputMs.load() < 0)
+                    for (int i = 0; i < block; ++i)
+                        if (std::abs (output.getSample (0, i)) > 0.1f)
+                        {
+                            firstOutputMs = (probeSamples + i) * 1000.0 / rate;
+                            break;
+                        }
+                probeSamples += block;
                 for (int ch = 0; ch < 2; ++ch)
                     for (int i = 0; i < block; ++i)
                         ring.setSample (ch, (cursor + i) % delay, output.getSample (ch, i));
@@ -114,7 +132,7 @@ namespace
         juce::AudioIODevice* createDevice (const String&, const String&) override { return new LoopbackDevice(); }
     };
 
-    juce::File writePulses (const juce::File& file, double sr)
+    std::vector<float> writePulses (const juce::File& file, double sr)
     {
         juce::AudioBuffer<float> buffer (2, (int) (4 * sr));
         buffer.clear();
@@ -129,7 +147,11 @@ namespace
         stream.release();
         if (! writer->writeFromAudioSampleBuffer (buffer, 0, buffer.getNumSamples()))
             throw RpcError ("Could not finish loopback fixture");
-        return file;
+        std::vector<float> interleaved ((size_t) buffer.getNumSamples() * 2);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            for (int ch = 0; ch < 2; ++ch)
+                interleaved[(size_t) i * 2 + ch] = buffer.getSample (ch, i);
+        return interleaved;
     }
 }
 
@@ -153,6 +175,8 @@ RecordingSelfTest::~RecordingSelfTest()
     app.sendEvent = nullptr;
     if (auto* e = app.currentEdit()) e->getTransport().stop (false, true);
     app.getEngine().getDeviceManager().deviceManager.closeAudioDevice();
+    for (const auto& source : sourceBuffers)
+        app.getEngine().getAudioFileManager().unregisterMemoryBuffer (source.first);
 }
 
 var RecordingSelfTest::call (const String& method, const var& params)
@@ -186,9 +210,17 @@ void RecordingSelfTest::beginScenario()
     auto dir = workDir.getChildFile (String (scenario));
     dir.createDirectory();
     call ("project.new", Obj().set ("dir", dir.getFullPathName()).set ("name", "Loopback").set ("template", "empty"));
-    const auto file = writePulses (dir.getChildFile ("pulses.wav"), s.rate);
+    const auto file = app.getAudioDir().getChildFile ("pulses.wav");
+    sourceBuffers.emplace_back (file.getFullPathName().toStdString(), writePulses (file, s.rate));
+    const auto& source = sourceBuffers.back();
+    // Use the engine's memory-reader fixture path, so capture timing is independent of disk read-ahead.
+    app.getEngine().getAudioFileManager().registerMemoryBuffer (
+        source.first, choc::buffer::createInterleavedView (static_cast<const float*> (source.second.data()),
+                                                        2, source.second.size() / 2), s.rate);
     auto playback = call ("track.add", Obj().set ("kind", "audio").set ("name", "Pulse source"))[0].toString();
-    call ("clip.importAudio", Obj().set ("trackId", playback).set ("file", file.getFullPathName()).set ("start", 0.0));
+    auto sourceClip = call ("clip.importAudio", Obj().set ("trackId", playback).set ("file", file.getFullPathName()).set ("start", 0.0)).toString();
+    if (auto* wave = dynamic_cast<te::WaveAudioClip*> (&app.clip (sourceClip)))
+        wave->setUsesProxy (false);
     recordTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Recorded pulses"))[0].toString();
     // Prime the disk-backed source before the clock test; missing disk-cache data is not an input offset.
     call ("transport.setPosition", Obj().set ("time", 1.25));
@@ -237,6 +269,7 @@ void RecordingSelfTest::beginRecording()
                         for (auto& peak : *peaks)
                             sawPreview = sawPreview || std::abs ((int) peak) > 5;
     };
+    ++LoopbackDevice::probeSerial;
     call ("transport.record");
     check ("transport enters recording", app.edit().getTransport().isRecording());
     recordingFile = {};
@@ -258,6 +291,7 @@ void RecordingSelfTest::beginRecording()
 
 void RecordingSelfTest::inspectRecording()
 {
+    std::cout << "First rendered source pulse after test arm: " << LoopbackDevice::firstOutputMs.load() << " ms" << std::endl;
     auto& at = app.audioTrack (recordTrack);
     check ("recording creates a clip", at.getClips().size() == 1,
            "clips=" + String (at.getClips().size()) + " file=" + recordingFile);

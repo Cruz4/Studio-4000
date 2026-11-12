@@ -18,6 +18,7 @@ private:
     juce::uint32 started = 0;
     String recordTrack, inputName, recordingFile;
     bool sawPreview = false;
+    std::vector<std::pair<std::string, std::vector<float>>> sourceBuffers;
 
     void timerCallback() override;
     void check (const String&, bool, const String& = {});
