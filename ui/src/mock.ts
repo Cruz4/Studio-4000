@@ -200,7 +200,7 @@ export function createMock(emit: Emit) {
     "clip.split": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => x.clips.includes(c))!;
       const right = { ...structuredClone(c), id: nid(), start: p.time, offset: c.offset + p.time - c.start }; c.end = p.time; tr.clips.push(right); changed(); return right.id; },
     "clip.delete": (p) => { for (const tr of project!.tracks) tr.clips = tr.clips.filter((c) => c.id !== p.id && !(p.ids || []).includes(c.id)); changed(); return true; },
-    "clip.duplicate": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => x.clips.includes(c))!; const len = c.end - c.start;
+    "clip.duplicate": (p) => { const c = findClip(p.id)!; const tr = project!.tracks.find((x) => p.trackId ? x.id === p.trackId : x.clips.includes(c))!; const len = c.end - c.start;
       const at = p.start ?? c.end;
       const d = { ...structuredClone(c), id: nid(), start: at, end: at + len, notes: c.notes?.map((n): Note => [n[0], n[1] + at - c.start, n[2], n[3], n[4], n[5]]) }; tr.clips.push(d); changed(); return d.id; },
     "clip.set": (p) => {
@@ -340,6 +340,7 @@ export function createMock(emit: Emit) {
       changed();
       return copy;
     },
+    "plugin.factoryPreset": (p) => Object.fromEntries((findPlugin(p.id)?.params ?? []).map((p) => [p.id, p.def ?? p.value])),
     "plugin.params": (p) => structuredClone(findPlugin(p.id)?.params ?? []),
     "plugin.setParam": (p) => {
       const pl = findPlugin(p.id);

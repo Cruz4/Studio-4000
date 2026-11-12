@@ -1,18 +1,18 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { on, rpc } from "../bridge";
 import { RecordingClip } from "./RecordingClip";
-import type { RecordingPreview } from "../recording";
+import { mergeRecording, type RecordingPreview } from "../recording";
 import { startSelectionDrag } from "../selectionDrag"; // Studio 4000 selection scrolling fix
 import { reportHover, useCollab } from "../collab";
 import { addMidiClip, addTrack, copySelection, crossfadeSelection, cutSelection, importAudio, pasteClips, runCommand, splitAtPlayhead, splitClipAt, zoomToClips } from "../commands";
 import { type Choice, inputChoices, inputLabel, outputChoices, outputLabel } from "../io";
 import { useMeterCanvas } from "../meters";
-import { act, armLoopRange, live, loadDevices, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
+import { act, armLoopRange, live, loadDevices, refreshProject, onTick, openPlugin, selectTrack, toast, useStore, type ArrangeTool, type Grid } from "../store";
 import { createTrackItems, formatChoices, openFormatMenu, openTrackMenu, toggleAutomation } from "../trackMenu";
 import type { AutomationLane, Clip, Project, Track } from "../types";
 import { HEADER_W_DEFAULT, TRACK_H_DEFAULT, heightOf, resetTrackHeight, resizeAllTracks, setAllTrackHeights, setHeaderWidth, setTrackHeight, useHeaderWidth, useTrackHeights } from "../trackHeights";
 import { useThemeName } from "../theme";
-import { bendOfFade, clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fadeInPaths, fadeOutPaths, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan } from "../util";
+import { bendOfFade, clamp, crossfadeOverlaps, cx, dbToFader, faderToDb, fadeInPaths, fadeOutPaths, fileToBase64, formatDb, formatRulerTime, gridSeconds, rulerStep, secondsPerBar, shade, snap, snapEdge, snapSpan, snapMarkers } from "../util";
 import { askText } from "./Ask";
 import { ClipGain } from "./ClipGain";
 import { ClipPan, panText } from "./ClipPan";
@@ -928,9 +928,38 @@ export function Arrange() {
   const [recordings, setRecordings] = useState<RecordingPreview[]>([]);
   const selecting = useRef(false);
   const cancelSelection = useRef<(() => void) | null>(null);
-  useEffect(() => on("recordings", (items: RecordingPreview[]) => {
-    if (live.tick.recording) setRecordings(items);
-  }), []);
+  useEffect(() => {
+    let alive = true;
+    const history = new Map<string, RecordingPreview>();
+    const pending = new Set<string>();
+    const publish = () => { if (alive && live.tick.recording) setRecordings([...history.values()]); };
+    const fill = async (file: string, until: number) => {
+      if (pending.has(file)) return;
+      pending.add(file);
+      try {
+        while (alive && live.tick.recording && history.has(file) && (history.get(file)!.receivedBins ?? 0) < until) {
+          const fromBin = history.get(file)!.receivedBins ?? 0;
+          const chunks = await rpc<RecordingPreview[]>("recording.peaks", { file, fromBin });
+          const chunk = chunks.find((p) => p.file === file);
+          if (!alive || !history.has(file) || !chunk?.data.length) break;
+          history.set(file, mergeRecording(history.get(file), chunk));
+          if ((history.get(file)!.receivedBins ?? 0) <= fromBin) break;
+          publish();
+        }
+      } finally { pending.delete(file); }
+    };
+    const off = on("recordings", (items: RecordingPreview[]) => {
+      if (!live.tick.recording) return;
+      for (const file of history.keys()) if (!items.some((p) => p.file === file)) history.delete(file);
+      for (const item of items) {
+        const before = history.get(item.file)?.receivedBins ?? 0;
+        history.set(item.file, mergeRecording(history.get(item.file), item));
+        if ((item.startBin ?? 0) > before) void fill(item.file, item.startBin ?? 0).catch(() => {});
+      }
+      publish();
+    });
+    return () => { alive = false; off(); };
+  }, [project.file]);
   useEffect(() => { setRecordings([]); }, [project.file]);
   useEffect(() => {
     if (recording) return;
@@ -1097,10 +1126,15 @@ export function Arrange() {
         const grid = useStore.getState().grid;
         const edges = clipEdges(p, moveIds);
         if (mode === "move") {
-          const start = snapSpan(clip.start + dt, clip.end - clip.start, grid, p, edges, false, pps);
+          const raw = clip.start + dt, length = clip.end - clip.start;
+          let start = snapSpan(raw, length, grid, p, edges, false, pps);
+          if (grid !== "off" || ev.ctrlKey || ev.metaKey) {
+            const magnetic = snapMarkers(raw, length, p.markers.map((m) => m.time), pps);
+            if (p.markers.some((m) => Math.min(Math.abs(m.time - raw), Math.abs(m.time - raw - length)) <= 10 / Math.max(1, pps))) start = magnetic;
+          }
           dt = start - clip.start;
           dt = Math.max(dt, -Math.min(...moveIds.map((id) => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)?.start ?? 0)));
-          if (ev.ctrlKey || ev.metaKey) dt = 0;
+          if ((ev.ctrlKey || ev.metaKey) && grid !== "off") dt = 0;
         } else if (mode === "l") dt = snapEdge(clip.start + dt, grid, p, edges, ev.altKey, pps) - clip.start;
         else dt = snapEdge(clip.end + dt, grid, p, edges, ev.altKey, pps) - clip.end;
       }
@@ -1115,7 +1149,7 @@ export function Arrange() {
         if (lane && fits && lane !== sourceLane) {
           trackDelta = Number(lane.dataset.laneIndex) - trackIndex;
           dy = lane.getBoundingClientRect().top - sourceLane.getBoundingClientRect().top;
-          if (Math.abs(dx) < 8) dt = 0;
+          if (Math.abs(dx) < 8 && !ev.ctrlKey && !ev.metaKey) dt = 0;
         }
       }
       const fadeBend = mode === "fi" || mode === "fo"
@@ -1140,7 +1174,7 @@ export function Arrange() {
           const target = p.tracks[clamp(ti, 0, p.tracks.length - 1)];
           const compatible = (target.kind === "instrument") === (c.kind === "midi") || target.kind === "audio" && c.kind === "audio";
           const trackId = last.trackDelta !== 0 && compatible ? target.id : undefined;
-          if (last.copy) calls.push({ method: "clip.duplicate", params: { id, start: edge.start } });
+          if (last.copy) calls.push({ method: "clip.duplicate", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
           else calls.push({ method: "clip.move", params: { id, start: edge.start, ...(trackId ? { trackId } : {}) } });
         } else if (last.mode === "l") calls.push({ method: "clip.trim", params: { id, start: edge.start } });
         else if (last.mode === "r") calls.push({ method: "clip.trim", params: { id, end: edge.end } });
@@ -1168,7 +1202,10 @@ export function Arrange() {
       setPreview(null);
       if (!last.copy) setSettled(held);
       const label = { move: last.copy ? "Copy clips" : "Move clips", fi: "Fade", fo: "Fade", slip: "Slip", l: "Trim", r: "Trim" }[last.mode];
-      if (calls.length) void act("batch.run", { label, calls });
+      if (calls.length && last.copy) {
+        setPreview(last);
+        void act("batch.run", { label, calls }).then(() => refreshProject()).finally(() => setPreview((current) => current === last ? null : current));
+      } else if (calls.length) void act("batch.run", { label, calls });
       else setSettled(null);
     });
   }, [pps]);
@@ -1343,7 +1380,7 @@ export function Arrange() {
         ))}
         <div className="grow" />
         <span className="small faint">Snap</span>
-        <select className="input sm" value={grid} onChange={(e) => useStore.setState({ grid: e.target.value as Grid })} title="Snap grid. While snap is on, a clip also catches other clips and markers. Hold Alt while trimming or moving the playhead to ignore it. Hold Ctrl while dragging a clip up or down to keep its timing. Hold Alt while dragging a clip to copy it.">
+        <select className="input sm" value={grid} onChange={(e) => useStore.setState({ grid: e.target.value as Grid })} title="Snap grid. While snap is on, a clip also catches other clips and markers. Hold Alt while trimming or moving the playhead to ignore it. With snap off, hold Ctrl while dragging to catch markers. Hold Alt while dragging a clip to copy it.">
           <option value="bar">1 Bar</option>
           <option value="1/2">1/2</option>
           <option value="beat">1/4</option>
@@ -1417,7 +1454,12 @@ export function Arrange() {
                     onDragOver={(e) => dragOver(e, track.id)}
                     onDrop={(e) => onDrop(e, track)}>
                     {track.clips.map((c) => (
-                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
+                      <ClipView key={c.id} clip={c} track={track} pps={pps} selected={selected.has(c.id)} preview={preview?.copy ? null : preview} settled={settled} view={view} onDown={onClipDown} trackIndex={i} timeAt={timeAtClient} onTime={beginTime} />
+                    ))}
+                    {preview?.copy && track.clips.filter((c) => preview.ids.includes(c.id)).map((c) => (
+                      <div key={"ghost:" + c.id} className="duplicate-ghost">
+                        <ClipView clip={c} track={track} pps={pps} selected preview={preview} settled={null} view={view} onDown={() => {}} trackIndex={i} timeAt={timeAtClient} onTime={() => {}} />
+                      </div>
                     ))}
                     {recordings.filter((take) => take.trackId === track.id && !track.clips.some((clip) => clip.file === take.file)).map((take) => (
                       <RecordingClip key={take.file} preview={take} track={track} project={project} pps={pps} view={view} />
@@ -1443,6 +1485,9 @@ export function Arrange() {
           {loopVisible && project.looping && (
             <div style={{ position: "absolute", top: 34, bottom: 0, left: headerW + project.loop[0] * pps, width: (project.loop[1] - project.loop[0]) * pps, background: "rgba(124,92,255,.06)", borderLeft: "1px solid rgba(124,92,255,.4)", borderRight: "1px solid rgba(124,92,255,.4)", pointerEvents: "none", zIndex: 1 }} />
           )}
+          <div className="marker-lines" style={{ left: view.left + headerW, width: Math.max(0, laneW - view.left) }} aria-hidden="true">
+            {project.markers.map((m) => <div key={m.id} className="marker-line" style={{ left: m.time * pps - view.left }} />)}
+          </div>
           <div ref={playhead} className={cx("playhead", recording && "rec")} style={{ left: 0 }} />
           {ghost != null && (arrangeTool === "time" || arrangeTool === "split") && (
             <div className="tool-ghost" style={{ transform: `translateX(${headerW + ghost * pps}px)` }} />

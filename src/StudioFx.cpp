@@ -1,4 +1,5 @@
 #include "StudioFx.h"
+#include "VocalFx.h"
 #include "SuiteFx.h"
 
 namespace s3
@@ -1276,6 +1277,7 @@ void registerStudioEffects (te::PluginManager& pm)
     pm.createBuiltInType<EqPlugin>();
     pm.createBuiltInType<CompressorFx>();
     registerSuite (pm);
+    registerVocalEffects (pm);
 }
 
 std::vector<std::array<const char*, 3>> studioEffectCatalogue()
@@ -1294,6 +1296,8 @@ std::vector<std::array<const char*, 3>> studioEffectCatalogue()
         { StereoWidthPlugin::xmlTypeName,       StereoWidthPlugin::getPluginName(),     "Stereo" },
         { TremoloPlugin::xmlTypeName,           TremoloPlugin::getPluginName(),         "Modulation" },
     };
+
+    for (auto& extra : vocalEffectCatalogue()) list.push_back (extra);
 
     for (auto& extra : suiteEffectCatalogue())
         list.push_back (extra);

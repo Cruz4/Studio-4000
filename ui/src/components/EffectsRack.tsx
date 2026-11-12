@@ -32,7 +32,7 @@ function WetDry({ value, disabled, title, onChange, onDone }: {
 }
 
 function EffectBody({ plugin, open }: { plugin: Plugin; open: boolean }) {
-  const fx = useFx(plugin.id, plugin.params);
+  const fx = useFx(plugin.id, plugin.params, plugin.type);
   const entry = EDITORS[plugin.type];
   return (
     <div className={cx("fx-col-body", !plugin.enabled && "bypassed")}>

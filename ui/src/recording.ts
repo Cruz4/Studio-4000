@@ -7,6 +7,8 @@ export interface RecordingPreview {
   channels: number;
   binsPerSecond: number;
   data: number[];
+  startBin?: number;
+  receivedBins?: number;
 }
 
 /** Only the current pass is shown when recording into looped takes. */
@@ -33,4 +35,15 @@ export function recordingPeak(preview: RecordingPreview, start: number, end: num
     hi = Math.max(hi, preview.data[b * stride + channel * 2 + 1] ?? 0);
   }
   return [lo, hi];
+}
+
+/** Accumulate fixed bins without copying a long take every tick. */
+export function mergeRecording(previous: RecordingPreview | undefined, update: RecordingPreview): RecordingPreview {
+  const data = previous?.data ?? [];
+  const from = update.startBin ?? 0, stride = update.channels * 2;
+  for (let i = 0; i < update.data.length; i++) data[from * stride + i] = update.data[i];
+  const end = from + Math.floor(update.data.length / stride);
+  let receivedBins = previous?.receivedBins ?? 0;
+  if (from <= receivedBins) receivedBins = Math.max(receivedBins, end);
+  return { ...update, length: Math.max(previous?.length ?? 0, update.length), startBin: 0, receivedBins, data };
 }

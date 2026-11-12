@@ -1,5 +1,5 @@
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { currentTheme, toggleTheme } from "../theme";
+import { currentTheme, toggleTheme, useThemeName } from "../theme";
 import { clamp, cx, formatDb, parseDb } from "../util";
 
 /** Keeps a crash in one panel from blanking the whole window. */
@@ -203,11 +203,11 @@ export function DbField({ db, min, max, onChange, digits = 1, className, style }
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState(currentTheme);
-  const light = theme === "light";
+  useThemeName();
+  const light = currentTheme() === "light";
   return (
     <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? "Switch to the dark theme" : "Switch to the light theme"}
-      onClick={() => { toggleTheme(); setTheme(currentTheme()); }}>
+      onClick={() => { toggleTheme(); }}>
       {light ? "Dark" : "Light"}
     </button>
   );

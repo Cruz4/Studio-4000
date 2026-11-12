@@ -1,11 +1,15 @@
 // Starting points for every built-in effect. Values are the parameter's own units
 // (the same numbers the knobs write), not a 0..1 position.
-export interface Preset { name: string; values: Record<string, number> }
+export interface Preset { name: string; values: Record<string, number>; description?: string }
 
 /** Classic compressor stores threshold as linear gain and ratio as 1 / displayed ratio. */
 const g = (db: number) => Math.pow(10, db / 20);
 
 export const EQ_PRESETS: Preset[] = [
+  {"name": "Rap vocal - controlled presence", "values": {"b1on": 1, "b1freq": 85, "b1slope": 1, "b3freq": 300, "b3gain": -3, "b3q": 1.2, "b5freq": 3200, "b5gain": 2, "b5q": 0.9, "b7freq": 11000, "b7gain": 1.5}, "description": "High-pass at 85 Hz, less 300 Hz boxiness, a restrained presence lift."},
+  {"name": "Vocal - tame nasal resonance", "values": {"b1on": 1, "b1freq": 75, "b4freq": 1000, "b4gain": -3, "b4q": 1.8, "b7gain": 1}, "description": "Broad attenuation around 1 kHz; move this band to the actual nasal resonance."},
+  {"name": "Vocal - reduce proximity boom", "values": {"b1on": 1, "b1freq": 95, "b2freq": 160, "b2gain": -3, "b3freq": 280, "b3gain": -2, "b3q": 0.9}, "description": "Cuts the low shelf and low mids for an overly close microphone."},
+
   { name: "Flat", values: { b1on: 0, b1gain: 0, b2on: 1, b2gain: 0, b3on: 1, b3gain: 0, b4on: 1, b4gain: 0, b5on: 1, b5gain: 0, b6on: 1, b6gain: 0, b7on: 1, b7gain: 0, b8on: 0, b8gain: 0, output: 0 } },
   { name: "Vocal clarity", values: { b1on: 1, b1type: 0, b1freq: 90, b1slope: 1, b2gain: -2, b2freq: 180, b3freq: 300, b3gain: -2.5, b3q: 1.2, b5freq: 3200, b5gain: 2.5, b5q: 0.9, b7freq: 11000, b7gain: 3, output: 0 } },
   { name: "Warm vocal", values: { b1on: 1, b1freq: 80, b1slope: 0, b2freq: 200, b2gain: 2, b4freq: 800, b4gain: -1.5, b4q: 1, b6freq: 3500, b6gain: -1, b7freq: 10000, b7gain: 1.5, output: 0 } },
@@ -40,6 +44,12 @@ export const CLASSIC_EQ_PRESETS: Preset[] = [
 ];
 
 export const COMP_PRESETS: Preset[] = [
+  {"name": "Rap lead - fast peak control", "values": {"threshold": -18, "ratio": 5, "knee": 4, "attack": 3, "release": 80, "makeup": 2, "autoMakeup": 0, "detect": 0, "scHpf": 90, "mix": 100}, "description": "Peak detector, 5:1 ratio and 3 ms attack. Adjust threshold for the take."},
+  {"name": "Ballad - gentle RMS leveling", "values": {"threshold": -24, "ratio": 2.2, "knee": 12, "attack": 30, "release": 280, "makeup": 2, "autoMakeup": 0, "detect": 1, "scHpf": 90, "mix": 100}, "description": "Soft knee, slow attack and gentle ratio preserve phrasing."},
+  {"name": "Spoken voice - clear consonants", "values": {"threshold": -22, "ratio": 3, "knee": 9, "attack": 15, "release": 160, "makeup": 2, "autoMakeup": 0, "detect": 1, "scHpf": 100, "mix": 100}, "description": "Moderate attack leaves consonant transients intact."},
+  {"name": "Backing stack - even bed", "values": {"threshold": -26, "ratio": 4, "knee": 10, "attack": 12, "release": 200, "makeup": 3, "autoMakeup": 0, "detect": 1, "scHpf": 140, "mix": 100}, "description": "Firmer RMS compression for layered vocals."},
+  {"name": "Parallel vocal - blended density", "values": {"threshold": -30, "ratio": 10, "knee": 6, "attack": 2, "release": 100, "makeup": 7, "autoMakeup": 0, "detect": 1, "scHpf": 100, "mix": 30}, "description": "Heavy compression blended at 30 percent wet."},
+
   { name: "Vocal", values: { threshold: -20, ratio: 3.5, knee: 6, attack: 8, release: 120, makeup: 0, autoMakeup: 1, detect: 1, scHpf: 80, mix: 100 } },
   { name: "Vocal leveler", values: { threshold: -24, ratio: 6, knee: 8, attack: 12, release: 180, makeup: 0, autoMakeup: 1, detect: 1, scHpf: 100, mix: 100 } },
   { name: "Whisper lift", values: { threshold: -32, ratio: 4, knee: 10, attack: 5, release: 150, makeup: 2, autoMakeup: 1, detect: 1, scHpf: 120, mix: 100 } },
@@ -74,6 +84,9 @@ export const CLASSIC_COMP_PRESETS: Preset[] = [
 ];
 
 export const LIMITER_PRESETS: Preset[] = [
+  {"name": "Lead vocal - peak catch", "values": {"inputGain": 0, "ceiling": -3, "release": 70}, "description": "No input boost; a -3 dBFS ceiling catches peaks only."},
+  {"name": "Backing stack - safety", "values": {"inputGain": 0, "ceiling": -2, "release": 140}, "description": "A slower release and no input boost for a vocal stack."},
+
   { name: "Transparent", values: { inputGain: 1, ceiling: -1, release: 80 } },
   { name: "Streaming -1", values: { inputGain: 3, ceiling: -1, release: 60 } },
   { name: "Streaming -1.5", values: { inputGain: 2, ceiling: -1.5, release: 70 } },
@@ -91,6 +104,9 @@ export const LIMITER_PRESETS: Preset[] = [
 ];
 
 export const GATE_PRESETS: Preset[] = [
+  {"name": "Vocal breaths - gentle range", "values": {"threshold": -48, "range": -8, "attack": 3, "hold": 100, "release": 280}, "description": "Only 8 dB attenuation so pauses remain natural. Set threshold for the room."},
+  {"name": "Rap pauses - smooth close", "values": {"threshold": -44, "range": -24, "attack": 1, "hold": 90, "release": 170}, "description": "A longer hold protects word endings before the gate closes."},
+
   { name: "Vocal", values: { threshold: -50, range: -25, attack: 2, hold: 60, release: 180 } },
   { name: "Vocal tight", values: { threshold: -42, range: -40, attack: 1, hold: 40, release: 120 } },
   { name: "Podcast noise", values: { threshold: -48, range: -30, attack: 3, hold: 80, release: 220 } },
@@ -108,6 +124,11 @@ export const GATE_PRESETS: Preset[] = [
 ];
 
 export const DEESSER_PRESETS: Preset[] = [
+  {"name": "Low sibilance - 4.5 kHz", "values": {"frequency": 4500, "threshold": -30, "range": 6, "listen": 0}, "description": "Targets lower sibilance; sweep the frequency with Listen to match the voice."},
+  {"name": "Airy vocal - gentle 8.5 kHz", "values": {"frequency": 8500, "threshold": -26, "range": 4, "listen": 0}, "description": "Limits high S sounds while keeping the attenuation range small."},
+  {"name": "Close rap - 6 kHz control", "values": {"frequency": 6000, "threshold": -32, "range": 9, "listen": 0}, "description": "Stronger sibilance reduction for close, bright vocals."},
+  {"name": "Backing stack - soft top", "values": {"frequency": 6500, "threshold": -28, "range": 6, "listen": 0}, "description": "Moderate broad sibilance control before stacking voices."},
+
   { name: "Gentle vocal", values: { frequency: 7000, threshold: -28, range: 6, listen: 0 } },
   { name: "Bright vocal", values: { frequency: 6500, threshold: -32, range: 10, listen: 0 } },
   { name: "Harsh S", values: { frequency: 6000, threshold: -36, range: 14, listen: 0 } },
@@ -125,6 +146,9 @@ export const DEESSER_PRESETS: Preset[] = [
 ];
 
 export const TRANSIENT_PRESETS: Preset[] = [
+  {"name": "Rap consonants - soften", "values": {"attack": -18, "sustain": 0, "output": 0}, "description": "Reduces the transient component while retaining sustain."},
+  {"name": "Vocal ends - tuck sustain", "values": {"attack": 0, "sustain": -15, "output": 0}, "description": "Reduces trailing energy slightly; not a substitute for a gate."},
+
   { name: "Punchy drums", values: { attack: 45, sustain: -10, output: 0 } },
   { name: "Snare crack", values: { attack: 60, sustain: -20, output: -1 } },
   { name: "Kick click", values: { attack: 35, sustain: -15, output: 0 } },
@@ -142,6 +166,10 @@ export const TRANSIENT_PRESETS: Preset[] = [
 ];
 
 export const TUNE_PRESETS: Preset[] = [
+  {"name": "Chromatic rap - fast retune", "values": {"key": 0, "scale": 0, "speed": 3, "amount": 100, "tolerance": 0, "mix": 100}, "description": "Fast nearest-semitone correction. Chromatic does not assume a song key."},
+  {"name": "Chromatic vocal - natural", "values": {"key": 0, "scale": 0, "speed": 100, "amount": 80, "tolerance": 12, "mix": 100}, "description": "Slower correction with a 12-cent tolerance preserves small expressive changes."},
+  {"name": "C minor lead - firm retune", "values": {"key": 0, "scale": 2, "speed": 18, "amount": 100, "tolerance": 3, "mix": 100}, "description": "C natural minor. Change key and scale to match the song."},
+
   { name: "Hard tune", values: { speed: 0, amount: 100, tolerance: 0, mix: 100, scale: 1 } },
   { name: "Modern pop", values: { speed: 15, amount: 100, tolerance: 5, mix: 100, scale: 1 } },
   { name: "Natural", values: { speed: 70, amount: 85, tolerance: 12, mix: 100, scale: 1 } },
@@ -159,6 +187,10 @@ export const TUNE_PRESETS: Preset[] = [
 ];
 
 export const SATURATOR_PRESETS: Preset[] = [
+  {"name": "Rap vocal - parallel edge", "values": {"type": 1, "drive": 7, "tone": -5, "output": -1, "mix": 25}, "description": "Tube-style colour blended lightly under the dry vocal."},
+  {"name": "Ad-lib - hard grit", "values": {"type": 2, "drive": 20, "tone": -10, "output": -4, "mix": 75}, "description": "Harder clipping for deliberate ad-lib distortion."},
+  {"name": "Backing stack - gentle tape", "values": {"type": 0, "drive": 4, "tone": 0, "output": -0.5, "mix": 35}, "description": "A restrained tape-style saturation blend."},
+
   { name: "Tape warmth", values: { type: 0, drive: 8, tone: -15, output: 0, mix: 100 } },
   { name: "Tape vocal", values: { type: 0, drive: 5, tone: 5, output: 0, mix: 60 } },
   { name: "Tube vocal", values: { type: 1, drive: 10, tone: 10, output: -1, mix: 70 } },
@@ -176,6 +208,9 @@ export const SATURATOR_PRESETS: Preset[] = [
 ];
 
 export const CRUSHER_PRESETS: Preset[] = [
+  {"name": "Ad-lib - digital texture", "values": {"bits": 10, "downsample": 2, "mix": 30, "output": -1}, "description": "Reduced bit depth blended with the original vocal."},
+  {"name": "Telephone grit - parallel", "values": {"bits": 7, "downsample": 6, "mix": 45, "output": -2}, "description": "Coarse quantisation and sample reduction as a deliberate effect."},
+
   { name: "8-bit console", values: { bits: 8, downsample: 2, mix: 100, output: -3 } },
   { name: "12-bit sampler", values: { bits: 12, downsample: 2, mix: 100, output: 0 } },
   { name: "Lo-fi sampler", values: { bits: 12, downsample: 4, mix: 100, output: 0 } },
@@ -193,8 +228,11 @@ export const CRUSHER_PRESETS: Preset[] = [
 ];
 
 export const CHORUS_PRESETS: Preset[] = [
+  {"name": "Backing stack - slow chorus", "values": {"depthMs": 3, "speedHz": 0.25, "width": 0.8, "mixProportion": 0.3}, "description": "Slow pitch modulation and moderate stereo spread."},
+  {"name": "Ad-lib - wavering chorus", "values": {"depthMs": 7, "speedHz": 1.1, "width": 0.9, "mixProportion": 0.4}, "description": "More pronounced pitch movement for a special effect."},
+
   { name: "Subtle vocal", values: { depthMs: 2.5, speedHz: 0.6, width: 0.45, mixProportion: 0.28 } },
-  { name: "Wide vocal", values: { depthMs: 5, speedHz: 0.45, width: 0.85, mixProportion: 0.4 } },
+  { name: "Wide vocal doubles (stereo)", values: { depthMs: 5, speedHz: 0.45, width: 0.85, mixProportion: 0.4 } },
   { name: "Slow and deep", values: { depthMs: 12, speedHz: 0.18, width: 0.7, mixProportion: 0.45 } },
   { name: "Fast shimmer", values: { depthMs: 3, speedHz: 3.5, width: 0.6, mixProportion: 0.32 } },
   { name: "Guitar lush", values: { depthMs: 7, speedHz: 0.8, width: 0.9, mixProportion: 0.5 } },
@@ -210,6 +248,10 @@ export const CHORUS_PRESETS: Preset[] = [
 ];
 
 export const DELAY_PRESETS: Preset[] = [
+  {"name": "Rap vocal - dark slap", "values": {"sync": 0, "time": 85, "feedback": 5, "pingPong": 0, "lowCut": 220, "highCut": 4200, "mix": 12}, "description": "Short, lightly repeated echo with filtered lows and highs."},
+  {"name": "Backing vocals - stereo echo", "values": {"sync": 0, "time": 280, "feedback": 22, "pingPong": 1, "lowCut": 300, "highCut": 5000, "mix": 18}, "description": "Unsynchronised 280 ms ping-pong echo. Adjust time to the song."},
+  {"name": "Ad-lib - long dark throw", "values": {"sync": 0, "time": 480, "feedback": 42, "pingPong": 1, "lowCut": 350, "highCut": 3500, "mix": 32}, "description": "Long repeated stereo echoes for an automated throw or an effects bus."},
+
   { name: "Vocal slap", values: { sync: 0, time: 110, feedback: 10, pingPong: 0, lowCut: 300, highCut: 5000, mix: 18 } },
   { name: "Vocal throw", values: { sync: 5, feedback: 28, pingPong: 0, lowCut: 250, highCut: 6000, mix: 16 } },
   { name: "1/8 ping-pong", values: { sync: 6, feedback: 38, pingPong: 1, lowCut: 200, highCut: 6500, mix: 22 } },
@@ -227,6 +269,10 @@ export const DELAY_PRESETS: Preset[] = [
 ];
 
 export const DOUBLER_PRESETS: Preset[] = [
+  {"name": "Lead vocal - tucked double", "values": {"detune": 5, "delay": 14, "width": 65, "mix": 18}, "description": "Low wet level and small detune retain the central lead."},
+  {"name": "Backing vocals - broad double", "values": {"detune": 11, "delay": 24, "width": 100, "mix": 45}, "description": "Wider detuned delay creates side content even from a mono vocal."},
+  {"name": "Ad-lib - obvious double", "values": {"detune": 18, "delay": 32, "width": 100, "mix": 55}, "description": "A longer and more detuned double for a creative effect."},
+
   { name: "Tight double", values: { detune: 8, delay: 12, width: 80, mix: 40 } },
   { name: "Vocal double", values: { detune: 12, delay: 18, width: 90, mix: 35 } },
   { name: "Wide chorus", values: { detune: 18, delay: 22, width: 100, mix: 55 } },
@@ -244,9 +290,12 @@ export const DOUBLER_PRESETS: Preset[] = [
 ];
 
 export const WIDTH_PRESETS: Preset[] = [
+  {"name": "Vocal stack - moderate expansion", "values": {"width": 135, "bassMono": 170, "output": -0.5}, "description": "Expands existing stereo side content. Mono vocals need the Doubler first."},
+  {"name": "Vocal bus - narrow centre", "values": {"width": 75, "bassMono": 150, "output": 0}, "description": "Reduces side content for a stronger centre; keeps low bass mono."},
+
   { name: "Original", values: { width: 100, bassMono: 0, output: 0 } },
   { name: "A bit wider", values: { width: 130, bassMono: 120, output: 0 } },
-  { name: "Wide vocal", values: { width: 140, bassMono: 180, output: 0 } },
+  { name: "Wide vocal doubles (stereo)", values: { width: 140, bassMono: 180, output: 0 } },
   { name: "Super wide", values: { width: 180, bassMono: 150, output: -1 } },
   { name: "Narrow", values: { width: 70, bassMono: 0, output: 0 } },
   { name: "Mono", values: { width: 0, bassMono: 0, output: 0 } },
@@ -261,6 +310,8 @@ export const WIDTH_PRESETS: Preset[] = [
 ];
 
 export const TREMOLO_PRESETS: Preset[] = [
+  {"name": "Ad-lib - slow pan", "values": {"mode": 1, "shape": 0, "sync": 0, "rate": 0.25, "depth": 30}, "description": "Gentle quarter-Hz stereo movement rather than volume chopping."},
+
   { name: "Vintage amp", values: { mode: 0, shape: 0, sync: 0, rate: 5.5, depth: 55 } },
   { name: "Slow pulse", values: { mode: 0, shape: 0, sync: 0, rate: 1.5, depth: 40 } },
   { name: "Choppy 1/16", values: { mode: 0, shape: 2, sync: 8, depth: 90 } },
@@ -278,6 +329,11 @@ export const TREMOLO_PRESETS: Preset[] = [
 ];
 
 export const REVERB_PRESETS: Preset[] = [
+  {"name": "Lead vocal - small dark room", "values": {"room size": 0.3, "damping": 0.65, "width": 0.8, "wet level": 0.06, "dry level": 0.5, "mode": 0}, "description": "Small room and low wet level keep the lead close."},
+  {"name": "Ballad vocal - long soft space", "values": {"room size": 0.78, "damping": 0.6, "width": 1, "wet level": 0.12, "dry level": 0.5, "mode": 0}, "description": "Larger algorithmic room with dark reflections. No physical plate emulation is claimed."},
+  {"name": "Backing stack - distant room", "values": {"room size": 0.65, "damping": 0.55, "width": 1, "wet level": 0.18, "dry level": 0.45, "mode": 0}, "description": "More wet signal pushes backing vocals behind the lead."},
+  {"name": "Spoken voice - subtle room", "values": {"room size": 0.22, "damping": 0.75, "width": 0.6, "wet level": 0.025, "dry level": 0.5, "mode": 0}, "description": "A very small wet contribution avoids a conspicuous speech tail."},
+
   { name: "Vocal plate", values: { "room size": 0.55, damping: 0.45, width: 1, "wet level": 0.35, "dry level": 0.45, mode: 0 } },
   { name: "Small room", values: { "room size": 0.2, damping: 0.6, width: 0.7, "wet level": 0.25, "dry level": 0.5, mode: 0 } },
   { name: "Medium room", values: { "room size": 0.4, damping: 0.5, width: 0.85, "wet level": 0.3, "dry level": 0.5, mode: 0 } },

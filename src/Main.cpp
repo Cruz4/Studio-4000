@@ -3,6 +3,7 @@
 #include "SessionRelay.h"
 #include "MainWindow.h"
 #include "SelfTest.h"
+#include "RefinementSelfTest.h"
 #include "RecordingSelfTest.h" // Studio 4000 recording regression test
 #include "Updater.h"
 
@@ -23,6 +24,13 @@ public:
             return;
 
         engine = std::make_unique<AppEngine> (isSelfTest (commandLine));
+
+        if (commandLine.contains ("--selftest-refinements"))
+        {
+            setApplicationReturnValue (runRefinementSelfTest (*engine, juce::File::getCurrentWorkingDirectory().getChildFile ("effect-presets.test.json")));
+            quit();
+            return;
+        }
 
         if (commandLine.contains ("--selftest-recording"))
         {

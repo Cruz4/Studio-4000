@@ -92,7 +92,7 @@ function Loudness() {
 function Cpu() {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => onTick((t) => { if (ref.current) ref.current.textContent = `${Math.round(t.cpu * 100)}%`; }) as () => void, []);
-  return <span className="pill" title="Audio engine load"><Icon name="bolt" size={11} /> <span ref={ref}>0%</span></span>;
+  return <span className="pill engine-load" title="Audio engine load"><Icon name="bolt" size={11} /> <span ref={ref}>0%</span></span>;
 }
 
 export function TopBar() {

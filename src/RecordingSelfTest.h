@@ -17,7 +17,9 @@ private:
     int scenario = 0, stage = 0, failures = 0;
     juce::uint32 started = 0;
     String recordTrack, inputName, recordingFile;
-    bool sawPreview = false;
+    bool sawPreview = false, stablePreview = true;
+    double previewRate = 0;
+    std::vector<int> previousPeaks;
     std::vector<std::pair<std::string, std::vector<float>>> sourceBuffers;
 
     void timerCallback() override;

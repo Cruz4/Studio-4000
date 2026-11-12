@@ -47,6 +47,10 @@ Apply-IfMissing "tracktion-recording-block-sync.patch" "modules\tracktion_engine
 Apply-IfMissing "tracktion-recording-reference-origin.patch" "modules\tracktion_engine\playback\tracktion_EditPlaybackContext.cpp" "Studio 4000: initialise the preceding reference block"
 Apply-IfMissing "tracktion-recording-thumbnail-bins.patch" "modules\tracktion_engine\audio_files\tracktion_RecordingThumbnailManager.h" "Studio 4000: accumulate partial thumbnail bins"
 
+Apply-IfMissing "tracktion-recording-stable-bins.patch" "modules\tracktion_engine\audio_files\tracktion_RecordingThumbnailManager.h" "Studio 4000: expose the captured length"
+
+Apply-IfMissing "tracktion-automation-modifier-lifetime.patch" "modules\tracktion_engine\model\automation\tracktion_AutomatableParameter.cpp" "Studio 4000: retain automation modifiers"
+
 $juce = Join-Path $dest "modules\juce\CMakeLists.txt"
 if (-not (Test-Path $juce)) {
     Write-Host "Fetching the JUCE submodule..."

@@ -161,6 +161,10 @@ RecordingSelfTest::RecordingSelfTest (AppEngine& a, std::function<void (int)> do
     workDir = juce::File::getSpecialLocation (juce::File::tempDirectory)
                   .getNonexistentChildFile ("Studio4000 recording test", "", false);
     workDir.createDirectory();
+    // The synthetic device uses a normal-priority thread, not a hardware real-time
+    // driver. Cold-start scheduling can inflate JUCE's CPU estimate and trigger
+    // overload muting, which is unrelated to the recording alignment under test.
+    app.getEngine().getDeviceManager().setCpuLimitBeforeMuting (std::numeric_limits<double>::max());
     auto& dm = app.getEngine().getDeviceManager().deviceManager;
     dm.closeAudioDevice();
     dm.addAudioDeviceType (std::make_unique<LoopbackType>());
@@ -201,7 +205,9 @@ void RecordingSelfTest::beginScenario()
     setup.inputDeviceName = setup.outputDeviceName = deviceName;
     setup.sampleRate = s.rate;
     setup.bufferSize = s.immediateChange ? 128 : s.block;
-    setup.useDefaultInputChannels = setup.useDefaultOutputChannels = true;
+    setup.useDefaultInputChannels = setup.useDefaultOutputChannels = false;
+    setup.inputChannels.setRange (0, 2, true);
+    setup.outputChannels.setRange (0, 2, true);
     const auto error = dm.setAudioDeviceSetup (setup, true);
     if (error.isNotEmpty()) throw RpcError (error);
     if (dynamic_cast<LoopbackDevice*> (dm.getCurrentAudioDevice()) == nullptr)
@@ -230,15 +236,21 @@ void RecordingSelfTest::beginScenario()
 void RecordingSelfTest::enableInput()
 {
     auto& tdm = app.getEngine().getDeviceManager();
+    // The fixture uses independent left pulses and right microphone data.
+    // Do not inherit persisted mono grouping, gain or trigger thresholds.
+    tdm.setAllWaveInputsToNumChannels (2);
+    tdm.dispatchPendingUpdates();
     te::WaveInputDevice* input = nullptr;
     for (int i = 0; i < tdm.getNumWaveInDevices(); ++i)
-        if (auto* w = tdm.getWaveInDevice (i); w != nullptr && ! w->isTrackDevice())
+        if (auto* w = tdm.getWaveInDevice (i); w != nullptr && ! w->isTrackDevice() && w->getChannels().getNumChannels() == 2)
         {
             input = w;
             break;
         }
     if (input == nullptr) throw RpcError ("No loopback input");
     inputName = input->getName();
+    input->setRecordTriggerDb (-50);
+    input->setInputGainDb (0);
     input->setEnabled (true);
     started = juce::Time::getMillisecondCounter();
 }
@@ -256,7 +268,7 @@ void RecordingSelfTest::beginRecording()
     call ("transport.setCountIn", Obj().set ("mode", "none"));
     call ("transport.setClick", Obj().set ("enabled", false));
     call ("transport.setPosition", Obj().set ("time", 1.25));
-    sawPreview = false;
+    sawPreview = false; stablePreview = true; previewRate = 0; previousPeaks.clear();
     app.sendEvent = [this] (const String& type, const var& payload)
     {
         if (type == "toast")
@@ -267,6 +279,15 @@ void RecordingSelfTest::beginRecording()
                 if (preview["trackId"].toString() == recordTrack && (double) preview["length"] > 1.0)
                     if (auto* peaks = preview["data"].getArray())
                     {
+                        const int strideNow = juce::jmax (1, (int) preview["channels"]) * 2;
+                        const double rateNow = (double) preview["binsPerSecond"];
+                        if (previewRate != 0) stablePreview = stablePreview && previewRate == rateNow;
+                        previewRate = rateNow;
+                        const int completed = juce::jmax (0, (int) previousPeaks.size() - strideNow);
+                        for (int i = 0; i < juce::jmin (completed, peaks->size()); ++i)
+                            stablePreview = stablePreview && previousPeaks[(size_t) i] == (int) (*peaks)[i];
+                        previousPeaks.clear();
+                        for (auto& value : *peaks) previousPeaks.push_back ((int) value);
                         // Check an old LEFT-channel transient, after later buffers have arrived.
                         // The independent right-channel mic signal must not satisfy this check.
                         const int stride = juce::jmax (1, (int) preview["channels"]) * 2;
@@ -310,6 +331,7 @@ void RecordingSelfTest::inspectRecording()
     auto* clip = dynamic_cast<te::WaveAudioClip*> (at.getClips()[0]);
     if (clip == nullptr) throw RpcError ("Recording is not an audio clip");
     const auto pos = clip->getPosition();
+    std::cout << "Captured timeline " << pos.getStart().inSeconds() << " to " << pos.getEnd().inSeconds() << std::endl;
     auto reader = app.getEngine().getAudioFileFormatManager().readFormatManager
                       .createReaderFor (clip->getCurrentSourceFile());
     std::unique_ptr<juce::AudioFormatReader> owned (reader);
@@ -334,6 +356,7 @@ void RecordingSelfTest::inspectRecording()
         check ("pulse at " + String (expected) + "s is aligned", std::abs (errorMs) < 2.0, String (errorMs, 3) + " ms");
     }
     check ("earlier waveform peaks remain visible before stopping", sawPreview);
+    check ("completed recording waveform bins never pulse or shift", stablePreview && previousPeaks.size() > 10);
     std::cout << "Scenario " << scenario << ": " << reader->sampleRate << " Hz, "
               << scenarios[scenario].block << " samples" << std::endl;
 }
@@ -360,7 +383,11 @@ void RecordingSelfTest::timerCallback()
             beginRecording();
             stage = 3;
         }
-        else if (stage == 3 && app.edit().getTransport().getPosition().inSeconds() >= 3.0)
+        // The synthetic callback can be scheduled slower than the UI clock under
+        // a debugger or a loaded CI machine. Finish by actual captured samples,
+        // so an extrapolated transport position cannot truncate the fixture.
+        else if (stage == 3 && app.getEngine().getRecordingThumbnailManager().getThumbnailFor (juce::File (recordingFile))->getRecordedSampleCount()
+                                   >= (juce::int64) (1.75 * scenarios[scenario].rate))
         {
             app.edit().getTransport().stop (false, true);
             stage = 4;

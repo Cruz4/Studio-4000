@@ -1,5 +1,5 @@
 // Modified for Studio 4000: display real captured waveform data during a take.
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { Project, Track } from "../types";
 import { recordingPeak, recordingRange, type RecordingPreview } from "../recording";
 
@@ -9,14 +9,14 @@ export function RecordingClip({ preview, track, project, pps, view }: {
   const canvas = useRef<HTMLCanvasElement>(null);
   const range = recordingRange(preview, project.loop, project.looping);
   const left = range.start * pps, width = Math.max(2, range.length * pps);
-  const visibleStart = Math.max(0, view.left - left);
-  const drawWidth = Math.max(0, Math.min(width, view.left + view.width - left) - visibleStart);
-  useEffect(() => {
+  const visibleStart = Math.floor(Math.max(0, view.left - left));
+  const drawWidth = Math.ceil(view.width + 2);
+  useLayoutEffect(() => {
     const c = canvas.current;
     if (!c || drawWidth <= 0) return;
     const dpr = window.devicePixelRatio || 1, height = c.clientHeight || 40;
-    c.width = Math.ceil(drawWidth * dpr);
-    c.height = Math.ceil(height * dpr);
+    if (c.width !== Math.ceil(drawWidth * dpr)) c.width = Math.ceil(drawWidth * dpr);
+    if (c.height !== Math.ceil(height * dpr)) c.height = Math.ceil(height * dpr);
     const g = c.getContext("2d");
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -33,7 +33,7 @@ export function RecordingClip({ preview, track, project, pps, view }: {
       }
     }
   }, [preview, range.offset, drawWidth, visibleStart, pps, track.channels]);
-  if (drawWidth <= 0 || range.length <= 0) return null;
+  if (left > view.left + view.width || left + width < view.left || range.length <= 0) return null;
   return <div className="clip recording-preview" aria-label={`Recording ${track.name}`}
     style={{ left, width, pointerEvents: "none", background: "rgba(172,32,61,.5)", border: "1px solid #ff4d6d", zIndex: 3 }}>
     <div className="clip-label" style={{ background: "rgba(130,15,40,.8)" }}>● Recording</div>

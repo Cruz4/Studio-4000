@@ -1,3 +1,4 @@
+import { restoreTheme } from "./theme";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { isNative } from "./bridge";
@@ -32,6 +33,7 @@ refreshInfo().catch(() => {});
 refreshProject();
 loadCatalogue().catch(() => {});
 
+restoreTheme();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

@@ -7,6 +7,8 @@ import { usePad } from "../gamepad/pad";
 import { act, loadCatalogue, loadDevices, toast, useStore } from "../store";
 import { Icon, Modal, Spinner, Tabs } from "./ui";
 import { cx } from "../util";
+import { PALETTES } from "../palettes";
+import { applyPalette, useThemeName } from "../theme";
 
 type TabId = "audio" | "plugins" | "ai" | "agent" | "collab" | "general";
 
@@ -320,10 +322,18 @@ function CollabTab() {
 }
 
 function GeneralTab() {
+  const palette = useThemeName();
   const info = useStore((s) => s.info);
   const pad = usePad((s) => s.enabled);
   return (
     <div className="col" style={{ gap: 14 }}>
+      <label className="field"><span>Appearance theme</span>
+        <select className="input" value={palette} onChange={(e) => applyPalette(e.target.value)}>
+          <option value="dark">Default Dark</option><option value="light">Default Light</option>
+          {PALETTES.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </label>
+      <span className="small dim">The toolbar Light / Dark button selects the two default themes. Choose a colour palette here.</span>
       <div className="row"><img className="wordmark sm" src={wordmark} alt="Studio 4000" /><span className="pill">{info?.version}</span></div>
       <div className="row">
         <span className="grow">Game controller</span>

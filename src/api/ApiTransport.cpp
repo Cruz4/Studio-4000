@@ -1,4 +1,5 @@
 #include "Api.h"
+#include "../RecordingPreview.h"
 
 namespace s3
 {
@@ -21,6 +22,7 @@ namespace
 void registerTransportApi (AppEngine& app)
 {
     auto& rpc = app.rpc;
+    rpc.add ("recording.peaks", K::read, "Backfills fixed waveform bins of an active recording", "{file, fromBin}", [&app] (const var& p) { return recordingPreviews (app.edit(), p); });
 
     rpc.add ("transport.play", K::read, "Starts playback", "{from?}", [&app] (const var& p)
     {

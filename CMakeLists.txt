@@ -42,6 +42,7 @@ target_sources(Studio4000 PRIVATE
     src/SmartMix.cpp
     src/StudioFx.cpp
     src/SuiteFx.cpp
+    src/VocalFx.cpp
     src/Instruments.cpp
     src/LiveMidi.cpp
     src/Convert.cpp
@@ -56,6 +57,7 @@ target_sources(Studio4000 PRIVATE
     src/api/ApiAi.cpp
     src/api/ApiDevices.cpp
     src/RecordingSelfTest.cpp # Studio 4000 recording regression test
+    src/RefinementSelfTest.cpp
     src/SelfTest.cpp
     src/Updater.cpp)
 

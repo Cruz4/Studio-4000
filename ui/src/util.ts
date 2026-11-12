@@ -148,6 +148,17 @@ export function snapSpan(start: number, length: number, grid: Grid, p: Project |
   return best;
 }
 
+/** Clip edges catch a marker within ten screen pixels, then release past it. */
+export function snapMarkers(start: number, length: number, markers: number[], pxPerSec: number, reachPx = 10) {
+  const raw = Math.max(0, start), reach = reachPx / Math.max(1, pxPerSec);
+  let best = raw, distance = reach + 1e-9;
+  for (const time of markers) for (const candidate of [time, time - length]) {
+    const d = Math.abs(candidate - raw);
+    if (candidate >= 0 && d <= reach && d < distance) { best = candidate; distance = d; }
+  }
+  return best;
+}
+
 /** -1 is a steep convex rise, 0 is a straight line, 1 stays quiet longer. */
 export function bendOfFade(type?: string) {
   if (type === "convex") return -0.72;

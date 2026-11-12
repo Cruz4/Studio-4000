@@ -8,7 +8,7 @@ import { useFx } from "./core";
 import { EDITORS, GENERIC, accentFor } from "./registry";
 
 export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner: string; onClose: () => void }) {
-  const fx = useFx(plugin.id, plugin.params);
+  const fx = useFx(plugin.id, plugin.params, plugin.type);
   const entry = EDITORS[plugin.type];
   const [tab, setTab] = useState<"editor" | "params">(entry ? "editor" : "params");
   const width = entry?.width ?? 640;

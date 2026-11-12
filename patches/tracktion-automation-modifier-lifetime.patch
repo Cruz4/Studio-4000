@@ -1,0 +1,21 @@
+--- a/modules/tracktion_engine/model/automation/tracktion_AutomatableParameter.cpp
++++ b/modules/tracktion_engine/model/automation/tracktion_AutomatableParameter.cpp
+@@ -412,6 +412,7 @@
+                                    AutomationCurveModifier::Assignment::Ptr curveAssignment,
+                                    AutomationCurveModifier& acm)
+         : AutomationModifierSource (std::move (curveAssignment)),
++          curveModifierKeepAlive (&acm),
+           curveModifier (acm),
+           parameter (parameter_)
+     {
+@@ -511,6 +512,10 @@
+         return &curveModifier;
+     }
+ 
++    // Studio 4000: retain automation modifiers while cached sources still use them.
++    // Undo/removal can detach the curve before its parameter assignments are removed.
++    // Audio-thread snapshots must not be left with a dangling modifier reference.
++    const AutomationCurveModifier::Ptr curveModifierKeepAlive;
+     AutomationCurveModifier& curveModifier;
+     AutomatableParameter& parameter;
+ 

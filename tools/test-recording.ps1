@@ -6,6 +6,7 @@ $exe = Join-Path $projectDir "build\Studio4000_artefacts\$Config\Studio 4000.exe
 $stdout = Join-Path $projectDir "recording-test.log"
 $stderr = Join-Path $projectDir "recording-test.err"
 $process = Start-Process -FilePath $exe -ArgumentList "--selftest-recording" -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+$null = $process.Handle
 if (-not $process.WaitForExit(120000)) {
     $process.Kill()
     throw "Recording loopback selftest timed out"

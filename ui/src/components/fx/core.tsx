@@ -1,6 +1,7 @@
 // Building blocks for the effect editors: live parameters, telemetry polling, knobs, switches, meters and canvases.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { askText } from "../Ask";
 import { rpc } from "../../bridge";
 import { toast, useStore } from "../../store";
 import type { Param } from "../../types";
@@ -22,6 +23,7 @@ export interface Telemetry {
 
 export interface Fx {
   id: string;
+  type?: string;
   params: Param[];
   ready: boolean;
   get: (pid: string) => Param | undefined;
@@ -67,7 +69,7 @@ function usePadTarget<T extends HTMLElement>(kind: string, handlers: { adjust?: 
 }
 
 /** Live parameter state for one plug-in. Writes are coalesced to one in-flight call per kind so drags stay smooth. */
-export function useFx(id: string, seed: Param[] = []): Fx {
+export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
   const [params, setParams] = useState<Param[]>(Array.isArray(seed) ? seed : []);
   const [ready, setReady] = useState(false);
   const pendingValues = useRef<Record<string, number>>({});
@@ -136,6 +138,7 @@ export function useFx(id: string, seed: Param[] = []): Fx {
       const value = clamp(values[p.id], p.min, p.max);
       return { ...p, value, norm: toNorm(p, value) };
     }));
+    for (const key of Object.keys(values)) delete pendingNorm.current[key];
     Object.assign(pendingValues.current, values);
     requestAnimationFrame(() => flush());
   }, [flush]);
@@ -151,7 +154,7 @@ export function useFx(id: string, seed: Param[] = []): Fx {
   }, [flush]);
 
   return {
-    id, params, ready,
+    id, type, params, ready,
     get: (pid) => byId.get(pid),
     v: (pid, fallback = 0) => { const p = byId.get(pid); return p && Number.isFinite(p.value) ? p.value : fallback; },
     c: (pid) => {
@@ -445,19 +448,50 @@ export function Section({ title, children, className, right }: { title?: string;
 }
 
 /** Quick-start settings for an effect. A dropdown keeps a long list inside the window. */
-export function Presets({ fx, presets }: { fx: Fx; presets: { name: string; values: Record<string, number> }[] }) {
+export function Presets({ fx, presets }: { fx: Fx; presets: { name: string; values: Record<string, number>; description?: string }[] }) {
+  const [factoryLoading, setFactoryLoading] = useState(true);
+  const [factory, setFactory] = useState<Record<string, number> | null>(null);
+  const [saved, setSaved] = useState<{ name: string; values: Record<string, number> }[]>([]);
+  const [selected, setSelected] = useState("");
+  const key = "studio4000-presets:" + (fx.type ?? fx.id);
+  useEffect(() => {
+    let alive = true;
+    setFactory(null); setFactoryLoading(true); setSelected("");
+    rpc<Record<string, number>>("plugin.factoryPreset", { id: fx.id }).then((v) => { if (alive) setFactory(v); }).catch(() => {}).finally(() => { if (alive) setFactoryLoading(false); });
+    try { const items = JSON.parse(localStorage.getItem(key) ?? "[]"); setSaved(Array.isArray(items) ? items : []); } catch { setSaved([]); }
+    return () => { alive = false; };
+  }, [fx.id, key]);
+  const defaults = Object.fromEntries(fx.params.filter((p) => p.def !== undefined).map((p) => [p.id, p.def!]));
+  const baseline = factory ?? defaults;
+  const factoryBank = factory !== null || Object.keys(defaults).length === fx.params.length ? [{ name: "Factory default", values: baseline, description: "The processor's original factory settings." }] : [];
+  const bank = [...factoryBank, ...presets, ...saved.map((p) => ({ ...p, description: "Your saved parameter snapshot." }))];
+  const persist = (items: typeof saved) => {
+    try { localStorage.setItem(key, JSON.stringify(items)); setSaved(items); } catch { toast("Could not save the preset on this device", "error"); }
+  };
+  const description = bank.find((p) => p.name === selected)?.description;
   return (
-    <label className="fx-presets">
-      <span className="fx-label">Presets</span>
-      <select className="input sm" value="" title="Apply a starting point. Your current settings are replaced."
-        onChange={(e) => {
-          const preset = presets.find((p) => p.name === e.target.value);
-          if (preset) fx.setMany(preset.values);
-        }}>
-        <option value="">Choose a preset…</option>
-        {presets.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
-      </select>
-    </label>
+    <div className="col" style={{ gap: 4 }}>
+      <div className="fx-presets">
+        <span className="fx-label">Presets</span>
+        <select className="input sm" value={selected} disabled={!fx.ready || factoryLoading} title="Replaces controls using factory defaults plus the selected settings."
+          onChange={(e) => {
+            const preset = bank.find((p) => p.name === e.target.value);
+            if (preset) { fx.setMany({ ...baseline, ...preset.values }); setSelected(preset.name); }
+          }}>
+          <option value="">Choose a preset...</option>
+          {bank.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+        </select>
+        <button className="btn sm" disabled={!fx.ready || !fx.params.length} onClick={async () => {
+          const name = await askText({ title: "Save effect preset", hint: "Stored on this device for this effect type.", value: "My preset", ok: "Save" });
+          if (!name?.trim()) return;
+          if (bank.slice(0, presets.length + factoryBank.length).some((p) => p.name === name.trim())) { toast("Choose a different name from a factory preset", "error"); return; }
+          const values = Object.fromEntries(fx.params.map((p) => [p.id, p.value]));
+          persist([...saved.filter((p) => p.name !== name.trim()), { name: name.trim(), values }]); setSelected(name.trim());
+        }}>Save preset</button>
+        {saved.some((p) => p.name === selected) && <button className="btn sm ghost" onClick={() => { persist(saved.filter((p) => p.name !== selected)); setSelected(""); }}>Delete</button>}
+      </div>
+      {description && <span className="small dim">{description}</span>}
+    </div>
   );
 }
 

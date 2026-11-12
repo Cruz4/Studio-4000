@@ -142,3 +142,18 @@ Do not commit `external/asiosdk`, `external/webview2`, `external/tracktion_engin
 - `server/` — the live-session relay
 - `tools/` — build, fetch, screenshots, and packaging
 - `patches/` — the Tracktion monitor patch
+
+
+## Vocal effects and presets
+
+Use **Vocal Leveler** for slow RMS phrase leveling. Set its noise floor above the recording's room noise; limit maximum gain change to keep breaths natural. Follow it with **Compressor** or **Tube-style Compressor** for individual peaks. The tube-style processor adds asymmetric saturation; it does not model a particular hardware unit.
+
+**Vocal Dynamics** combines compression, downward expansion and a sample ceiling. **Vocal Enhancer** offers a rumble cut, 3.5 kHz presence, 10 kHz air and harmonic excitation. Use the existing **De-esser** after brightening a voice. **Hard Limiter** is a zero-latency hard sample clipper; choose **Brickwall Limiter** for smoother look-ahead limiting. Neither label promises intersample true-peak protection. **Stereo Width** expands existing stereo content; use **Vocal Doubler** first if you need side content from a mono voice.
+
+Every bundled effect has a **Factory default** entry. The original Studio effects and the new vocal suite also have curated starting points. Their thresholds still need to match the level of your recording, and pitch presets require the correct key and scale. **Save preset** stores a parameter snapshot on this device for that processor type. A preset replaces controls from the factory baseline, so the previous preset cannot leave extra boosts, bands or modes active. Fixed processors with no exposed controls have their factory response.
+
+## Markers, duplicate previews and appearance
+
+Marker lines extend through tracks and clips. With Snap enabled, either clip edge catches a marker within ten screen pixels. With Snap off, hold Ctrl while dragging to enable the marker magnet temporarily. Move farther than the catch zone to continue past the marker. With Snap enabled, Ctrl still locks time for vertical moves. Alt-drag shows the stationary original plus a translucent copy while dragging, then commits the copy at the shown time and compatible destination track.
+
+Select a palette under **Settings > General > Appearance theme**. All 35 palettes preserve the supplied primary, secondary and accent colours, with dark tinted surfaces and contrast-adjusted text. The toolbar Light/Dark button returns to the two default themes. Ctrl+wheel over track information continues to resize tracks.

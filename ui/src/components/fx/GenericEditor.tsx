@@ -1,8 +1,9 @@
 // Fallback editor for plug-ins without a dedicated one: parameters grouped into panels of knobs and switches.
 import { useMemo, useState } from "react";
 import type { Param } from "../../types";
-import { Knob, Pick, Section, Seg, Toggle } from "./core";
+import { Knob, Pick, Presets, Section, Seg, Toggle } from "./core";
 import type { Fx } from "./core";
+import { GENERIC_PRESETS } from "./genericPresets";
 import { knobLook } from "./knobLook";
 
 /** "Osc 2 Tune" → "Osc 2"; "Filter Cutoff" → "Filter"; parameters left alone go to "Main". */
@@ -32,6 +33,7 @@ export function GenericEditor({ fx, type }: { fx: Fx; type?: string }) {
 
   return (
     <div className="fx-layout">
+      <Presets fx={fx} presets={GENERIC_PRESETS[type ?? ""] ?? []} />
       {fx.params.length > 12 && (
         <input className="input sm" placeholder={`Filter ${fx.params.length} parameters`} value={query} onChange={(e) => setQuery(e.target.value)} />
       )}

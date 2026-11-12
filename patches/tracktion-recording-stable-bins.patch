@@ -1,0 +1,22 @@
+--- a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
++++ b/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
+@@ -62,8 +62,8 @@
+                 for (int channel = 0; channel < juce::jmin (pending.getNumChannels(), incoming.getNumChannels()); ++channel)
+                     pending.copyFrom (channel, pendingSamples, incoming, channel, startOffsetInBuffer, count);
+                 pendingSamples += count;
++                thumb->addBlock (nextSampleNum.load() + count - pendingSamples, pending, 0, pendingSamples);
+                 nextSampleNum += count;
+-                thumb->addBlock (nextSampleNum.load() - pendingSamples, pending, 0, pendingSamples);
+                 startOffsetInBuffer += count;
+                 numSamples -= count;
+                 if (pendingSamples == pending.getNumSamples())
+@@ -71,6 +71,9 @@
+             }
+         }
+ 
++        // Studio 4000: expose the captured length, excluding thumbnail padding.
++        int64_t getRecordedSampleCount() const noexcept { return nextSampleNum.load(); }
++
+     private:
+         friend class RecordingThumbnailManager;
+         std::atomic<int64_t> nextSampleNum { 0 };

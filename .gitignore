@@ -15,3 +15,11 @@
 /build-native.log
 /selftest-err.txt
 /selftest-out.txt
+
+/effect-presets.test.json
+/refinement-test.*
+/recording-test.*
+
+/*-run.log
+/ui-smoke/
+/ui-smoke.log

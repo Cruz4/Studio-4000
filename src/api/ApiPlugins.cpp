@@ -574,6 +574,21 @@ void registerPluginApi (AppEngine& app)
         return var (Obj());
     });
 
+    rpc.add ("plugin.factoryPreset", K::read, "Fresh factory parameter values for a bundled processor", "{id}", [&app] (const var& p)
+    {
+        auto& plugin = app.plugin (reqStr (p, "id"));
+        const auto type = plugin.getPluginType();
+        const auto& catalogue = builtIns();
+        if (std::none_of (catalogue.begin(), catalogue.end(), [&type] (const auto& item) { return item.type == type; }))
+            throw RpcError ("Factory defaults are supplied by this external plug-in");
+        auto fresh = app.edit().getPluginCache().createNewPlugin (type, {});
+        if (fresh == nullptr) throw RpcError ("Could not create the factory preset");
+        Obj values;
+        for (auto* param : fresh->getAutomatableParameters())
+            if (std::isfinite (param->getCurrentValue())) values.set (param->paramID, param->getCurrentValue());
+        return var (values);
+    });
+
     rpc.add ("plugin.params", K::read, "All parameters of a plug-in", "{id, query?}", [&app] (const var& p)
     {
         auto& plugin = app.plugin (reqStr (p, "id"));

@@ -247,15 +247,20 @@ void registerClipApi (AppEngine& app)
         return var (true);
     });
 
-    rpc.add ("clip.duplicate", K::write, "Copies a clip, by default right after itself", "{id, start?}", [&app] (const var& p)
+    rpc.add ("clip.duplicate", K::write, "Copies a clip with independent automation at its final track and time", "{id, start?, trackId?}", [&app] (const var& p)
     {
-        auto& c = app.clip (reqStr (p, "id"));
-        auto copy = te::duplicateClip (c);
-
-        if (copy == nullptr)
-            throw RpcError ("Could not duplicate the clip");
-
-        copy->setStart (seconds (num (p, "start", c.getPosition().getEnd().inSeconds())), false, true);
+        te::Clip::Ptr source (&app.clip (reqStr (p, "id")));
+        auto* destination = has (p, "trackId") ? &clipTrack (app, str (p, "trackId")) : source->getClipTrack();
+        if (destination == nullptr) throw RpcError ("The clip has no destination track");
+        const double start = num (p, "start", source->getPosition().getEnd().inSeconds());
+        if (! std::isfinite (start) || start < 0) throw RpcError ("Invalid copy position");
+        // Include nested automation modifier IDs, and avoid moving a live copy
+        // through graph listeners from the source position to its destination.
+        auto snapshot = te::ClipCopy::fromClip (*source).withNewItemID (app.edit());
+        auto state = snapshot.getState();
+        state.setProperty (te::IDs::start, start, nullptr);
+        te::Clip::Ptr copy (te::insertClipCopy (*destination, snapshot));
+        if (copy == nullptr) throw RpcError ("Could not duplicate the clip");
         return var (copy->itemID.toString());
     });
 
