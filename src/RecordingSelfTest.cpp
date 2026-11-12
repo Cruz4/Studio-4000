@@ -190,6 +190,8 @@ void RecordingSelfTest::beginScenario()
     auto playback = call ("track.add", Obj().set ("kind", "audio").set ("name", "Pulse source"))[0].toString();
     call ("clip.importAudio", Obj().set ("trackId", playback).set ("file", file.getFullPathName()).set ("start", 0.0));
     recordTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Recorded pulses"))[0].toString();
+    // Prime the disk-backed source before the clock test; missing disk-cache data is not an input offset.
+    call ("transport.setPosition", Obj().set ("time", 1.25));
     started = juce::Time::getMillisecondCounter();
 }
 

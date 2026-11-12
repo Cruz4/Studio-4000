@@ -1,0 +1,52 @@
+diff --git a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h b/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
+--- a/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
++++ b/modules/tracktion_engine/audio_files/tracktion_RecordingThumbnailManager.h
+@@ -42,8 +42,11 @@
+         /** Destructor */
+         void reset (int numChannels, double sampleRate)
+         {
+-            thumb->reset (numChannels, sampleRate, 0);
+-            nextSampleNum = 0;
++            thumb->reset (numChannels, sampleRate, 0);
++            nextSampleNum = 0;
++            pendingSamples = 0;
++            pending.setSize (numChannels, 1024);
++            pending.clear();
+         }
+ 
+         /** Adss a block of recorded data to the thumbnail.
+@@ -51,8 +51,21 @@
+         */
+         void addBlock (const juce::AudioBuffer<float>& incoming, int startOffsetInBuffer, int numSamples)
+         {
+-            thumb->addBlock (nextSampleNum, incoming, startOffsetInBuffer, numSamples);
+-            nextSampleNum += numSamples;
++            // Studio 4000: accumulate partial thumbnail bins so later silence cannot
++            // overwrite an earlier transient. Publish the partial bin too for live drawing.
++            while (numSamples > 0)
++            {
++                const int count = juce::jmin (pending.getNumSamples() - pendingSamples, numSamples);
++                for (int channel = 0; channel < juce::jmin (pending.getNumChannels(), incoming.getNumChannels()); ++channel)
++                    pending.copyFrom (channel, pendingSamples, incoming, channel, startOffsetInBuffer, count);
++                pendingSamples += count;
++                nextSampleNum += count;
++                thumb->addBlock (nextSampleNum.load() - pendingSamples, pending, 0, pendingSamples);
++                startOffsetInBuffer += count;
++                numSamples -= count;
++                if (pendingSamples == pending.getNumSamples())
++                    pendingSamples = 0;
++            }
+         }
+ 
+     private:
+@@ -57,7 +57,9 @@
+ 
+     private:
+         friend class RecordingThumbnailManager;
+-        std::atomic<int64_t> nextSampleNum { 0 };
++        std::atomic<int64_t> nextSampleNum { 0 };
++        juce::AudioBuffer<float> pending;
++        int pendingSamples = 0;
+ 
+         Thumbnail (Engine& e, const juce::File& f)
+             : engine (e),
