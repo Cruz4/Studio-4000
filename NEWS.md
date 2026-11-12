@@ -1,3 +1,5 @@
+Studio Sessions is the default dark theme. Its Effects category headings use Technological Shine's fuchsia, with the rest of its colours unchanged. The original dark appearance is available in Settings as Dark Night, and Plotting (Default) is now named Plotting. The toolbar switches between Default Light and Studio Sessions; saved custom palette choices are preserved.
+
 The audio load badge is shorter, and the toolbar now preserves space for the right-hand search button. Long project names truncate before they can push controls past the window edge, and narrower windows compact the toolbar while keeping the transport and right-hand actions accessible. Percentage changes keep their fixed spacing.
 
 Arming and immediately starting recording now flushes pending routing changes before capture, preventing a queued update from interrupting the new take. Recording waveforms now use fixed sample bins and a stable canvas, so previously drawn audio stays still. The audio engine load badge has a fixed width and tabular digits, keeping toolbar buttons stationary.

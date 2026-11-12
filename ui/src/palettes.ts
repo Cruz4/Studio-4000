@@ -1,9 +1,9 @@
 // Supplied palette colours are preserved. Text accents are derived for contrast.
-export interface Palette { id: string; name: string; primary: string; secondary: string; accent: string }
+export interface Palette { id: string; name: string; primary: string; secondary: string; accent: string; effectsHeading?: string }
 export const PALETTES: Palette[] = [
   {
     "id": "plotting",
-    "name": "Plotting (Default)",
+    "name": "Plotting",
     "primary": "#9AFF29",
     "secondary": "#28B4FF",
     "accent": "#28B4FF"
@@ -62,7 +62,8 @@ export const PALETTES: Palette[] = [
     "name": "Studio Sessions",
     "primary": "#2C3E50",
     "secondary": "#BDC3C7",
-    "accent": "#E74C3C"
+    "accent": "#E74C3C",
+    "effectsHeading": "#FF00FF"
   },
   {
     "id": "sage-flame",
@@ -267,6 +268,7 @@ export function paletteTokens(p: Palette): Record<string, string> {
   return {
     "--bg": mix("#05070b", p.secondary, .04), "--bg1": mix("#090c10", p.secondary, .12),
     "--bg2": mix("#0e131b", p.secondary, .12), "--bg3": mix("#121923", p.secondary, .14), "--bg4": bg4,
+    "--effects-heading": p.effectsHeading ?? readable(p.accent),
     "--primary-rgb": rgb(p.primary).join(", "), "--secondary-rgb": rgb(p.secondary).join(", "),
     "--text": "#f2f4f8", "--dim": "#c1c9d5", "--faint": "#a3aebe",
     "--violet": readable(p.primary), "--violet2": readable(p.accent), "--cyan": readable(p.secondary),

@@ -206,7 +206,7 @@ export function ThemeToggle() {
   useThemeName();
   const light = currentTheme() === "light";
   return (
-    <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? "Switch to the dark theme" : "Switch to the light theme"}
+    <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? "Switch to Studio Sessions (default dark)" : "Switch to the default light theme"}
       onClick={() => { toggleTheme(); }}>
       {light ? "Dark" : "Light"}
     </button>

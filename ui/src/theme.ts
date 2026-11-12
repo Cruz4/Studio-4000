@@ -1,13 +1,18 @@
 import { useEffect, useState } from "react";
 import { PALETTES, paletteTokens } from "./palettes";
 const KEY = "studio4000-theme";
+export const DEFAULT_DARK_THEME = "studio-sessions";
 export type ThemeName = "dark" | "light";
 export function currentTheme(): ThemeName {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
-export function currentPalette(): string { return document.documentElement.dataset.palette ?? currentTheme(); }
-export function applyTheme(theme: ThemeName) { applyPalette(theme); }
+export function currentPalette(): string {
+  const root = document.documentElement;
+  return root.dataset.palette ?? (root.dataset.theme === "dark-night" ? "dark-night" : currentTheme() === "light" ? "light" : DEFAULT_DARK_THEME);
+}
+export function applyTheme(theme: ThemeName) { applyPalette(theme === "dark" ? DEFAULT_DARK_THEME : "light"); }
 export function applyPalette(id: string) {
+  if (id === "dark") id = DEFAULT_DARK_THEME; // Carry the old default-dark preference forward.
   const root = document.documentElement;
   for (const key of Object.keys(paletteTokens(PALETTES[0]))) root.style.removeProperty(key);
   const palette = PALETTES.find((p) => p.id === id);
@@ -15,17 +20,20 @@ export function applyPalette(id: string) {
     root.dataset.theme = "dark";
     root.dataset.palette = palette.id;
     for (const [key, value] of Object.entries(paletteTokens(palette))) root.style.setProperty(key, value);
-  } else {
+  } else if (id === "light" || id === "dark-night") {
+    // Dark Night uses the original CSS without custom palette fill overrides.
     delete root.dataset.palette;
-    root.dataset.theme = id === "light" ? "light" : "dark";
-    id = currentTheme();
+    root.dataset.theme = id;
+  } else {
+    applyPalette(DEFAULT_DARK_THEME);
+    return;
   }
   try { localStorage.setItem(KEY, id); } catch { /* private mode */ }
 }
 export function restoreTheme() {
-  try { applyPalette(localStorage.getItem(KEY) ?? "dark"); } catch { applyPalette("dark"); }
+  try { applyPalette(localStorage.getItem(KEY) ?? DEFAULT_DARK_THEME); } catch { applyPalette(DEFAULT_DARK_THEME); }
 }
-/** Toolbar selects only the two default themes. */
+/** The toolbar alternates between Default Light and Studio Sessions. */
 export function toggleTheme() { applyTheme(currentTheme() === "light" ? "dark" : "light"); }
 export function useThemeName() {
   const [name, setName] = useState(currentPalette);

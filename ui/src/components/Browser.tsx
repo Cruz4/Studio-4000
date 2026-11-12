@@ -77,7 +77,7 @@ export function Browser() {
   const collapsedByDefault = (g: string) => g.startsWith("Airwindows") && !q;
 
   return (
-    <div className="browser">
+    <div className="browser" data-browser-tab={tab}>
       <div className="browser-head">
         <div className="row" style={{ gap: 4 }}>
           <Tabs value={tab} onChange={setTab} items={[{ id: "fx", label: "Effects" }, { id: "inst", label: "Instruments" }, { id: "media", label: "Media" }, { id: "chains", label: "Chains" }]} />

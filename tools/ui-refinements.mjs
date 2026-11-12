@@ -73,8 +73,17 @@ async function openPage() {
 try {
   const page = await openPage();
   await page.go(UI);
-  await page.shot("initial");
-  console.log(await page.eval(() => ({ url: location.href, text: document.body.innerText.slice(0, 1000), resources: performance.getEntriesByType("resource").map((e) => e.name).slice(0, 10) })));
+  await page.eval(() => localStorage.removeItem("studio4000-theme"));
+  await page.go(UI);
+  const fresh = await page.eval(() => document.documentElement.dataset.palette);
+  if (fresh !== "studio-sessions") throw new Error("Fresh installations must default to Studio Sessions");
+  await page.eval(async () => (await import("/src/theme.ts")).applyPalette("dark-night"));
+  await page.go(UI);
+  const restoredNight = await page.eval(() => ({ mode: document.documentElement.dataset.theme, palette: document.documentElement.dataset.palette ?? null, bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() }));
+  if (restoredNight.mode !== "dark-night" || restoredNight.palette !== null || restoredNight.bg !== "#07080c") throw new Error("Dark Night must restore the original dark colours: " + JSON.stringify(restoredNight));
+  await page.eval(() => localStorage.setItem("studio4000-theme", "dark"));
+  await page.go(UI);
+  if (await page.eval(() => document.documentElement.dataset.palette) !== "studio-sessions") throw new Error("The old default-dark preference must migrate to Studio Sessions");
   const setup = await page.eval(async () => {
     const url = performance.getEntriesByType("resource").map((e) => e.name).find((u) => new URL(u).pathname === "/src/store.ts");
     window.__test = { store: await import(url ?? "/src/store.ts"), theme: await import("/src/theme.ts") };
@@ -86,6 +95,19 @@ try {
     return store.useStore.getState().project.tracks.length;
   });
   if (!setup) throw new Error("No fixture tracks");
+  const headings = await page.eval(async () => {
+    const heading = () => getComputedStyle(document.querySelector('.browser[data-browser-tab="fx"] .section-title')).color;
+    const studio = heading();
+    window.__test.theme.applyPalette("technological-shine");
+    const shine = heading();
+    window.__test.theme.applyPalette("studio-sessions");
+    return { studio, shine };
+  });
+  if (headings.studio !== "rgb(255, 0, 255)" || headings.studio !== headings.shine) throw new Error("Studio Sessions effects headings must use Technological Shine's fuchsia: " + JSON.stringify(headings));
+  await page.shot("studio-sessions-default");
+  await page.eval(() => window.__test.theme.applyPalette("dark-night"));
+  await page.shot("dark-night");
+  await page.eval(() => window.__test.theme.applyPalette("studio-sessions"));
   await page.shot("default-dark");
   const geometry = await page.eval(async () => {
     const box = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; };
@@ -143,8 +165,8 @@ try {
   if (preset.leftover !== 0 || preset.air !== 4.5) throw new Error("Preset leaked the previous band's boost: " + JSON.stringify(preset));
   await page.eval(() => { window.__test.theme.applyPalette("plotting"); window.__test.store.useStore.setState({ settingsOpen: "general" }); });
   await page.shot("plotting-settings");
-  const count = await page.eval(() => [...document.querySelectorAll("select")].find((s) => [...s.options].some((o) => o.text === "Plotting (Default)"))?.options.length);
-  if (count !== 37) throw new Error("Expected 35 palettes plus default Light/Dark");
+  const count = await page.eval(() => [...document.querySelectorAll("select")].find((s) => [...s.options].some((o) => o.text === "Plotting"))?.options.length);
+  if (count !== 37) throw new Error("Expected all palettes plus Default Light and Dark Night");
   for (const name of ["breeze-candy", "studio-sessions", "lilac-smoke", "neon-midnight"]) {
     await page.eval((name) => { window.__test.theme.applyPalette(name); window.__test.store.useStore.setState({ settingsOpen: null }); }, name);
     await page.shot(name);
@@ -153,7 +175,11 @@ try {
   const toggle = await page.eval(() => ({ mode: document.documentElement.dataset.theme, palette: document.documentElement.dataset.palette ?? null }));
   if (toggle.mode !== "light" || toggle.palette !== null) throw new Error("Toolbar toggle must select default Light");
   await page.shot("default-light");
-  console.log(JSON.stringify({ geometry, drag, drop, preset, themes: count, toggle }, null, 2));
+  await page.eval(() => document.querySelector(".theme-toggle").click());
+  await sleep(100);
+  const darkToggle = await page.eval(() => document.documentElement.dataset.palette);
+  if (darkToggle !== "studio-sessions") throw new Error("Toolbar Dark button must select Studio Sessions");
+  console.log(JSON.stringify({ fresh, restoredNight, headings, geometry, drag, drop, preset, themes: count, toggle, darkToggle }, null, 2));
   console.log("UI REFINEMENT CHECKS PASSED");
   page.close();
 } finally { browser.kill(); }

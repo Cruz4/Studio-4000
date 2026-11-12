@@ -1011,3 +1011,5 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-palette] .strip.selected,
 :root[data-palette] .strip.reorder-held { background: var(--bg3); }
 :root[data-palette] .track-row.selected .track-head { box-shadow: inset 0 0 0 1px var(--violet); }
+
+:root[data-palette] .browser[data-browser-tab="fx"] .b-group.section-title { color: var(--effects-heading); }
