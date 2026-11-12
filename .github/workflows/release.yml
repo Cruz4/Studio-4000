@@ -27,6 +27,10 @@ jobs:
         working-directory: ui
         run: npm test
 
+      - name: Test effect presets, DSP and audio duplication
+        shell: pwsh
+        run: .\tools\test-refinements.ps1
+
       - name: Test recorded timing and live waveforms
         shell: pwsh
         run: .\tools\test-recording.ps1

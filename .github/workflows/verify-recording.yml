@@ -1,8 +1,8 @@
 # Modified for the Studio 4000 recording fixes: verify the branch before publication.
-name: Verify recording fixes
+name: Verify Studio 4000 changes
 on:
   push:
-    branches: [fix/recording-and-selection]
+    branches: [fix/recording-and-selection, fix/studio-refinements]
 permissions:
   contents: read
 jobs:
@@ -36,6 +36,9 @@ jobs:
       - name: Test UI
         working-directory: ui
         run: npm test
+      - name: Test effect presets, DSP and audio duplication
+        shell: pwsh
+        run: .\tools\test-refinements.ps1
       - name: Test recorded timing and live waveforms
         shell: pwsh
         run: .\tools\test-recording.ps1
@@ -44,5 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: recording-test-logs
-          path: recording-test.*
+          path: |
+            recording-test.*
+            refinement-test.*
           if-no-files-found: ignore
