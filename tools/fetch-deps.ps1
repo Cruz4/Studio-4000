@@ -44,6 +44,7 @@ function Apply-IfMissing($patchName, $relativeFile, $marker) {
 Apply-IfMissing "tracktion-chorus-params.patch" "modules\tracktion_engine\plugins\effects\tracktion_Chorus.cpp" "Studio 4000: chorus parameters"
 Apply-IfMissing "tracktion-fader-headroom.patch" "modules\tracktion_engine\plugins\internal\tracktion_VolumeAndPan.cpp" "Studio 4000: fader headroom"
 Apply-IfMissing "tracktion-recording-block-sync.patch" "modules\tracktion_engine\playback\tracktion_EditPlaybackContext.cpp" "Studio 4000: align capture and playback"
+Apply-IfMissing "tracktion-recording-reference-origin.patch" "modules\tracktion_engine\playback\tracktion_EditPlaybackContext.cpp" "Studio 4000: initialise the preceding reference block"
 
 $juce = Join-Path $dest "modules\juce\CMakeLists.txt"
 if (-not (Test-Path $juce)) {

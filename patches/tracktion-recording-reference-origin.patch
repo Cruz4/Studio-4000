@@ -1,0 +1,17 @@
+diff --git a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
+--- a/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
++++ b/modules/tracktion_engine/playback/tracktion_EditPlaybackContext.cpp
+@@ -1238,8 +1238,11 @@
+     if (! nodePlaybackContext)
+         return;
+ 
+-    const auto globalSampleRange = tracktion::graph::timeToSample (globalStreamTime, sampleRate);
+-    nodePlaybackContext->resyncToReferenceSampleRange (globalSampleRange);
++    const auto globalSampleRange = tracktion::graph::timeToSample (globalStreamTime, sampleRate);
++    // Studio 4000: initialise the preceding reference block. nextBlockStarted advances
++    // it to the callback's actual stream range before capture and playback begin.
++    // Starting at the upcoming block here would advance the graph one buffer ahead.
++    nodePlaybackContext->resyncToReferenceSampleRange (globalSampleRange - globalSampleRange.getLength());
+ }
+ 
+ void EditPlaybackContext::setThreadPoolStrategy (int type)
