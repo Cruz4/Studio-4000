@@ -171,12 +171,12 @@ try {
   const heading=getComputedStyle(document.querySelector('.browser[data-browser-tab="fx"] .section-title')).color;
   const headings=[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>({color:getComputedStyle(el).color,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,children:[...el.children].map(c=>getComputedStyle(c).color)}));
   return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,headings,weight:getComputedStyle(document.body).fontWeight};
- });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.headings.some(h=>h.color!=="rgb(255, 209, 240)"||h.weight!=="700"||h.size!=="11px"||h.children.some(c=>c!==h.color)))throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
+ });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.headings.some(h=>h.color!=="rgb(38, 0, 92)"||h.weight!=="700"||h.size!=="12px"||h.children.some(c=>c!==h.color)))throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
  const browserAccents=[];
  for(const tab of ['inst','media','chains']){
   await page.eval(tab=>window.__test.store.useStore.setState({browserTab:tab,openPlugins:[]}),tab);await sleep(100);
   const groups=await page.eval(()=>[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>getComputedStyle(el).color));
-  browserAccents.push({tab,count:groups.length});if(tab!=='media'&&!groups.length||groups.some(c=>c!=='rgb(255, 209, 240)'))throw new Error('Browser section accent missing: '+JSON.stringify({tab,groups}));
+  browserAccents.push({tab,count:groups.length});if(tab!=='media'&&!groups.length||groups.some(c=>c!=='rgb(38, 0, 92)'))throw new Error('Browser section accent missing: '+JSON.stringify({tab,groups}));
  }
  await page.eval(()=>window.__test.store.useStore.setState({browserTab:'fx'}));await page.shot('light-browser-accent');
  await page.eval(async()=>{const{store}=window.__test;store.useStore.setState({openPlugins:[]});await store.act("track.add",{kind:"group",name:"Mono check bus"});window.__test.formats=Object.fromEntries(store.useStore.getState().project.tracks.map(t=>[t.id,t.channels]));});await sleep(120);

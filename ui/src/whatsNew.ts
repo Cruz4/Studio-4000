@@ -39,7 +39,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "The top-right switch takes you between Light and Blue Storm.",
     "Light mode keeps its original gray appearance, with slightly darker, bolder text.",
     "EQ type labels stay readable.",
-    "Light-mode browser headings use a readable pink accent on the original gray.",
+    "Light-mode browser headings use bold, deep purple on the original gray.",
   ] },
 ];
 

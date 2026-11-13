@@ -3,7 +3,7 @@ Updates from November 11–12, 2026
 ### Light mode restored
 Restored the original gray backgrounds, toolbar gradients, FX panels and graph styling. Kept the requested slightly darker, bolder main text and readable EQ type labels.
 
-Browser section headings, arrows and counts use a soft pink accent with bold lettering and a subtle dark text shadow to stay readable against the original gray. This applies across Effects, Instruments, Media and Chains.
+Light-mode browser section headings, arrows and counts use deep purple with slightly larger, bold lettering for clearer contrast against the original gray. This applies across Effects, Instruments, Media and Chains.
 
 ### Keep the takes coming
 Right-click Record to set up and arm loop takes without starting recording. A LOOP badge on Record shows the mode is enabled. Click Record or press R when you're ready, or right-click again to change settings or turn the mode off. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.
@@ -32,4 +32,4 @@ Every track, bus and the master has a Mono toggle for checking left/right compat
 ### Make it yours
 Blue Storm is the default dark theme. The top-right switch alternates between Light and Blue Storm. Existing use of the previous Studio Sessions default moves to Blue Storm once; Studio Sessions can still be selected in Settings afterward. Dark Night preserves the original dark appearance, Plotting has its shorter name, and all 35 supplied palettes remain in Settings.
 
-Light mode retains its original gray surfaces, with slightly stronger dark text, readable EQ type labels and pink browser section headings. Active track FX badges are fuchsia in Studio Sessions.
+Light mode retains its original gray surfaces, with slightly stronger dark text, readable EQ type labels and purple browser section headings. Active track FX badges are fuchsia in Studio Sessions.
