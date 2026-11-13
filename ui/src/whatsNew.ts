@@ -9,8 +9,8 @@ export interface WhatsNewGroup {
 export const WHATS_NEW: WhatsNewGroup[] = [
   { title: "Reference another app", color: "#29c1ff", items: [
     "Use a floating Reference FX window that keeps analyzing while hidden.",
-    "Overlay the DAW master, record a Reference track, and save averaged profiles.",
-    "Apply a safe, editable eight-band match EQ to the selected audio or instrument track.",
+    "Load saved spectra and choose a target from the persistent background Match bar.",
+    "Apply and immediately open a safe, editable eight-band match EQ.",
     "AKAsheet opens its installed web app first, with the website as a fallback.",
   ] },
   { title: "Connect without code glitches", color: "#8cddbc", items: [
@@ -35,6 +35,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Alt-drag previews a duplicate and crossfades overlaps immediately.",
   ] },
   { title: "A smoother session", color: "#8cddbc", items: [
+    "EQ frequency knobs now follow dragged graph nodes smoothly in real time.",
     "Markers extend through every track and catch dragged clips magnetically.",
     "History has readable rows, step counts and clear Undo and Redo sections.",
     "Bounce with Effects to New Track prints your sound directly below the source.",

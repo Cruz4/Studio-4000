@@ -6,6 +6,8 @@ export interface Param {
   text: string;
   min: number;
   max: number;
+  /** Real value at the centre of the knob. Used to mirror the engine's logarithmic/skewed range while dragging. */
+  centre?: number;
   automated: boolean;
   /** Default value, when the plug-in reports one. */
   def?: number;

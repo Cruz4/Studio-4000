@@ -301,6 +301,11 @@ export function createMock(emit: Emit) {
     "plugin.add": (p) => {
       const entry = (handlers["plugins.list"]({}) as { plugins: { id: string; name: string; synth: boolean }[] }).plugins.find((x) => x.id === p.plugin);
       const pl = { ...plugin(p.plugin, entry?.name ?? p.plugin), synth: !!entry?.synth };
+      if (p.params && typeof p.params === "object") for (const [id, raw] of Object.entries(p.params as Record<string, number>)) {
+        const param = pl.params.find((x) => x.id === id); if (!param) continue;
+        const value = Math.max(param.min, Math.min(param.max, Number(raw))); param.value = value;
+        param.norm = param.max === param.min ? 0 : (value - param.min) / (param.max - param.min); param.text = String(Math.round(value * 100) / 100);
+      }
       const list = targetList(p);
       if (!list) return null;
       if (pl.synth && !p.clipId && p.trackId !== "master") {

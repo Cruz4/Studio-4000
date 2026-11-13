@@ -77,6 +77,7 @@ try {
   const urls=performance.getEntriesByType("resource").map(e=>e.name);
   const store=await import(urls.find(u=>new URL(u).pathname==="/src/store.ts"));
   const theme=await import("/src/theme.ts");const {TRACK_CHAINS}=await import("/src/trackChains.ts");
+  localStorage.setItem("studio4000.referenceProfiles.v1",JSON.stringify([{id:"workflow-reference",name:"Workflow reference",spectrum:Array.from({length:160},(_,i)=>-82+i*.24),width:88,created:new Date().toISOString()}]));
   window.__test={store,theme,chains:TRACK_CHAINS};
   await store.act("project.new",{name:"Workflow checks",template:"vocal"});await new Promise(r=>setTimeout(r,150));
   store.useStore.setState({aboutOpen:false,bottom:null,side:null,browserOpen:true,grid:"off"});theme.applyPalette("studio-sessions");
@@ -167,9 +168,12 @@ try {
  if(!await page.eval(()=>!window.__test.store.useStore.getState().transport.recording&&window.__test.store.useStore.getState().project.loopTakes.enabled))throw new Error("Stopping recording must retain the prepared loop mode");
  await page.eval(()=>{const{store,theme,vocal}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null});theme.applyPalette("light");const p=store.useStore.getState().project.tracks.find(t=>t.id===vocal).plugins.find(p=>p.type==="s4000eq");store.openPlugin(p.id);});await sleep(450);
  const eqDrag=await page.eval(()=>{const c=document.querySelector('.fx-eq .fx-canvas'),r=c.getBoundingClientRect(),tab=document.querySelector('.fx-band-tab.on');const f=parseFloat(tab.querySelector('.freq').textContent)*(/kHz/.test(tab.querySelector('.freq').textContent)?1000:1),g=parseFloat(tab.querySelector('.gain')?.textContent||'0');return{x:r.left+Math.log(f/20)/Math.log(1000)*r.width,y:r.top+r.height/2-(g/18)*(r.height/2),before:tab.querySelector('.freq').textContent};});
- await page.mouse("mousePressed",eqDrag.x,eqDrag.y);await page.mouse("mouseMoved",eqDrag.x+90,eqDrag.y-25);await sleep(80);
- const eqLive=await page.eval(()=>({frequency:document.querySelector('.fx-band-tab.on .freq').textContent,angle:document.querySelector('.fx-eq-detail .fx-knob-value')?.getAttribute('d')}));
- if(eqLive.frequency===eqDrag.before||!eqLive.angle)throw new Error("EQ knobs did not follow the node during the live drag");await page.mouse("mouseReleased",eqDrag.x+90,eqDrag.y-25,0);await page.shot("light-eq-readable");
+ await page.mouse("mousePressed",eqDrag.x,eqDrag.y);const eqLive=[];
+ for(const dx of [18,36,54,72,90]){await page.mouse("mouseMoved",eqDrag.x+dx,eqDrag.y-25);await sleep(30);eqLive.push(await page.eval(()=>{const label=document.querySelector('.fx-band-tab.on .freq').textContent,line=document.querySelector('.fx-eq-detail .fx-knob-pointer'),x=Number(line?.getAttribute('x2')),y=Number(line?.getAttribute('y2')),c=27;return{frequency:parseFloat(label)*(/kHz/.test(label)?1000:1),angle:Math.atan2(x-c,c-y)};}));}
+ const freqMonotonic=eqLive.every((p,i)=>!i||p.frequency>=eqLive[i-1].frequency)&&eqLive.at(-1).frequency>eqLive[0].frequency;
+ const angles=eqLive.map(p=>p.angle);for(let i=1;i<angles.length;i++)while(angles[i]<angles[i-1]-Math.PI)angles[i]+=Math.PI*2;
+ const knobMonotonic=angles.every((a,i)=>!i||a>=angles[i-1]-.015)&&angles.at(-1)>angles[0];
+ if(!freqMonotonic||!knobMonotonic)throw new Error("Selected EQ frequency knob jumped during the live node drag: "+JSON.stringify({eqLive,angles}));await page.mouse("mouseReleased",eqDrag.x+90,eqDrag.y-25,0);await page.shot("light-eq-readable");
  const colours=await page.eval(async()=>{
   const root=getComputedStyle(document.documentElement);
   const active=document.querySelector(".fx-eq-detail .fx-seg button.on"),style=getComputedStyle(active);
@@ -204,6 +208,9 @@ try {
  await page.eval(()=>window.__test.store.useStore.setState({view:"tracks",aboutOpen:false,referenceOpen:true}));await sleep(120);
  const referenceUi=await page.eval(()=>({title:document.querySelector('.reference-window .fx-window-head b')?.textContent,canPick:[...document.querySelectorAll('.reference-tool button')].some(b=>b.textContent.includes('Choose app / window')),graphs:document.querySelectorAll('.reference-graphs canvas').length,profile:!!document.querySelector('.reference-actions select'),blocking:!!document.querySelector('.modal-bg')}));
  if(referenceUi.title?.trim()!=="Reference Analyzer"||!referenceUi.canPick||referenceUi.graphs!==2||!referenceUi.profile||referenceUi.blocking)throw new Error("Reference FX window is incomplete or blocks the DAW: "+JSON.stringify(referenceUi));await page.shot("reference-track");
+ const referenceApplied=await page.eval(async()=>{const{store,vocal}=window.__test;const choose=(el,value)=>{el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));};choose(document.querySelector('.reference-actions .reference-profile-select'),'workflow-reference');choose(document.querySelector('.reference-actions .reference-target-select'),vocal);await new Promise(r=>setTimeout(r,40));document.querySelector('.reference-actions .btn.accent').click();await new Promise(r=>setTimeout(r,180));const track=store.useStore.getState().project.tracks.find(t=>t.id===vocal),eqs=track.plugins.filter(p=>p.type==='s4000eq'),last=eqs[eqs.length-1];return{count:eqs.length,gains:last?.params.filter(p=>/^b\d+gain$/.test(p.id)).map(p=>p.value)??[]};});
+ if(referenceApplied.count<2||!referenceApplied.gains.some(g=>Math.abs(g)>.1))throw new Error("Saved Reference profile did not create a shaped match EQ: "+JSON.stringify(referenceApplied));
+ await page.eval(()=>{window.__test.store.useStore.setState({openPlugins:[],referenceOpen:false});});await sleep(80);const backgroundReference=await page.eval(()=>({bar:!!document.querySelector('.reference-background-pill'),apply:[...document.querySelectorAll('.reference-background-pill button')].some(b=>b.textContent.includes('Apply EQ')),target:!!document.querySelector('.reference-background-pill .reference-target-select')}));if(!backgroundReference.bar||!backgroundReference.apply||!backgroundReference.target)throw new Error("Reference Match is not usable while hidden: "+JSON.stringify(backgroundReference));
  await page.eval(()=>{window.__test.store.useStore.setState({view:"tracks",openPlugins:[],referenceOpen:false,aboutOpen:true});});await page.shot("whats-new-light");
  await page.eval(()=>window.__test.theme.applyPalette("studio-sessions"));await page.shot("whats-new-dark");
  const darkBadge=await page.eval(()=>getComputedStyle(document.querySelector(".track-head .toggle.fx.on")).backgroundColor);if(darkBadge!=="rgb(255, 0, 255)")throw new Error("Default dark track FX is not fuchsia");

@@ -81,9 +81,9 @@ On the EQ, the white line is the curve you are shaping. The filled colour is the
 
 ### Reference audio from another app
 
-Click **Reference** above the tracks, then **Choose app / window**. Select the Windows source and enable **Share audio**. The blue trace is the external reference; **Compare DAW master** adds the fuchsia master trace. The stereo panel shows the source's width and field. This is a draggable FX-style window, so the arrangement remains usable underneath it. Hide it with X or **Hide window**; analysis, averaging and recording continue in the background. Use the small **Reference live** indicator to reopen it or explicitly disconnect the source.
+Click **Reference** above the tracks, then **Choose app / window**. Select the Windows source and enable **Share audio**. The blue trace is the external reference; **Compare DAW master** adds the fuchsia master trace, and a loaded saved profile is amber. The stereo panel shows the source's width and field. This is a draggable FX-style window, so the arrangement remains usable underneath it. Hide it with X or **Hide window**; analysis, averaging and recording continue in the background. The persistent **Reference Match** bar can load a saved profile, choose an exact target track, apply its EQ, reopen the analyzer, or explicitly disconnect the source.
 
-**Record source to Reference track** writes a stereo WAV into the project and places it on a Reference track. Let a source play for a few seconds before saving a profile. A saved profile can add an editable eight-band Parametric EQ to the selected audio or instrument track. Match corrections are limited to ±6 dB and do not copy loudness or mastering.
+**Record source to Reference track** writes a stereo WAV into the project and places it on a Reference track. Let a source play for a few seconds before saving a profile. Load that profile, choose an audio or instrument target, and apply it from either the analyzer or the background bar. Studio 4000 adds and opens an editable eight-band Parametric EQ. Match corrections are limited to ±6 dB and do not copy loudness or mastering.
 
 ## Smart Mix and the assistant
 

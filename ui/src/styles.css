@@ -1079,7 +1079,7 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 .reference-tool { display: flex; flex-direction: column; gap: 12px; min-height: 430px; }
 .reference-window { z-index: 115; }
 .reference-window .fx-window-body { overflow: auto; }
-.reference-background-pill { position: fixed; right: 18px; bottom: 34px; z-index: 75; display: flex; align-items: center; gap: 8px; max-width: 420px; padding: 7px 8px 7px 11px; border-radius: 10px; color: var(--text); background: color-mix(in srgb, var(--bg2) 94%, transparent); border: 1px solid color-mix(in srgb, #29c1ff 45%, var(--line)); box-shadow: 0 12px 35px rgba(0,0,0,.4); }
+.reference-background-pill { position: fixed; right: 18px; bottom: 34px; z-index: 75; display: flex; align-items: center; gap: 8px; max-width: min(980px, calc(100vw - 36px)); padding: 7px 8px 7px 11px; border-radius: 10px; color: var(--text); background: color-mix(in srgb, var(--bg2) 94%, transparent); border: 1px solid color-mix(in srgb, #29c1ff 45%, var(--line)); box-shadow: 0 12px 35px rgba(0,0,0,.4); }
 .reference-background-pill .dot.live { color: #29c1ff; box-shadow: 0 0 9px currentColor; }
 .reference-source { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg2); }
 .reference-source .dot.live { color: var(--green); box-shadow: 0 0 10px currentColor; }
@@ -1090,6 +1090,9 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 .reference-key::before { content: ""; width: 16px; height: 2px; background: currentColor; }
 .reference-key.external { color: #29c1ff; }
 .reference-key.master { color: #ed4bff; }
+.reference-key.profile { color: #ffc857; }
+.reference-profile-select { min-width: 180px; }
+.reference-target-select { min-width: 150px; }
 .reference-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .reference-actions select { min-width: 180px; }
 @media (max-width: 760px) { .reference-graphs { grid-template-columns: 1fr; } .reference-field canvas { height: 180px; } }

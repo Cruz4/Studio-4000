@@ -41,11 +41,20 @@ export interface Fx {
   resetAll: () => void;
 }
 
-const toNorm = (p: Param, value: number) => {
-  if (p.max === p.min) return 0;
-  // Linear guess until the engine replies with the exact (possibly skewed) position.
-  return clamp((value - p.min) / (p.max - p.min), 0, 1);
+const skewFor = (p: Param) => {
+  const centre = p.centre;
+  if (centre === undefined || centre <= p.min || centre >= p.max || p.max === p.min) return 1;
+  const proportion = (centre - p.min) / (p.max - p.min);
+  return Math.log(.5) / Math.log(proportion);
 };
+
+export const parameterToNorm = (p: Param, value: number) => {
+  if (p.max === p.min) return 0;
+  return Math.pow(clamp((value - p.min) / (p.max - p.min), 0, 1), skewFor(p));
+};
+
+export const parameterFromNorm = (p: Param, norm: number) =>
+  p.min + Math.pow(clamp(norm, 0, 1), 1 / skewFor(p)) * (p.max - p.min);
 
 /** Lets the game controller turn, reset, or toggle a control without knowing the parameter. */
 function usePadTarget<T extends HTMLElement>(kind: string, handlers: { adjust?: (delta: number) => void; reset?: () => void; activate?: () => void }) {
@@ -140,7 +149,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     setParams((ps) => ps.map((p) => {
       if (!(p.id in values)) return p;
       const value = clamp(values[p.id], p.min, p.max);
-      return { ...p, value, norm: toNorm(p, value) };
+      return { ...p, value, norm: parameterToNorm(p, value) };
     }));
     for (const key of Object.keys(values)) delete pendingNorm.current[key];
     Object.assign(pendingValues.current, values);
@@ -152,7 +161,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
   const setNorm = useCallback((pid: string, norm: number) => {
     lastWrite.current = Date.now();
     norm = clamp(norm, 0, 1);
-    setParams((ps) => ps.map((p) => (p.id === pid ? { ...p, norm, value: p.min + (p.max - p.min) * norm } : p)));
+    setParams((ps) => ps.map((p) => (p.id === pid ? { ...p, norm, value: parameterFromNorm(p, norm) } : p)));
     pendingNorm.current[pid] = norm;
     if (!gestureDepth.current) requestAnimationFrame(() => flush());
   }, [flush]);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { rpc } from "../bridge";
-import { act, live, refreshProject, selectTrack, toast, useStore } from "../store";
+import { act, live, openPlugin, refreshProject, selectTrack, toast, useStore } from "../store";
 import type { Plugin } from "../types";
 import { Icon } from "./ui";
 
@@ -64,7 +64,7 @@ function drawSpectrum(ctx: CanvasRenderingContext2D, w: number, h: number, value
 
 export function ReferenceTool() {
   const open = useStore((s) => s.referenceOpen);
-  const project = useStore((s) => s.project);
+  const project = useStore((s) => s.project)!;
   const selectedTrack = useStore((s) => s.selectedTrack);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [sourceName, setSourceName] = useState("No Windows source selected");
@@ -73,6 +73,7 @@ export function ReferenceTool() {
   const [masterSpec, setMasterSpec] = useState<number[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>(storedProfiles);
   const [profileId, setProfileId] = useState("");
+  const [targetTrack, setTargetTrack] = useState(selectedTrack ?? "");
   const [width, setWidth] = useState(0);
   const [pos, setPos] = useState(() => ({ x: Math.max(12, (window.innerWidth - 980) / 2), y: Math.max(56, window.innerHeight * .1) }));
   const drag = useRef<{ dx: number; dy: number } | null>(null);
@@ -81,6 +82,7 @@ export function ReferenceTool() {
   const audio = useRef<{ ctx: AudioContext; source: MediaStreamAudioSourceNode; analyser: AnalyserNode; left: AnalyserNode; right: AnalyserNode; processor: ScriptProcessorNode; sink: GainNode } | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const masterSpecRef = useRef<number[]>([]);
+  const profileRef = useRef<Profile | null>(null);
   const ext = useRef(new Float32Array(BINS).fill(-100));
   const average = useRef(new Float64Array(BINS));
   const frames = useRef(0);
@@ -97,6 +99,10 @@ export function ReferenceTool() {
   }, []);
 
   useEffect(() => () => disconnect(), [disconnect]);
+  useEffect(() => { profileRef.current = profiles.find((p) => p.id === profileId) ?? null; }, [profiles, profileId]);
+  useEffect(() => {
+    if (project.tracks.some((t) => t.id === selectedTrack && (t.kind === "audio" || t.kind === "instrument"))) setTargetTrack(selectedTrack!);
+  }, [selectedTrack, project.tracks]);
 
   useEffect(() => {
     if (!masterPlugin) return;
@@ -107,14 +113,13 @@ export function ReferenceTool() {
     return () => clearInterval(timer);
   }, [masterPlugin]);
 
-  if (!project) return null;
-
   const render = () => {
     const a = audio.current;
-    if (!a) return;
-    spectrumFrom(a.analyser, ext.current);
-    frames.current++;
-    for (let i = 0; i < BINS; i++) average.current[i] += (ext.current[i] - average.current[i]) / Math.min(frames.current, 600);
+    if (a) {
+      spectrumFrom(a.analyser, ext.current);
+      frames.current++;
+      for (let i = 0; i < BINS; i++) average.current[i] += (ext.current[i] - average.current[i]) / Math.min(frames.current, 600);
+    }
     const c = canvas.current, f = field.current;
     if (c) {
       const dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
@@ -122,21 +127,30 @@ export function ReferenceTool() {
       const x = c.getContext("2d")!; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
       x.fillStyle = "#111521"; x.fillRect(0, 0, w, h); x.strokeStyle = "rgba(255,255,255,.09)"; x.lineWidth = 1;
       for (let i = 1; i < 5; i++) { x.beginPath(); x.moveTo(0, h * i / 5); x.lineTo(w, h * i / 5); x.stroke(); }
-      drawSpectrum(x, w, h, ext.current, "rgba(41,193,255,.18)", true); drawSpectrum(x, w, h, ext.current, "#29c1ff");
+      if (a) { drawSpectrum(x, w, h, ext.current, "rgba(41,193,255,.18)", true); drawSpectrum(x, w, h, ext.current, "#29c1ff"); }
       if (masterSpecRef.current.length) drawSpectrum(x, w, h, masterSpecRef.current, "#ed4bff");
+      if (profileRef.current) drawSpectrum(x, w, h, profileRef.current.spectrum, "#ffc857");
     }
     if (f) {
       const dpr = devicePixelRatio || 1, w = f.clientWidth, h = f.clientHeight;
       if (f.width !== w * dpr || f.height !== h * dpr) { f.width = w * dpr; f.height = h * dpr; }
       const x = f.getContext("2d")!; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = "#111521"; x.fillRect(0, 0, w, h);
       x.strokeStyle = "rgba(255,255,255,.14)"; x.beginPath(); x.moveTo(w / 2, 8); x.lineTo(w / 2, h - 8); x.moveTo(8, h / 2); x.lineTo(w - 8, h / 2); x.stroke();
-      const l = new Float32Array(512), r = new Float32Array(512); a.left.getFloatTimeDomainData(l); a.right.getFloatTimeDomainData(r);
-      let side = 0, mid = 0; x.fillStyle = "rgba(41,193,255,.55)";
-      for (let i = 0; i < l.length; i += 3) { const m = (l[i] + r[i]) * .5, s = (l[i] - r[i]) * .5; mid += m * m; side += s * s; x.fillRect(w / 2 + s * w * .9, h / 2 - m * h * .9, 1.5, 1.5); }
-      if (frames.current % 10 === 0) setWidth(Math.round(clamp(Math.sqrt(side / Math.max(mid, 1e-9)) * 100, 0, 200)));
+      if (a) {
+        const l = new Float32Array(512), r = new Float32Array(512); a.left.getFloatTimeDomainData(l); a.right.getFloatTimeDomainData(r);
+        let side = 0, mid = 0; x.fillStyle = "rgba(41,193,255,.55)";
+        for (let i = 0; i < l.length; i += 3) { const m = (l[i] + r[i]) * .5, s = (l[i] - r[i]) * .5; mid += m * m; side += s * s; x.fillRect(w / 2 + s * w * .9, h / 2 - m * h * .9, 1.5, 1.5); }
+        if (frames.current % 10 === 0) setWidth(Math.round(clamp(Math.sqrt(side / Math.max(mid, 1e-9)) * 100, 0, 200)));
+      }
     }
     raf.current = requestAnimationFrame(render);
   };
+
+  useEffect(() => {
+    cancelAnimationFrame(raf.current);
+    if (open || stream) raf.current = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(raf.current);
+  }, [open, stream, profileId, masterPlugin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const chooseSource = async () => {
     if (!navigator.mediaDevices?.getDisplayMedia) return toast("This Windows/WebView build cannot capture another app. Update WebView2 and try again.", "error");
@@ -152,7 +166,7 @@ export function ReferenceTool() {
       processor.onaudioprocess = (e) => { if (!recordingStart.current) return; captured.current.push([new Float32Array(e.inputBuffer.getChannelData(0)), new Float32Array(e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : e.inputBuffer.getChannelData(0))]); };
       audio.current = { ctx, source, analyser, left, right, processor, sink }; streamRef.current = picked; setStream(picked);
       setSourceName(picked.getAudioTracks()[0]?.label || picked.getVideoTracks()[0]?.label || "Windows audio source");
-      frames.current = 0; average.current.fill(0); picked.getTracks().forEach((t) => t.addEventListener("ended", disconnect, { once: true })); render();
+      frames.current = 0; average.current.fill(0); picked.getTracks().forEach((t) => t.addEventListener("ended", disconnect, { once: true }));
       toast("Reference source connected", "success");
     } catch (e) { if ((e as Error).name !== "NotAllowedError") toast((e as Error).message, "error"); }
   };
@@ -187,19 +201,27 @@ export function ReferenceTool() {
   };
 
   const applyMatch = async () => {
-    const target = profiles.find((p) => p.id === profileId); const track = project.tracks.find((t) => t.id === selectedTrack);
-    if (!target) return toast("Choose a saved profile", "warning"); if (!track || track.kind === "group" || track.kind === "return") return toast("Select an audio or instrument track to match", "warning");
-    const current = masterSpec.length === BINS ? masterSpec : Array(BINS).fill(-48);
+    const target = profiles.find((p) => p.id === profileId); const track = project.tracks.find((t) => t.id === targetTrack);
+    if (!target) return toast("Choose a saved profile", "warning"); if (!track || (track.kind !== "audio" && track.kind !== "instrument")) return toast("Choose an audio or instrument target track", "warning");
     const atHz = (a: number[], hz: number) => a[clamp(Math.round((Math.log(hz / 20) / Math.log(1000)) * BINS - .5), 0, BINS - 1)] || -100;
-    const deltas = FREQS.map((hz) => clamp(atHz(target.spectrum, hz) - atHz(current, hz), -6, 6)); const mean = deltas.reduce((a, b) => a + b, 0) / deltas.length;
-    const params: Record<string, number> = {}; FREQS.forEach((hz, i) => { params[`b${i + 1}on`] = 1; params[`b${i + 1}type`] = 2; params[`b${i + 1}freq`] = hz; params[`b${i + 1}gain`] = clamp(deltas[i] - mean, -6, 6); params[`b${i + 1}q`] = .8; });
-    const p = await act("plugin.add", { trackId: track.id, plugin: "s4000eq", params }) as Plugin | undefined; if (p?.id) { await refreshProject(); toast(`Matched ${track.name} toward “${target.name}” with a safe ±6 dB EQ`, "success"); }
+    const targetBands = FREQS.map((hz) => atHz(target.spectrum, hz));
+    const raw = masterSpec.length === BINS ? FREQS.map((hz, i) => targetBands[i] - atHz(masterSpec, hz)) : targetBands;
+    const mean = raw.reduce((a, b) => a + b, 0) / raw.length;
+    const gains = raw.map((v) => clamp(v - mean, -6, 6));
+    const params: Record<string, number> = {}; FREQS.forEach((hz, i) => { params[`b${i + 1}on`] = 1; params[`b${i + 1}type`] = 2; params[`b${i + 1}freq`] = hz; params[`b${i + 1}gain`] = gains[i]; params[`b${i + 1}q`] = .8; });
+    const p = await act("plugin.add", { trackId: track.id, plugin: "s4000eq", params }) as Plugin | undefined; if (p?.id) { await refreshProject(); openPlugin(p.id); toast(`Matched ${track.name} toward “${target.name}” with a safe ±6 dB EQ`, "success"); }
   };
 
-  if (!open) return stream ? <div className="reference-background-pill" title="The reference analyzer is still running in the background">
-    <span className="dot live" /><b className="ellipsis">Reference live</b>{recording && <span className="pill err">REC</span>}
-    <button className="btn sm accent" onClick={() => useStore.setState({ referenceOpen: true })}>Open</button>
-    <button className="btn sm ghost" disabled={recording} onClick={disconnect} title={recording ? "Stop the reference recording before disconnecting" : "Stop capturing this source"}>Disconnect</button>
+  const targets = project.tracks.filter((t) => t.kind === "audio" || t.kind === "instrument");
+  const profileSelect = <select className="input sm reference-profile-select" value={profileId} onChange={(e) => setProfileId(e.target.value)}><option value="">Load saved profile…</option>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>;
+  const targetSelect = <select className="input sm reference-target-select" value={targetTrack} onChange={(e) => setTargetTrack(e.target.value)}><option value="">Target track…</option>{targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>;
+
+  if (!open) return (stream || profiles.length) ? <div className="reference-background-pill" title="Reference Match remains available while its analyzer is hidden">
+    <span className={stream ? "dot live" : "dot"} /><b className="ellipsis">Reference Match</b>{recording && <span className="pill err">REC</span>}
+    {profileSelect}{targetSelect}
+    <button className="btn sm accent" disabled={!profileId || !targetTrack} onClick={applyMatch}>Apply EQ</button>
+    <button className="btn sm" onClick={() => useStore.setState({ referenceOpen: true })}>Open analyzer</button>
+    {stream && <button className="btn sm ghost" disabled={recording} onClick={disconnect} title={recording ? "Stop the reference recording before disconnecting" : "Stop capturing this source"}>Disconnect</button>}
   </div> : null;
 
   return <div className="fx-window reference-window" style={{ left: pos.x, top: pos.y, width: Math.min(980, window.innerWidth - 24), maxHeight: "calc(100vh - 16px)", ["--accent" as string]: "#29c1ff" }}>
@@ -218,12 +240,12 @@ export function ReferenceTool() {
     </div>
     <div className="fx-window-body reference-tool">
       <div className="reference-source row"><span className={stream ? "dot live" : "dot"} /><b className="grow ellipsis" title={sourceName}>{sourceName}</b><button className="btn accent" onClick={chooseSource}><Icon name="window" size={13} /> Choose app / window</button><button className="btn" onClick={compareMaster} disabled={!!masterPlugin}>Compare DAW master</button></div>
-      <div className="reference-graphs"><div className="reference-spectrum"><div className="row small"><b className="grow">Frequency comparison</b><span className="reference-key external">Reference</span><span className="reference-key master">DAW master</span></div><canvas ref={canvas} /></div><div className="reference-field"><div className="row small"><b className="grow">Stereo field</b><span>{width}% width</span></div><canvas ref={field} /></div></div>
+      <div className="reference-graphs"><div className="reference-spectrum"><div className="row small"><b className="grow">Frequency comparison</b><span className="reference-key external">Live reference</span><span className="reference-key master">DAW master</span><span className="reference-key profile">Saved profile</span></div><canvas ref={canvas} /></div><div className="reference-field"><div className="row small"><b className="grow">Stereo field</b><span>{width}% width</span></div><canvas ref={field} /></div></div>
       <div className="reference-actions">
         <button className={recording ? "btn danger" : "btn"} onClick={toggleRecord} disabled={!stream}><Icon name={recording ? "stop" : "record"} size={13} /> {recording ? "Stop and place recording" : "Record source to Reference track"}</button>
         <button className="btn" onClick={saveProfile} disabled={!stream}><Icon name="save" size={13} /> Save profile</button>
-        <select className="input grow" value={profileId} onChange={(e) => setProfileId(e.target.value)}><option value="">Saved reference profile…</option>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
-        <button className="btn accent" onClick={applyMatch} disabled={!profileId}>Apply match EQ to selected track</button>
+        {profileSelect}{targetSelect}
+        <button className="btn accent" onClick={applyMatch} disabled={!profileId || !targetTrack}>Apply match EQ to target track</button>
       </div>
       <p className="small dim">Choose a source in the Windows picker and enable <b>Share audio</b>. Let it play to build a stable average. “Apply match” creates an editable eight-band Parametric EQ and limits corrections to ±6 dB; it does not copy loudness or mastering.</p>
       <div className="row small faint"><span className="grow">External audio stays separate from the DAW master. Hiding this window keeps analysis and capture active.</span><button className="btn sm" onClick={() => useStore.setState({ referenceOpen: false })}>Hide window</button></div>

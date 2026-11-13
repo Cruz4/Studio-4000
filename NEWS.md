@@ -1,9 +1,11 @@
 Updates from November 12–13, 2026
 
 ### Reference another app
-Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden, with a small live indicator for reopening or disconnecting. Studio 4000 draws its live frequency spectrum and stereo field beside an optional DAW-master overlay. Record the source directly to a stereo Reference track, save averaged profiles, and apply a conservative, editable eight-band match EQ to a selected audio or instrument track.
+Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden. The persistent Reference Match bar loads saved spectra, explicitly chooses a target track and applies EQ without reopening the analyzer. Saved profiles draw their own amber trace, and applying one immediately opens the new editable Parametric EQ. Studio 4000 also shows the live reference spectrum, stereo field and an optional DAW-master overlay, and can record the source to a stereo Reference track.
 
 The AKAsheet button now looks for an installed AKAsheet web-app shortcut first. If it is not installed, the website opens with an install suggestion.
+
+EQ nodes and their frequency knobs now use the same logarithmic range during a drag, so the selected knob follows the dot smoothly in real time instead of jumping up and down.
 
 ### Collaboration codes that survive copy and paste
 Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.

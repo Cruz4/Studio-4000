@@ -60,6 +60,7 @@ var describeParameter (te::AutomatableParameter& p)
      .set ("text", p.getCurrentValueAsString())
      .set ("min", finite (p.valueRange.start))
      .set ("max", finite (p.valueRange.end))
+     .set ("centre", finite (p.valueRange.convertFrom0to1 (0.5f)))
      .set ("automated", p.hasAutomationPoints());
 
     if (auto def = p.getDefaultValue())

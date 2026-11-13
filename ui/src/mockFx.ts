@@ -65,7 +65,7 @@ function describe(spec: Spec, value: number, skew: number): Param {
   const norm = Math.pow((v - min) / (max - min), skew);
   const span = max - min;
   const text = stepped ? choices![Math.round(v - min)] ?? String(v) : `${v.toFixed(span >= 100 ? 0 : span >= 10 ? 1 : 2)}${unit ? ` ${unit}` : ""}`;
-  const p: Param = { id, name, value: v, norm, text, min, max, automated: false, def };
+  const p: Param = { id, name, value: v, norm, text, min, max, automated: false, def, centre: spec[6] || (min + max) / 2 };
   if (stepped) p.options = choices!.map((label, i) => ({ value: min + i, norm: Math.pow(i / span, skew), label }));
   meta.set(p, { spec, skew });
   return p;
