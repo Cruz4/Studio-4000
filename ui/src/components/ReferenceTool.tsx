@@ -74,6 +74,7 @@ export function ReferenceTool() {
   const [profiles, setProfiles] = useState<Profile[]>(storedProfiles);
   const [profileId, setProfileId] = useState("");
   const [targetTrack, setTargetTrack] = useState(selectedTrack ?? "");
+  const [matchBarDismissed, setMatchBarDismissed] = useState(false);
   const [width, setWidth] = useState(0);
   const [pos, setPos] = useState(() => ({ x: Math.max(12, (window.innerWidth - 980) / 2), y: Math.max(56, window.innerHeight * .1) }));
   const drag = useRef<{ dx: number; dy: number } | null>(null);
@@ -164,7 +165,7 @@ export function ReferenceTool() {
       const processor = ctx.createScriptProcessor(4096, 2, 2), sink = ctx.createGain(); sink.gain.value = 0;
       source.connect(analyser); source.connect(splitter); splitter.connect(left, 0); splitter.connect(right, Math.min(1, source.channelCount - 1)); source.connect(processor); processor.connect(sink); sink.connect(ctx.destination);
       processor.onaudioprocess = (e) => { if (!recordingStart.current) return; captured.current.push([new Float32Array(e.inputBuffer.getChannelData(0)), new Float32Array(e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : e.inputBuffer.getChannelData(0))]); };
-      audio.current = { ctx, source, analyser, left, right, processor, sink }; streamRef.current = picked; setStream(picked);
+      audio.current = { ctx, source, analyser, left, right, processor, sink }; streamRef.current = picked; setStream(picked); setMatchBarDismissed(false);
       setSourceName(picked.getAudioTracks()[0]?.label || picked.getVideoTracks()[0]?.label || "Windows audio source");
       frames.current = 0; average.current.fill(0); picked.getTracks().forEach((t) => t.addEventListener("ended", disconnect, { once: true }));
       toast("Reference source connected", "success");
@@ -216,12 +217,13 @@ export function ReferenceTool() {
   const profileSelect = <select className="input sm reference-profile-select" value={profileId} onChange={(e) => setProfileId(e.target.value)}><option value="">Load saved profile…</option>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>;
   const targetSelect = <select className="input sm reference-target-select" value={targetTrack} onChange={(e) => setTargetTrack(e.target.value)}><option value="">Target track…</option>{targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>;
 
-  if (!open) return (stream || profiles.length) ? <div className="reference-background-pill" title="Reference Match remains available while its analyzer is hidden">
+  if (!open) return (stream || profiles.length) && !matchBarDismissed ? <div className="reference-background-pill" title="Reference Match remains available while its analyzer is hidden">
     <span className={stream ? "dot live" : "dot"} /><b className="ellipsis">Reference Match</b>{recording && <span className="pill err">REC</span>}
     {profileSelect}{targetSelect}
     <button className="btn sm accent" disabled={!profileId || !targetTrack} onClick={applyMatch}>Apply EQ</button>
     <button className="btn sm" onClick={() => useStore.setState({ referenceOpen: true })}>Open analyzer</button>
     {stream && <button className="btn sm ghost" disabled={recording} onClick={disconnect} title={recording ? "Stop the reference recording before disconnecting" : "Stop capturing this source"}>Disconnect</button>}
+    <button className="btn sm ghost icon reference-dismiss" disabled={recording} onClick={() => { if (stream) disconnect(); setMatchBarDismissed(true); }} title={recording ? "Stop recording before closing this controller" : "Close Reference Match and stop its live source"}><Icon name="x" size={13} /></button>
   </div> : null;
 
   return <div className="fx-window reference-window" style={{ left: pos.x, top: pos.y, width: Math.min(980, window.innerWidth - 24), maxHeight: "calc(100vh - 16px)", ["--accent" as string]: "#29c1ff" }}>
@@ -236,7 +238,7 @@ export function ReferenceTool() {
       <div className="col grow" style={{ gap: 0, minWidth: 0 }}><b>Reference Analyzer</b><span className="small faint ellipsis">{sourceName} · runs while hidden</span></div>
       {stream && <span className="fx-live"><i /> {recording ? "Recording" : "Live source"}</span>}
       <button className="btn sm ghost" disabled={!stream || recording} onClick={disconnect} title={recording ? "Stop the recording before disconnecting" : "Stop capturing the external source"}><Icon name="power" size={12} /> Disconnect</button>
-      <button className="btn ghost icon sm" onClick={() => useStore.setState({ referenceOpen: false })} title="Hide — analysis keeps running"><Icon name="x" size={14} /></button>
+      <button className="btn ghost icon sm" onClick={() => { setMatchBarDismissed(false); useStore.setState({ referenceOpen: false }); }} title="Hide — analysis keeps running"><Icon name="x" size={14} /></button>
     </div>
     <div className="fx-window-body reference-tool">
       <div className="reference-source row"><span className={stream ? "dot live" : "dot"} /><b className="grow ellipsis" title={sourceName}>{sourceName}</b><button className="btn accent" onClick={chooseSource}><Icon name="window" size={13} /> Choose app / window</button><button className="btn" onClick={compareMaster} disabled={!!masterPlugin}>Compare DAW master</button></div>
@@ -248,7 +250,7 @@ export function ReferenceTool() {
         <button className="btn accent" onClick={applyMatch} disabled={!profileId || !targetTrack}>Apply match EQ to target track</button>
       </div>
       <p className="small dim">Choose a source in the Windows picker and enable <b>Share audio</b>. Let it play to build a stable average. “Apply match” creates an editable eight-band Parametric EQ and limits corrections to ±6 dB; it does not copy loudness or mastering.</p>
-      <div className="row small faint"><span className="grow">External audio stays separate from the DAW master. Hiding this window keeps analysis and capture active.</span><button className="btn sm" onClick={() => useStore.setState({ referenceOpen: false })}>Hide window</button></div>
+      <div className="row small faint"><span className="grow">External audio stays separate from the DAW master. Hiding this window keeps analysis and capture active.</span><button className="btn sm" onClick={() => { setMatchBarDismissed(false); useStore.setState({ referenceOpen: false }); }}>Hide window</button></div>
     </div>
   </div>;
 }
