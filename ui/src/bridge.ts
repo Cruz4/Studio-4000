@@ -115,5 +115,6 @@ export const native = {
   agentInfo: () => nativeCall("agentInfo") as Promise<{ port: number; token: string; configFile: string; mcpServer: string }>,
   window: (action: "fullscreen" | "minimise" | "title" | "quit", arg?: string) => nativeCall("window", action, arg ?? ""),
   openUrl: (url: string) => nativeCall("openUrl", url),
+  openAkashi: () => nativeCall("openAkashi"),
   checkUpdate: () => nativeCall("checkUpdate") as Promise<{ state: "current" | "staged" | "offline" | "failed" | "skipped" | "busy" }>,
 };

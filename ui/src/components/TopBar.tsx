@@ -3,7 +3,7 @@ import akasheet from "../assets/akasheet.png";
 import emblem from "../assets/emblem.png";
 import { native } from "../bridge";
 import { runCommand, toggleMixerView, toggleRecord } from "../commands";
-import { AKASHEET_TIP, AKASHEET_URL } from "../support";
+import { AKASHEET_TIP } from "../support";
 import { useMeterCanvas } from "../meters";
 import { act, live, onTick, useStore } from "../store";
 import { cx, formatBars, formatTime } from "../util";
@@ -168,7 +168,7 @@ export function TopBar() {
         <div className="seg">
           <button className="btn ghost icon" title="Export (Ctrl+E)" onClick={() => useStore.setState({ exportOpen: true })}><Icon name="export" /></button>
           <button className="btn ghost icon" title="Settings (Ctrl+,)" onClick={() => useStore.setState({ settingsOpen: "audio" })}><Icon name="settings" /></button>
-          <button className="btn ghost icon akasheet" onClick={() => native.openUrl(AKASHEET_URL)}>
+          <button className="btn ghost icon akasheet" onClick={() => native.openAkashi()} title="Open the installed AKAsheet app (or the website if it is not installed)">
             <img src={akasheet} alt="AKAsheet" />
             <span className="tip">{AKASHEET_TIP}</span>
           </button>

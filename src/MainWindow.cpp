@@ -174,6 +174,36 @@ public:
                     url.launchInDefaultBrowser();
 
                 done (true);
+            })
+            .withNativeFunction ("openAkashi", [] (const juce::Array<var>&, juce::WebBrowserComponent::NativeFunctionCompletion done)
+            {
+                // Installed Edge/Chrome web apps are exposed as Start-menu shortcuts. Launching the shortcut
+                // preserves the PWA window; only fall back to the browser when no installed app is present.
+                juce::Array<juce::File> roots {
+                    juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("Microsoft/Windows/Start Menu/Programs"),
+                    juce::File::getSpecialLocation (juce::File::commonApplicationDataDirectory).getChildFile ("Microsoft/Windows/Start Menu/Programs"),
+                    juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
+                };
+                juce::File shortcut;
+
+                for (auto& root : roots)
+                {
+                    auto links = root.findChildFiles (juce::File::findFiles, true, "*.lnk");
+                    for (auto& link : links)
+                        if (link.getFileNameWithoutExtension().containsIgnoreCase ("akasheet")
+                            || link.getFileNameWithoutExtension().containsIgnoreCase ("akashi"))
+                        {
+                            shortcut = link;
+                            break;
+                        }
+                    if (shortcut.existsAsFile()) break;
+                }
+
+                const bool installed = shortcut.existsAsFile() && shortcut.startAsProcess();
+                if (! installed)
+                    juce::URL ("https://akasheet.com/?ref=studio4000&install=1").launchInDefaultBrowser();
+
+                done (Obj().set ("installed", installed));
             });
 
         // Session servers on a LAN are plain ws://, and remote voice must play without a click.

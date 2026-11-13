@@ -1,9 +1,17 @@
-Updates from November 11–12, 2026
+Updates from November 12–13, 2026
+
+### Reference another app
+Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Studio 4000 draws its live frequency spectrum and stereo field beside an optional DAW-master overlay. Record the source directly to a stereo Reference track, save averaged profiles, and apply a conservative, editable eight-band match EQ to a selected audio or instrument track.
+
+The AKAsheet button now looks for an installed AKAsheet web-app shortcut first. If it is not installed, the website opens with an install suggestion.
+
+### Collaboration codes that survive copy and paste
+Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.
 
 ### Light mode restored
 Restored the original gray backgrounds, toolbar gradients, FX panels and graph styling. Kept the requested slightly darker, bolder main text and readable EQ type labels.
 
-Light-mode browser section headings, arrows and counts use deep purple with slightly larger, bold lettering for clearer contrast against the original gray. This applies across Effects, Instruments, Media and Chains.
+Light-mode browser categories use vivid purple headings on compact light-gray section strips, with a purple edge and clear spacing from the effect names. The lettering has at least 4.5:1 contrast across the original browser gradient. This applies across Effects, Instruments, Media and Chains; the rest of the gray theme is preserved.
 
 ### Keep the takes coming
 Right-click Record to set up and arm loop takes without starting recording. A LOOP badge on Record shows the mode is enabled. Click Record or press R when you're ready, or right-click again to change settings or turn the mode off. Choose 1–99 passes or keep going until you stop. New tracks inherit the source audio track's mono/stereo format, effects, mixer settings and routing. Mute earlier takes as you go, or keep them playing for layering. The most recent take remains audible when you stop.

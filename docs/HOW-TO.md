@@ -35,6 +35,8 @@ To work on one session together:
 
 Studio 4000 opens the connection. The code looks like `AB12CD@192.168.1.20:3031,203.0.113.5:3031`. Paste the whole code. It tries the same network first, then the internet address. **End** closes the session. **Leave** drops out and returns to the join screen.
 
+If a chat or email inserts invisible soft hyphens, zero-width marks, or line wraps into the copied code, Join removes them before validating both addresses.
+
 Voice and screen share are in the same panel. An optional password can lock the room. The host's project is the one everyone hears.
 
 ## First session
@@ -76,6 +78,12 @@ Click an effect to select it. Double-click to open it. You can leave several ope
 Track effects and Clip effects each have a Dry / Wet bar, shown next to the tab that is selected. Dry is the sound before that chain. Wet is the full chain. Double-click the bar for fully wet.
 
 On the EQ, the white line is the curve you are shaping. The filled colour is the sound, and it appears when something is actually playing. When you stop, the last shape stays faded.
+
+### Reference audio from another app
+
+Click **Reference** above the tracks, then **Choose app / window**. Select the Windows source and enable **Share audio**. The blue trace is the external reference; **Compare DAW master** adds the fuchsia master trace. The stereo panel shows the source's width and field.
+
+**Record source to Reference track** writes a stereo WAV into the project and places it on a Reference track. Let a source play for a few seconds before saving a profile. A saved profile can add an editable eight-band Parametric EQ to the selected audio or instrument track. Match corrections are limited to ±6 dB and do not copy loudness or mastering.
 
 ## Smart Mix and the assistant
 

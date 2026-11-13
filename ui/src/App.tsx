@@ -18,6 +18,7 @@ import { Guide } from "./components/Guide";
 import { KeysStrip } from "./components/Keys";
 import { History } from "./components/History";
 import { LoopTakeSetup } from "./components/LoopTakeSetup";
+import { ReferenceTool } from "./components/ReferenceTool";
 import { TrackChainPreset } from "./components/TrackChainPreset";
 import { MenuBar } from "./components/MenuBar";
 import { EffectsRack } from "./components/EffectsRack";
@@ -229,6 +230,7 @@ export function App() {
       <ExportDialog />
       <History />
       {loopTakeSetupOpen && project && <LoopTakeSetup />}
+      {project && <ReferenceTool />}
       {chainPreset && project && <TrackChainPreset key={chainPreset.id + chainPreset.trackId} />}
       <Guide />
       <About />

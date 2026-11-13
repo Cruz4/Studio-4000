@@ -91,7 +91,7 @@ export function isBuiltInServer(server: string) {
 }
 
 function asWebSocket(host: string) {
-  const text = host.trim();
+  const text = host.replace(/[\u00ad\u200b-\u200f\u202a-\u202e\u2060\ufeff\s]/g, "").trim();
   return /^wss?:\/\//i.test(text) ? text : `ws://${text}`;
 }
 
@@ -103,11 +103,16 @@ export function isPrivateAddress(server: string) {
 
 /** A pasted code is the room, or room@address, or room@lan,public from the host. */
 export function parseJoinCode(raw: string): { room: string; servers: string[] } {
-  const text = raw.trim();
+  // Codes copied through chat/email can gain soft hyphens, zero-width direction marks and line wraps.
+  // None are meaningful in a room code or host, so remove them before parsing either address.
+  const text = raw.replace(/[\u00ad\u200b-\u200f\u202a-\u202e\u2060\ufeff\s]/g, "").replace(/^[>]+/, "").trim();
   const at = text.indexOf("@");
   if (at > 0 && at < text.length - 1) {
     const room = text.slice(0, at).trim().toUpperCase();
-    const servers = text.slice(at + 1).split(",").map(asWebSocket).filter((s) => s !== "ws://");
+    const servers = text.slice(at + 1).split(/[,;]+/).map(asWebSocket).filter((s) => {
+      if (s === "ws://") return false;
+      try { const u = new URL(s); return !!u.hostname; } catch { return false; }
+    });
     return { room, servers };
   }
   return { room: text.toUpperCase(), servers: [] };

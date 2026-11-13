@@ -34,6 +34,9 @@ export interface Fx {
   set: (pid: string, value: number) => void;
   setMany: (values: Record<string, number>) => void;
   setNorm: (pid: string, norm: number) => void;
+  /** Keep drag feedback local, then send one settled value when the pointer is released. */
+  beginGesture: () => void;
+  endGesture: () => void;
   reset: (pid: string) => void;
   resetAll: () => void;
 }
@@ -75,6 +78,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
   const pendingValues = useRef<Record<string, number>>({});
   const pendingNorm = useRef<Record<string, number>>({});
   const busy = useRef(false);
+  const gestureDepth = useRef(0);
   const lastWrite = useRef(0);
   const project = useStore((s) => s.project);
 
@@ -140,7 +144,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     }));
     for (const key of Object.keys(values)) delete pendingNorm.current[key];
     Object.assign(pendingValues.current, values);
-    requestAnimationFrame(() => flush());
+    if (!gestureDepth.current) requestAnimationFrame(() => flush());
   }, [flush]);
 
   const set = useCallback((pid: string, value: number) => setMany({ [pid]: value }), [setMany]);
@@ -150,7 +154,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     norm = clamp(norm, 0, 1);
     setParams((ps) => ps.map((p) => (p.id === pid ? { ...p, norm, value: p.min + (p.max - p.min) * norm } : p)));
     pendingNorm.current[pid] = norm;
-    requestAnimationFrame(() => flush());
+    if (!gestureDepth.current) requestAnimationFrame(() => flush());
   }, [flush]);
 
   return {
@@ -166,6 +170,8 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
       return best;
     },
     set, setMany, setNorm,
+    beginGesture: () => { gestureDepth.current++; },
+    endGesture: () => { gestureDepth.current = Math.max(0, gestureDepth.current - 1); if (!gestureDepth.current) requestAnimationFrame(() => flush()); },
     reset: (pid) => { const p = byId.get(pid); if (p?.def !== undefined) set(pid, p.def); },
     resetAll: () => {
       const values: Record<string, number> = {};
@@ -337,13 +343,14 @@ export function Knob({ fx, pid, label, size = 46, color = COLORS.violet2, bipola
   return (
     <div ref={pad.ref} data-pad={pad.kind} className={cx("fx-knob", disabled && "disabled")} title={`${p.name}: ${p.text}\nDrag, scroll, or double-click to reset`}>
       <svg width={size} height={size}
-        onPointerDown={(e) => { if (disabled) return; (e.target as Element).setPointerCapture(e.pointerId); drag.current = { y: e.clientY, norm }; }}
+        onPointerDown={(e) => { if (disabled) return; (e.target as Element).setPointerCapture(e.pointerId); drag.current = { y: e.clientY, norm }; fx.beginGesture(); }}
         onPointerMove={(e) => {
           if (!drag.current) return;
           const scale = e.shiftKey ? 800 : 200;
           fx.setNorm(pid, drag.current.norm + (drag.current.y - e.clientY) / scale);
         }}
-        onPointerUp={() => (drag.current = null)}
+        onPointerUp={() => { if (drag.current) fx.endGesture(); drag.current = null; }}
+        onPointerCancel={() => { if (drag.current) fx.endGesture(); drag.current = null; }}
         onDoubleClick={() => fx.reset(pid)}
         onWheel={(e) => { if (!disabled) fx.setNorm(pid, norm - Math.sign(e.deltaY) * (e.shiftKey ? 0.002 : 0.02)); }}>
         <circle cx={cxy} cy={cxy} r={r - 3} className="fx-knob-body" />

@@ -7,6 +7,16 @@ export interface WhatsNewGroup {
 }
 
 export const WHATS_NEW: WhatsNewGroup[] = [
+  { title: "Reference another app", color: "#29c1ff", items: [
+    "Choose a Windows app or window and see its live frequency spectrum and stereo field.",
+    "Overlay the DAW master, record a Reference track, and save averaged profiles.",
+    "Apply a safe, editable eight-band match EQ to the selected audio or instrument track.",
+    "AKAsheet opens its installed web app first, with the website as a fallback.",
+  ] },
+  { title: "Connect without code glitches", color: "#8cddbc", items: [
+    "Join removes invisible characters and line wraps from copied session codes.",
+    "Local and public host addresses are validated and tried in order.",
+  ] },
   { title: "Keep the takes coming", color: "#ff72df", items: [
     "Right-click Record to arm loop takes, then click Record when you're ready.",
     "The LOOP badge shows the mode is on. Right-click Record to change it or turn it off.",
@@ -39,7 +49,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "The top-right switch takes you between Light and Blue Storm.",
     "Light mode keeps its original gray appearance, with slightly darker, bolder text.",
     "EQ type labels stay readable.",
-    "Light-mode browser headings use bold, deep purple on the original gray.",
+    "Purple category strips make Light-mode browser sections stand apart from effect names.",
   ] },
 ];
 

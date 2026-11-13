@@ -210,6 +210,7 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
               if (e.altKey && specs[i].on) { setBand(i, { on: bands[i].on ? 0 : 1 }); return; }
               (e.target as Element).setPointerCapture(e.pointerId);
               drag.current = { band: i, fine: e.shiftKey, x, y, f: bands[i].freq, g: bands[i].gain };
+              fx.beginGesture();
               if (specs[i].on && !bands[i].on) setBand(i, { on: 1 });
             }}
             onPointerMove={(e) => {
@@ -223,7 +224,8 @@ export function EqEditor({ fx, pluginId, classic }: { fx: Fx; pluginId: string; 
               const gain = clamp(d.g + (yToDb(y, h, range) - yToDb(d.y, h, range)) * fine, -24, 24);
               setBand(d.band, hasGain(bands[d.band].type) ? { freq, gain } : { freq });
             }}
-            onPointerUp={() => (drag.current = null)}
+            onPointerUp={() => { if (drag.current) fx.endGesture(); drag.current = null; }}
+            onPointerCancel={() => { if (drag.current) fx.endGesture(); drag.current = null; }}
             onPointerLeave={() => setHover(null)}
             onWheel={(e) => {
               const { x, y, w, h } = local(e);

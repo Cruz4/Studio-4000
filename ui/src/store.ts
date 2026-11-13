@@ -63,6 +63,7 @@ interface State {
   aboutOpen: boolean;
   historyOpen: boolean;
   loopTakeSetupOpen: boolean;
+  referenceOpen: boolean;
   chainPreset: { id: string; trackId: string; clipId?: string } | null;
   toasts: Toast[];
   approvals: Approval[];
@@ -140,6 +141,7 @@ export const useStore = create<State>((set) => ({
   aboutOpen: false,
   historyOpen: false,
   loopTakeSetupOpen: false,
+  referenceOpen: false,
   chainPreset: null,
   toasts: [],
   approvals: [],

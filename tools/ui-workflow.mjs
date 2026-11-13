@@ -64,6 +64,7 @@ async function openPage() {
       console.log(`saved ${name}.png`);
     },
     viewport: (width) => send("Emulation.setDeviceMetricsOverride", { width, height: H, deviceScaleFactor: 1, mobile: false }),
+    mouse: (type, x, y, buttons = type === "mouseReleased" ? 0 : 1) => send("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons, clickCount: 1 }),
     close: () => ws.close(),
   };
   return page;
@@ -164,19 +165,27 @@ try {
  if(!await page.eval(()=>window.__test.store.useStore.getState().transport.recording))throw new Error("The armed mode must start only when Record is clicked");
  await page.eval(()=>document.querySelector('.tbtn.rec').click());await sleep(150);
  if(!await page.eval(()=>!window.__test.store.useStore.getState().transport.recording&&window.__test.store.useStore.getState().project.loopTakes.enabled))throw new Error("Stopping recording must retain the prepared loop mode");
- await page.eval(()=>{const{store,theme,vocal}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null});theme.applyPalette("light");const p=store.useStore.getState().project.tracks.find(t=>t.id===vocal).plugins.find(p=>p.type==="s4000eq");store.openPlugin(p.id);});await sleep(450);await page.shot("light-eq-readable");
+ await page.eval(()=>{const{store,theme,vocal}=window.__test;store.useStore.setState({browserTab:"fx",bottom:null});theme.applyPalette("light");const p=store.useStore.getState().project.tracks.find(t=>t.id===vocal).plugins.find(p=>p.type==="s4000eq");store.openPlugin(p.id);});await sleep(450);
+ const eqDrag=await page.eval(()=>{const c=document.querySelector('.fx-eq .fx-canvas'),r=c.getBoundingClientRect(),tab=document.querySelector('.fx-band-tab.on');const f=parseFloat(tab.querySelector('.freq').textContent)*(/kHz/.test(tab.querySelector('.freq').textContent)?1000:1),g=parseFloat(tab.querySelector('.gain')?.textContent||'0');return{x:r.left+Math.log(f/20)/Math.log(1000)*r.width,y:r.top+r.height/2-(g/18)*(r.height/2),before:tab.querySelector('.freq').textContent};});
+ await page.mouse("mousePressed",eqDrag.x,eqDrag.y);await page.mouse("mouseMoved",eqDrag.x+90,eqDrag.y-25);await sleep(80);
+ const eqLive=await page.eval(()=>({frequency:document.querySelector('.fx-band-tab.on .freq').textContent,angle:document.querySelector('.fx-eq-detail .fx-knob-value')?.getAttribute('d')}));
+ if(eqLive.frequency===eqDrag.before||!eqLive.angle)throw new Error("EQ knobs did not follow the node during the live drag");await page.mouse("mouseReleased",eqDrag.x+90,eqDrag.y-25,0);await page.shot("light-eq-readable");
  const colours=await page.eval(async()=>{
   const root=getComputedStyle(document.documentElement);
   const active=document.querySelector(".fx-eq-detail .fx-seg button.on"),style=getComputedStyle(active);
   const heading=getComputedStyle(document.querySelector('.browser[data-browser-tab="fx"] .section-title')).color;
-  const headings=[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>({color:getComputedStyle(el).color,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,children:[...el.children].map(c=>getComputedStyle(c).color)}));
-  return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,headings,weight:getComputedStyle(document.body).fontWeight};
- });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.headings.some(h=>h.color!=="rgb(38, 0, 92)"||h.weight!=="700"||h.size!=="12px"||h.children.some(c=>c!==h.color)))throw new Error("Original Light appearance or text readability failure: "+JSON.stringify(colours));
+  const headings=[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>({color:getComputedStyle(el).color,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,background:getComputedStyle(el).backgroundColor,border:parseFloat(getComputedStyle(el).borderLeftWidth),children:[...el.children].map(c=>getComputedStyle(c).color)}));
+  const {contrast}=await import('/src/palettes.ts');
+  const hex=rgb=>'#'+rgb.map(n=>Math.round(n).toString(16).padStart(2,'0')).join('');
+  const headingContrast=Math.min(...headings.flatMap(h=>{const fill=h.background.match(/[\d.]+/g).map(Number),alpha=fill[3]??1,ink=hex(h.color.match(/[\d.]+/g).slice(0,3).map(Number));return [[116,124,134],[92,100,110]].map(bg=>contrast(ink,hex(fill.slice(0,3).map((v,i)=>v*alpha+bg[i]*(1-alpha)))));}));
+  const itemColor=getComputedStyle(document.querySelector('.browser .b-item')).color;
+  return{backgrounds:["--bg","--bg1","--bg2","--bg3","--bg4"].map(bg=>root.getPropertyValue(bg).trim()),text:root.getPropertyValue("--text").trim(),eqText:style.color,eqGlyph:getComputedStyle(active.querySelector(".glyph")).color,heading,headings,headingContrast,itemColor,weight:getComputedStyle(document.body).fontWeight};
+ });if(colours.backgrounds.join(",")!=="#5c646e,#707880,#868e97,#9aa2aa,#656d77"||colours.text!=="#080b10"||colours.weight!=="500"||colours.eqText!=="rgb(255, 255, 255)"||colours.eqGlyph!==colours.eqText||colours.headingContrast<4.5||colours.heading===colours.itemColor||colours.headings.some(h=>h.color!=="rgb(84, 34, 154)"||h.weight!=="700"||h.size!=="12px"||h.border<2||h.children.some(c=>c!==h.color)))throw new Error("Original Light appearance or category readability failure: "+JSON.stringify(colours));
  const browserAccents=[];
  for(const tab of ['inst','media','chains']){
   await page.eval(tab=>window.__test.store.useStore.setState({browserTab:tab,openPlugins:[]}),tab);await sleep(100);
   const groups=await page.eval(()=>[...document.querySelectorAll('.browser .b-group.section-title')].map(el=>getComputedStyle(el).color));
-  browserAccents.push({tab,count:groups.length});if(tab!=='media'&&!groups.length||groups.some(c=>c!=='rgb(38, 0, 92)'))throw new Error('Browser section accent missing: '+JSON.stringify({tab,groups}));
+  browserAccents.push({tab,count:groups.length});if(tab!=='media'&&!groups.length||groups.some(c=>c!=='rgb(84, 34, 154)'))throw new Error('Browser section accent missing: '+JSON.stringify({tab,groups}));
  }
  await page.eval(()=>window.__test.store.useStore.setState({browserTab:'fx'}));await page.shot('light-browser-accent');
  await page.eval(async()=>{const{store}=window.__test;store.useStore.setState({openPlugins:[]});await store.act("track.add",{kind:"group",name:"Mono check bus"});window.__test.formats=Object.fromEntries(store.useStore.getState().project.tracks.map(t=>[t.id,t.channels]));});await sleep(120);
@@ -192,7 +201,10 @@ try {
  if(monoClipped)throw new Error("A mixer Mono button is clipped by its strip");await page.shot("mono-checks-mixer");
  await page.eval(()=>document.querySelectorAll(".strip .sum-mono").forEach(b=>b.click()));await sleep(150);
  const monoOff=await page.eval(()=>{const p=window.__test.store.useStore.getState().project;return !p.master.sumToMono&&p.tracks.every(t=>!t.sumToMono);});if(!monoOff)throw new Error("Mono controls did not restore stereo");
- await page.eval(()=>{window.__test.store.useStore.setState({view:"tracks",openPlugins:[],aboutOpen:true});});await page.shot("whats-new-light");
+ await page.eval(()=>window.__test.store.useStore.setState({view:"tracks",aboutOpen:false,referenceOpen:true}));await sleep(120);
+ const referenceUi=await page.eval(()=>({title:document.querySelector('.modal-head h3')?.textContent,canPick:[...document.querySelectorAll('.reference-tool button')].some(b=>b.textContent.includes('Choose app / window')),graphs:document.querySelectorAll('.reference-graphs canvas').length,profile:!!document.querySelector('.reference-actions select')}));
+ if(referenceUi.title?.trim()!=="Reference Track"||!referenceUi.canPick||referenceUi.graphs!==2||!referenceUi.profile)throw new Error("Reference Track UI is incomplete: "+JSON.stringify(referenceUi));await page.shot("reference-track");
+ await page.eval(()=>{window.__test.store.useStore.setState({view:"tracks",openPlugins:[],referenceOpen:false,aboutOpen:true});});await page.shot("whats-new-light");
  await page.eval(()=>window.__test.theme.applyPalette("studio-sessions"));await page.shot("whats-new-dark");
  const darkBadge=await page.eval(()=>getComputedStyle(document.querySelector(".track-head .toggle.fx.on")).backgroundColor);if(darkBadge!=="rgb(255, 0, 255)")throw new Error("Default dark track FX is not fuchsia");
  await page.viewport(390);await sleep(100);await page.shot("whats-new-mobile");

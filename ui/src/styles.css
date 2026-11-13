@@ -1059,7 +1059,7 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 
 :root[data-palette] .browser[data-browser-tab="fx"] .b-group.section-title { color: var(--effects-heading); }
 
-/* Keep the original Light surfaces and borders; improve text only. */
+/* Keep the original Light surfaces; give browser categories their own clear rows. */
 :root[data-theme="light"] body { font-weight: 500; }
 :root[data-theme="light"] .fx-seg button { color: var(--text); font-weight: 600; }
 :root[data-theme="light"] .fx-eq-detail-head .fx-seg .glyph { color: inherit; }
@@ -1071,7 +1071,22 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-theme="light"] .fx-card-kind,
 :root[data-theme="light"] .fx-live { color: var(--text); }
 :root[data-theme="light"] .browser .b-group.section-title {
-  color: #26005c; font-size: 12px; font-weight: 700;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, .3);
+  color: #54229a; font-size: 12px; font-weight: 700; text-shadow: none;
+  background: rgba(255, 255, 255, .5); border-left: 3px solid #7946c7;
+  border-radius: 4px; padding: 5px 8px; margin: 6px 0 4px;
 }
+
+.reference-tool { display: flex; flex-direction: column; gap: 12px; min-height: 430px; }
+.reference-source { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg2); }
+.reference-source .dot.live { color: var(--green); box-shadow: 0 0 10px currentColor; }
+.reference-graphs { display: grid; grid-template-columns: minmax(0, 3fr) minmax(180px, 1fr); gap: 10px; }
+.reference-spectrum, .reference-field { padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg2); }
+.reference-spectrum canvas, .reference-field canvas { display: block; width: 100%; height: 280px; margin-top: 8px; border-radius: 5px; background: #111521; }
+.reference-key { display: inline-flex; align-items: center; gap: 5px; margin-left: 10px; color: var(--dim); }
+.reference-key::before { content: ""; width: 16px; height: 2px; background: currentColor; }
+.reference-key.external { color: #29c1ff; }
+.reference-key.master { color: #ed4bff; }
+.reference-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.reference-actions select { min-width: 180px; }
+@media (max-width: 760px) { .reference-graphs { grid-template-columns: 1fr; } .reference-field canvas { height: 180px; } }
 :root[data-palette="studio-sessions"] .track-head .toggle.fx.on { background: #ff00ff; color: #18091a; box-shadow: 0 0 0 1px rgba(255,0,255,.4); }

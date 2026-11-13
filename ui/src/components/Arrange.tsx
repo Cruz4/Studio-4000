@@ -1403,6 +1403,7 @@ export function Arrange() {
         <button className="btn sm" onClick={() => addTrack("instrument")} title="New instrument track (Ctrl+Shift+T)"><Icon name="piano" size={13} /> Instrument</button>
         <button className="btn sm" onClick={(e) => openMenu(e, formatChoices("group"))} title="New stereo or mono bus"><Icon name="layers" size={13} /> Bus</button>
         <button className="btn sm" onClick={() => addTrack("return")} title="New FX return with reverb"><Icon name="send" size={13} /> FX Return</button>
+        <button className="btn sm reference-open" onClick={() => useStore.setState({ referenceOpen: true })} title="Capture and compare audio from another app or window"><Icon name="scope" size={13} /> Reference</button>
         <button className="btn sm ghost" onClick={() => importAudio()} title="Import audio (Ctrl+I)"><Icon name="folder" size={13} /> Import</button>
         <div className="sep" />
         <button className="btn sm ghost" onClick={splitAtPlayhead} title="Split at playhead (S)"><Icon name="scissors" size={13} /></button>
