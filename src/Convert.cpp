@@ -73,7 +73,7 @@ namespace
         return n > 0 ? (float) std::sqrt (s / n) : 0.0f;
     }
 
-    juce::Array<te::Track*> trackWithParents (te::AudioTrack& t)
+    juce::Array<te::Track*> trackWithParents (te::Track& t)
     {
         juce::Array<te::Track*> tracks { &t };
 
@@ -185,7 +185,7 @@ juce::Array<ConvertedNote> audioToMidiNotes (te::Engine& engine,
     return notes;
 }
 
-juce::File bounceTrackToWav (AppEngine& app, te::AudioTrack& track, te::TimeRange range, const String& name, double tailSeconds, bool isolateParentEffects)
+juce::File bounceTrackToWav (AppEngine& app, te::Track& track, te::TimeRange range, const String& name, double tailSeconds, bool isolateParentEffects)
 {
     auto& edit = app.edit();
     auto dest = app.getBouncesDir().getNonexistentChildFile (juce::File::createLegalFileName (name), ".wav", false);
@@ -214,11 +214,13 @@ juce::File bounceTrackToWav (AppEngine& app, te::AudioTrack& track, te::TimeRang
         for (auto* parent = track.getParentFolderTrack(); parent != nullptr; parent = parent->getParentFolderTrack())
             for (auto* effect : parent->pluginList) { parentEffects.emplace_back (effect, effect->isEnabled()); effect->setEnabled (false); }
     const bool sourceMuted = track.isMuted (false);
-    if (isolateParentEffects) track.setMute (false);
+    // Printing must work even when the editable source was already muted for A/B use.
+    // Child mute states remain untouched when `track` is a group.
+    track.setMute (false);
     juce::ErasedScopeGuard restore ([&]
     {
         for (auto& item : parentEffects) item.first->setEnabled (item.second);
-        if (isolateParentEffects) track.setMute (sourceMuted);
+        track.setMute (sourceMuted);
     });
 
     const te::Edit::ScopedRenderStatus busy (edit, true);

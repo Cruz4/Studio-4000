@@ -296,6 +296,23 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         call ("edit.redo");
         check ("bounce redo restores its rendered track", app.findTrack (printed["trackId"].toString()) != nullptr);
 
+        app.edit().getUndoManager().clearUndoHistory();
+        auto groupPrinted = call ("track.bounce", Obj().set ("id", bus).set ("tailSeconds", .5));
+        auto& groupPrintedTrack = app.audioTrack (groupPrinted["trackId"].toString());
+        const auto groupPrintedDescription = describeTrack (app, groupPrintedTrack);
+        check ("group bounce creates its FX print outside and directly after the bus",
+               groupPrintedTrack.getParentFolderTrack() == app.track (bus).getParentFolderTrack()
+                   && groupPrintedTrack.state.getParent().indexOf (groupPrintedTrack.state) == app.track (bus).state.getParent().indexOf (app.track (bus).state) + 1);
+        check ("group bounce labels the baked track and mutes the editable bus",
+               groupPrintedDescription["bouncedFrom"].toString() == bus && (bool) groupPrintedDescription["bouncedGroup"]
+                   && groupPrintedTrack.getName().contains ("group FX print") && app.track (bus).isMuted (false));
+        std::unique_ptr<juce::AudioFormatReader> groupPrintedReader (app.getEngine().getAudioFileFormatManager().readFormatManager.createReaderFor (juce::File (groupPrinted["file"].toString())));
+        check ("group bounce renders its child audio through the bus effects", groupPrintedReader != nullptr && groupPrintedReader->lengthInSamples > 48000);
+        call ("edit.undo");
+        check ("group bounce undoes the printed track and source mute together", app.findTrack (groupPrinted["trackId"].toString()) == nullptr && ! app.track (bus).isMuted (false));
+        call ("edit.redo");
+        check ("group bounce redo restores the print and bus mute", app.findTrack (groupPrinted["trackId"].toString()) != nullptr && app.track (bus).isMuted (false));
+
         auto monoReturn = call ("track.add", Obj().set ("kind", "return").set ("name", "Mono return"))[0].toString();
         for (auto id : { printSource, splitMidi, bus, monoReturn })
         {

@@ -34,7 +34,7 @@ export interface Fx {
   set: (pid: string, value: number) => void;
   setMany: (values: Record<string, number>) => void;
   setNorm: (pid: string, norm: number) => void;
-  /** Keep drag feedback local, then send one settled value when the pointer is released. */
+  /** Marks one continuous edit gesture. Values still reach the audio engine live. */
   beginGesture: () => void;
   endGesture: () => void;
   reset: (pid: string) => void;
@@ -153,7 +153,9 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     }));
     for (const key of Object.keys(values)) delete pendingNorm.current[key];
     Object.assign(pendingValues.current, values);
-    if (!gestureDepth.current) requestAnimationFrame(() => flush());
+    // Always feed the newest value to the engine while dragging. `flush` permits only
+    // one RPC at a time and collapses intervening pointer events to the latest frame.
+    requestAnimationFrame(() => flush());
   }, [flush]);
 
   const set = useCallback((pid: string, value: number) => setMany({ [pid]: value }), [setMany]);
@@ -163,7 +165,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     norm = clamp(norm, 0, 1);
     setParams((ps) => ps.map((p) => (p.id === pid ? { ...p, norm, value: parameterFromNorm(p, norm) } : p)));
     pendingNorm.current[pid] = norm;
-    if (!gestureDepth.current) requestAnimationFrame(() => flush());
+    requestAnimationFrame(() => flush());
   }, [flush]);
 
   return {

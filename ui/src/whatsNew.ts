@@ -35,10 +35,11 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Alt-drag previews a duplicate and crossfades overlaps immediately.",
   ] },
   { title: "A smoother session", color: "#8cddbc", items: [
-    "EQ frequency knobs now follow dragged graph nodes smoothly in real time.",
+    "Hear EQ nodes, knobs, sliders and effects change while you move them.",
     "Markers extend through every track and catch dragged clips magnetically.",
     "History has readable rows, step counts and clear Undo and Redo sections.",
     "Bounce with Effects to New Track prints your sound directly below the source.",
+    "Bounce Group with Effects makes a marked FX PRINT and mutes the source bus.",
     "Bus meters show the summed signal, including nested buses.",
     "Check mono playback with a Mono toggle on tracks, buses and the master.",
     "The shorter CPU badge stays still, with room around the search button.",

@@ -702,6 +702,7 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
         {!tight && track.kind === "return" && <span className="kind">FX</span>}
         {!tight && track.kind === "instrument" && <span className="kind">INST</span>}
         {!tight && track.kind === "group" && <span className="kind">BUS</span>}
+        {!tight && track.bouncedFrom && <span className="kind baked" title={`Effects are baked into this ${track.bouncedGroup ? "group" : "track"} print. Its source was muted to prevent double playback.`}>FX PRINT</span>}
         <div className="track-pan" title={`Pan ${panText(panValue)}. Drag up or down. Double-click for center.`}>
           <Knob value={(panValue + 1) / 2} bipolar size={tight ? 16 : 20} title={`Pan ${panText(panValue)}. Double-click for center.`}
             onChange={(v) => { const next = Math.round((v * 2 - 1) * 100) / 100; setPan(next); act("track.set", { id: track.id, pan: next }); }}

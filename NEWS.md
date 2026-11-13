@@ -5,7 +5,7 @@ Add a Reference Track from the track toolbar, then choose a Windows app, window 
 
 The AKAsheet button now looks for an installed AKAsheet web-app shortcut first. If it is not installed, the website opens with an install suggestion.
 
-EQ nodes and their frequency knobs now use the same logarithmic range during a drag, so the selected knob follows the dot smoothly in real time instead of jumping up and down.
+EQ nodes and their frequency knobs use the same logarithmic range during a drag, so the selected knob follows the dot smoothly instead of jumping up and down. Every bundled effect editor now also sends its newest EQ, knob, slider and graph value to the audio engine while the pointer is moving, so a playing or looped passage responds before the control is released.
 
 ### Collaboration codes that survive copy and paste
 Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.
@@ -34,6 +34,8 @@ Alt-drag shows a live ghost copy, applies overlap crossfades during the drag, an
 
 ### Print your effects
 Choose Bounce with Effects to New Track from a track's menu. The track and its inserts are rendered to audio below the original, with room for effect tails. The original stays editable and is muted for comparison, avoiding doubled playback.
+
+Groups have **Bounce Group with Effects to New Track**. It renders all child tracks through the group's inserts and fader onto a stereo track directly after the group. The result is visibly marked **FX PRINT**, and the editable source group is muted automatically so the processed signal does not play twice.
 
 Bus meters now follow the summed post-fader signal, including buses nested inside other buses.
 

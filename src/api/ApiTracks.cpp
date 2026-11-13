@@ -335,26 +335,42 @@ void registerTrackApi (AppEngine& app)
         return var (copy->itemID.toString());
     });
 
-    rpc.add ("track.bounce", K::write, "Bakes a track and its effects to a new audio track directly below it", "{id,tailSeconds?:0..30,muteSource?:true}", [&app] (const var& p)
+    rpc.add ("track.bounce", K::write, "Bakes a track or group and its effects to a new audio track directly below it", "{id,tailSeconds?:0..30,muteSource?:true}", [&app] (const var& p)
     {
         auto& edit = app.edit();
         if (edit.getTransport().isRecording()) throw RpcError ("Stop recording before bouncing a track");
-        auto& source = app.audioTrack (reqStr (p, "id"));
-        if (source.getClips().isEmpty()) throw RpcError ("This track has no clips to bounce");
+        auto& source = app.track (reqStr (p, "id"));
+        const bool isGroup = getTrackKind (source) == TrackKind::group;
+        if (! isGroup && dynamic_cast<te::AudioTrack*> (&source) == nullptr) throw RpcError ("Only audio, instrument and group tracks can be bounced");
         if (edit.getTransport().isPlaying()) edit.getTransport().stop (false, true);
         double start = std::numeric_limits<double>::max(), end = 0;
-        for (auto* clip : source.getClips()) { start = std::min (start, clip->getPosition().getStart().inSeconds()); end = std::max (end, clip->getPosition().getEnd().inSeconds()); }
-        auto file = bounceTrackToWav (app, source, { seconds (start), seconds (end) }, source.getName() + " printed", num (p, "tailSeconds", 4), true);
+        const auto includeClips = [&] (te::Track& candidate)
+        {
+            if (auto* audio = dynamic_cast<te::AudioTrack*> (&candidate))
+                for (auto* clip : audio->getClips())
+                {
+                    start = std::min (start, clip->getPosition().getStart().inSeconds());
+                    end = std::max (end, clip->getPosition().getEnd().inSeconds());
+                }
+        };
+        includeClips (source);
+        if (auto* folder = dynamic_cast<te::FolderTrack*> (&source))
+            for (auto* child : folder->getAllSubTracks (true)) includeClips (*child);
+        if (start == std::numeric_limits<double>::max() || end <= start) throw RpcError (isGroup ? "This group has no clips to bounce" : "This track has no clips to bounce");
+        const String printName = source.getName() + (isGroup ? " - group FX print" : " - FX print");
+        auto file = bounceTrackToWav (app, source, { seconds (start), seconds (end) }, printName, num (p, "tailSeconds", 4), ! isGroup);
         te::AudioFile audio (app.getEngine(), file);
         if (! audio.isValid()) throw RpcError ("The bounced audio could not be read");
-        auto dest = createTrack (app, TrackKind::audio, source.getName() + " printed", &source, source.getParentFolderTrack(), nullptr, 2);
+        auto dest = createTrack (app, TrackKind::audio, printName, &source, source.getParentFolderTrack(), nullptr, 2);
         auto* track = dynamic_cast<te::AudioTrack*> (dest.get());
         if (track == nullptr) throw RpcError ("Could not create the bounced track");
         auto clip = track->insertWaveClip (file.getFileNameWithoutExtension(), file, { { seconds (start), duration (audio.getLength()) } }, false);
         if (clip == nullptr) { edit.deleteTrack (track); throw RpcError ("Could not insert the bounced clip"); }
         track->setColour (source.getColour());
+        track->state.setProperty ("s4bouncedFrom", source.itemID.toString(), &edit.getUndoManager());
+        track->state.setProperty ("s4bouncedGroup", isGroup, &edit.getUndoManager());
         if (flag (p, "muteSource", true)) source.state.setProperty (te::IDs::mute, true, &edit.getUndoManager());
-        return Obj().set ("trackId", track->itemID.toString()).set ("clipId", clip->itemID.toString()).set ("file", file.getFullPathName());
+        return Obj().set ("trackId", track->itemID.toString()).set ("clipId", clip->itemID.toString()).set ("file", file.getFullPathName()).set ("sourceMuted", flag (p, "muteSource", true)).set ("group", isGroup);
     });
 
     rpc.add ("track.move", K::write, "Moves a track after another, or into a group", "{id, afterId?, parentId?}", [&app] (const var& p)

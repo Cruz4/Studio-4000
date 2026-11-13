@@ -121,6 +121,9 @@ export interface Track {
   live?: boolean;
   /** Guest cue mix includes this track (with the click), not the late full mix. */
   cue?: boolean;
+  /** This is a rendered FX print. The source is muted when the print is created. */
+  bouncedFrom?: string;
+  bouncedGroup?: boolean;
   clips: Clip[];
 }
 

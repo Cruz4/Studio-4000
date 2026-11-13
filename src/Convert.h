@@ -24,7 +24,7 @@ juce::Array<ConvertedNote> audioToMidiNotes (te::Engine&,
                                              double clipStartSeconds);
 
 /** Renders one track (synth + its effects, no master) to a WAV and returns the file. */
-juce::File bounceTrackToWav (AppEngine&, te::AudioTrack&, te::TimeRange, const String& name, double tailSeconds = .4, bool isolateParentEffects = false);
+juce::File bounceTrackToWav (AppEngine&, te::Track&, te::TimeRange, const String& name, double tailSeconds = .4, bool isolateParentEffects = false);
 
 var notesToVar (const juce::Array<ConvertedNote>&);
 void applyConvertedNotes (te::MidiClip&, const juce::Array<ConvertedNote>&);

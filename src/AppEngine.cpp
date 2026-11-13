@@ -56,7 +56,7 @@ namespace
 
         const std::pair<const char*, const char*> names[] = {
             { "track.add", "New track" }, { "track.remove", "Delete track" }, { "track.move", "Reorder tracks" },
-            { "track.duplicate", "Duplicate track" }, { "track.arm", "Arm track" }, { "track.setInput", "Track input" },
+            { "track.duplicate", "Duplicate track" }, { "track.bounce", "Print effects" }, { "track.arm", "Arm track" }, { "track.setInput", "Track input" },
             { "track.setMonitor", "Input monitoring" }, { "bus.create", "New FX return" },
             { "plugin.add", "Add effect" }, { "plugin.remove", "Remove effect" }, { "plugin.move", "Reorder effect" },
             { "plugin.duplicate", "Duplicate effect" }, { "chain.load", "Load effect chain" },

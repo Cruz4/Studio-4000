@@ -342,6 +342,7 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .track-head .name { border: none; background: transparent; outline: none; font-weight: 600; padding: 0; min-width: 0; flex: 1; }
 .track-head .name:focus { background: var(--bg1); border-radius: 4px; padding: 0 4px; }
 .track-head .kind { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; }
+.track-head .kind.baked { padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--accent) 58%, transparent); border-radius: 5px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); font-weight: 800; letter-spacing: .055em; }
 .track-head button.kind, .strip-name button.kind { background: none; border: 0; padding: 0 2px; cursor: pointer; font: inherit; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
 .track-head button.kind:hover, .strip-name button.kind:hover { color: var(--text); }
 .track-meter { flex: none; height: 12px; width: calc(100% - 10px); margin-right: 10px; border-radius: 2px; display: block; }

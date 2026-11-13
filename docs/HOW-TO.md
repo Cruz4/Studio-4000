@@ -85,6 +85,10 @@ Click **Reference** above the tracks, then **Choose app / window**. Select the W
 
 **Record source to Reference track** writes a stereo WAV into the project and places it on a Reference track. Let a source play for a few seconds before saving a profile. Load that profile, choose an audio or instrument target, and apply it from either the analyzer or the background bar. Studio 4000 adds and opens an editable eight-band Parametric EQ. Match corrections are limited to ±6 dB and do not copy loudness or mastering.
 
+### Print a track or group with effects
+
+Right-click an audio, instrument or group track. Choose **Bounce with Effects to New Track**, or **Bounce Group with Effects to New Track** for a bus. Studio 4000 renders the audible result onto a new stereo track directly after the source and mutes the editable source to prevent doubled playback. Group prints include their child tracks, bus inserts and bus fader. Printed tracks carry an **FX PRINT** badge and have no duplicate insert chain because the processing is already baked into the audio.
+
 ## Smart Mix and the assistant
 
 **Ctrl+M** opens Smart Mix. It measures the session on this computer. Preview can gain-stage tracks, balance them by role, duck music under a voice, and master toward a loudness target. Apply is one undo step.

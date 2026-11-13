@@ -681,6 +681,9 @@ var describeTrack (AppEngine& app, te::Track& t)
      .set ("automation", describeAutomation (t))
      .set ("fxMix", chainMixPercent (t.pluginList));
 
+    if (auto bouncedFrom = t.state.getProperty ("s4bouncedFrom").toString(); bouncedFrom.isNotEmpty())
+        o.set ("bouncedFrom", bouncedFrom).set ("bouncedGroup", (bool) t.state.getProperty ("s4bouncedGroup"));
+
     juce::Array<var> inserts, sends;
 
     for (auto* p : t.pluginList)

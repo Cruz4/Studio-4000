@@ -166,8 +166,20 @@ export function createMock(emit: Emit) {
     "transport.jumpMarker": () => true,
     "project.setTempo": (p) => { project!.bpm = p.bpm; changed(); return true; },
     "project.setTimeSig": (p) => { project!.timeSig = [p.numerator, p.denominator]; changed(); return true; },
-    "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : p.kind === "group" ? "Bus" : "Audio"), p.kind || "audio", "#4dd4ff"); if (p.kind === "audio" || p.kind === "group" || !p.kind) tr.channels = p.channels === 1 ? 1 : 2; project!.tracks.push(tr); changed(); return [tr.id]; },
+    "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : p.kind === "group" ? "Bus" : "Audio"), p.kind || "audio", "#4dd4ff"); if (p.kind === "audio" || p.kind === "group" || !p.kind) tr.channels = p.channels === 1 ? 1 : 2; tr.parent = p.parentId || null; project!.tracks.push(tr); changed(); return [tr.id]; },
     "track.remove": (p) => { project!.tracks = project!.tracks.filter((x) => x.id !== p.id); changed(); return true; },
+    "track.bounce": (p) => {
+      const source = findTrack(p.id)!;
+      const members = source.kind === "group" ? project!.tracks.filter((t) => t.parent === source.id) : [source];
+      const clips = members.flatMap((t) => t.clips);
+      if (!clips.length) throw new Error(source.kind === "group" ? "This group has no clips to bounce" : "This track has no clips to bounce");
+      const start = Math.min(...clips.map((c) => c.start)), end = Math.max(...clips.map((c) => c.end));
+      const isGroup = source.kind === "group", name = `${source.name} - ${isGroup ? "group FX print" : "FX print"}`;
+      const dest = track(name, "audio", source.colour, [audioClip(name, start, end - start, source.colour)]);
+      dest.parent = source.parent; dest.bouncedFrom = source.id; dest.bouncedGroup = isGroup; source.mute = p.muteSource !== false;
+      const index = project!.tracks.indexOf(source); project!.tracks.splice(index + 1, 0, dest); changed();
+      return { trackId: dest.id, clipId: dest.clips[0].id, file: dest.clips[0].file, sourceMuted: source.mute, group: isGroup };
+    },
     "track.set": (p) => {
       const tr = findTrack(p.id)!;
       if (typeof p.output === "string") {
@@ -358,11 +370,13 @@ export function createMock(emit: Emit) {
     "plugin.factoryPreset": (p) => Object.fromEntries((findPlugin(p.id)?.params ?? []).map((p) => [p.id, p.def ?? p.value])),
     "plugin.params": (p) => structuredClone(findPlugin(p.id)?.params ?? []),
     "plugin.setParam": (p) => {
+      (window as unknown as { __s4MockParamWrites?: number }).__s4MockParamWrites = ((window as unknown as { __s4MockParamWrites?: number }).__s4MockParamWrites ?? 0) + 1;
       const pl = findPlugin(p.id);
       const r = pl && updateParam(pl.params, p.paramId, p);
       return r ? structuredClone(r) : { id: p.paramId, name: p.paramId, value: p.norm ?? p.value, norm: p.norm ?? 0.5, text: String(p.norm ?? p.value), min: 0, max: 1, automated: false };
     },
     "plugin.setParams": (p) => {
+      (window as unknown as { __s4MockParamWrites?: number }).__s4MockParamWrites = ((window as unknown as { __s4MockParamWrites?: number }).__s4MockParamWrites ?? 0) + 1;
       const pl = findPlugin(p.id);
       return pl ? structuredClone(Object.entries(p.values as Record<string, number>).map(([k, v]) => updateParam(pl.params, k, { value: v })).filter(Boolean)) : [];
     },
