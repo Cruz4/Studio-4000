@@ -1070,5 +1070,8 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 :root[data-theme="light"] .fx-window-badge,
 :root[data-theme="light"] .fx-card-kind,
 :root[data-theme="light"] .fx-live { color: var(--text); }
-:root[data-theme="light"] .browser .b-group.section-title { color: #100b1d; font-size: 11px; font-weight: 700; }
+:root[data-theme="light"] .browser .b-group.section-title {
+  color: #ffd1f0; font-size: 11px; font-weight: 700;
+  text-shadow: 0 1px 1px rgba(8, 10, 14, .9);
+}
 :root[data-palette="studio-sessions"] .track-head .toggle.fx.on { background: #ff00ff; color: #18091a; box-shadow: 0 0 0 1px rgba(255,0,255,.4); }
