@@ -8,7 +8,7 @@ export interface WhatsNewGroup {
 
 export const WHATS_NEW: WhatsNewGroup[] = [
   { title: "Reference another app", color: "#29c1ff", items: [
-    "Choose a Windows app or window and see its live frequency spectrum and stereo field.",
+    "Use a floating Reference FX window that keeps analyzing while hidden.",
     "Overlay the DAW master, record a Reference track, and save averaged profiles.",
     "Apply a safe, editable eight-band match EQ to the selected audio or instrument track.",
     "AKAsheet opens its installed web app first, with the website as a fallback.",

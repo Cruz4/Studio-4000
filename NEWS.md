@@ -1,7 +1,7 @@
 Updates from November 12–13, 2026
 
 ### Reference another app
-Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Studio 4000 draws its live frequency spectrum and stereo field beside an optional DAW-master overlay. Record the source directly to a stereo Reference track, save averaged profiles, and apply a conservative, editable eight-band match EQ to a selected audio or instrument track.
+Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden, with a small live indicator for reopening or disconnecting. Studio 4000 draws its live frequency spectrum and stereo field beside an optional DAW-master overlay. Record the source directly to a stereo Reference track, save averaged profiles, and apply a conservative, editable eight-band match EQ to a selected audio or instrument track.
 
 The AKAsheet button now looks for an installed AKAsheet web-app shortcut first. If it is not installed, the website opens with an install suggestion.
 

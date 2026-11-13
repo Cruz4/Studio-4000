@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rpc } from "../bridge";
 import { act, live, refreshProject, selectTrack, toast, useStore } from "../store";
 import type { Plugin } from "../types";
-import { Modal, Icon } from "./ui";
+import { Icon } from "./ui";
 
 const BINS = 160;
 const PROFILE_KEY = "studio4000.referenceProfiles.v1";
@@ -74,6 +74,8 @@ export function ReferenceTool() {
   const [profiles, setProfiles] = useState<Profile[]>(storedProfiles);
   const [profileId, setProfileId] = useState("");
   const [width, setWidth] = useState(0);
+  const [pos, setPos] = useState(() => ({ x: Math.max(12, (window.innerWidth - 980) / 2), y: Math.max(56, window.innerHeight * .1) }));
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const field = useRef<HTMLCanvasElement>(null);
   const audio = useRef<{ ctx: AudioContext; source: MediaStreamAudioSourceNode; analyser: AnalyserNode; left: AnalyserNode; right: AnalyserNode; processor: ScriptProcessorNode; sink: GainNode } | null>(null);
@@ -95,18 +97,17 @@ export function ReferenceTool() {
   }, []);
 
   useEffect(() => () => disconnect(), [disconnect]);
-  useEffect(() => { if (!open) disconnect(); }, [open, disconnect]);
 
   useEffect(() => {
-    if (!open || !masterPlugin) return;
+    if (!masterPlugin) return;
     const timer = window.setInterval(async () => {
       const t = await rpc<{ spectrumOut?: number[] }>("plugin.telemetry", { id: masterPlugin, spectrum: true }).catch(() => null);
       if (t?.spectrumOut?.length) { masterSpecRef.current = t.spectrumOut; setMasterSpec(t.spectrumOut); }
     }, 120);
     return () => clearInterval(timer);
-  }, [open, masterPlugin]);
+  }, [masterPlugin]);
 
-  if (!open || !project) return null;
+  if (!project) return null;
 
   const render = () => {
     const a = audio.current;
@@ -195,9 +196,27 @@ export function ReferenceTool() {
     const p = await act("plugin.add", { trackId: track.id, plugin: "s4000eq", params }) as Plugin | undefined; if (p?.id) { await refreshProject(); toast(`Matched ${track.name} toward “${target.name}” with a safe ±6 dB EQ`, "success"); }
   };
 
-  return <Modal title={<span className="row"><Icon name="scope" /> Reference Track</span>} onClose={() => useStore.setState({ referenceOpen: false })} width={980}
-    footer={<><span className="small faint grow">External source is analyzed separately and is never sent through the DAW master.</span><button className="btn" onClick={() => useStore.setState({ referenceOpen: false })}>Close</button></>}>
-    <div className="reference-tool">
+  if (!open) return stream ? <div className="reference-background-pill" title="The reference analyzer is still running in the background">
+    <span className="dot live" /><b className="ellipsis">Reference live</b>{recording && <span className="pill err">REC</span>}
+    <button className="btn sm accent" onClick={() => useStore.setState({ referenceOpen: true })}>Open</button>
+    <button className="btn sm ghost" disabled={recording} onClick={disconnect} title={recording ? "Stop the reference recording before disconnecting" : "Stop capturing this source"}>Disconnect</button>
+  </div> : null;
+
+  return <div className="fx-window reference-window" style={{ left: pos.x, top: pos.y, width: Math.min(980, window.innerWidth - 24), maxHeight: "calc(100vh - 16px)", ["--accent" as string]: "#29c1ff" }}>
+    <div className="fx-window-head" onPointerDown={(e) => {
+      if ((e.target as HTMLElement).closest("button,select,input")) return;
+      (e.currentTarget as Element).setPointerCapture(e.pointerId); drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+    }} onPointerMove={(e) => {
+      if (!drag.current) return;
+      setPos({ x: Math.min(window.innerWidth - 150, Math.max(-820, e.clientX - drag.current.dx)), y: Math.min(window.innerHeight - 50, Math.max(0, e.clientY - drag.current.dy)) });
+    }} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
+      <span className="fx-window-badge">Reference</span><Icon name="scope" size={15} />
+      <div className="col grow" style={{ gap: 0, minWidth: 0 }}><b>Reference Analyzer</b><span className="small faint ellipsis">{sourceName} · runs while hidden</span></div>
+      {stream && <span className="fx-live"><i /> {recording ? "Recording" : "Live source"}</span>}
+      <button className="btn sm ghost" disabled={!stream || recording} onClick={disconnect} title={recording ? "Stop the recording before disconnecting" : "Stop capturing the external source"}><Icon name="power" size={12} /> Disconnect</button>
+      <button className="btn ghost icon sm" onClick={() => useStore.setState({ referenceOpen: false })} title="Hide — analysis keeps running"><Icon name="x" size={14} /></button>
+    </div>
+    <div className="fx-window-body reference-tool">
       <div className="reference-source row"><span className={stream ? "dot live" : "dot"} /><b className="grow ellipsis" title={sourceName}>{sourceName}</b><button className="btn accent" onClick={chooseSource}><Icon name="window" size={13} /> Choose app / window</button><button className="btn" onClick={compareMaster} disabled={!!masterPlugin}>Compare DAW master</button></div>
       <div className="reference-graphs"><div className="reference-spectrum"><div className="row small"><b className="grow">Frequency comparison</b><span className="reference-key external">Reference</span><span className="reference-key master">DAW master</span></div><canvas ref={canvas} /></div><div className="reference-field"><div className="row small"><b className="grow">Stereo field</b><span>{width}% width</span></div><canvas ref={field} /></div></div>
       <div className="reference-actions">
@@ -207,6 +226,7 @@ export function ReferenceTool() {
         <button className="btn accent" onClick={applyMatch} disabled={!profileId}>Apply match EQ to selected track</button>
       </div>
       <p className="small dim">Choose a source in the Windows picker and enable <b>Share audio</b>. Let it play to build a stable average. “Apply match” creates an editable eight-band Parametric EQ and limits corrections to ±6 dB; it does not copy loudness or mastering.</p>
+      <div className="row small faint"><span className="grow">External audio stays separate from the DAW master. Hiding this window keeps analysis and capture active.</span><button className="btn sm" onClick={() => useStore.setState({ referenceOpen: false })}>Hide window</button></div>
     </div>
-  </Modal>;
+  </div>;
 }
