@@ -30,6 +30,6 @@ Bus meters now follow the summed post-fader signal, including buses nested insid
 Every track, bus and the master has a Mono toggle for checking left/right compatibility. It averages the channels for playback and restores stereo when switched off, without changing the recording format.
 
 ### Make it yours
-Studio Sessions is the default dark theme, with fuchsia Effects headings. The original dark appearance is available as Dark Night. Plotting has its shorter name, and all 35 supplied palettes remain in Settings. The top-right switch alternates between Light and Studio Sessions.
+Blue Storm is the default dark theme. The top-right switch alternates between Light and Blue Storm. Existing use of the previous Studio Sessions default moves to Blue Storm once; Studio Sessions can still be selected in Settings afterward. Dark Night preserves the original dark appearance, Plotting has its shorter name, and all 35 supplied palettes remain in Settings.
 
 Light mode retains its original gray surfaces, with slightly stronger dark text, readable EQ type labels and purple Effects browser headings. Active track FX badges are fuchsia in Studio Sessions.

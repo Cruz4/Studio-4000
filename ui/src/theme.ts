@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { PALETTES, paletteTokens } from "./palettes";
 const KEY = "studio4000-theme";
-export const DEFAULT_DARK_THEME = "studio-sessions";
+const DEFAULT_KEY = "studio4000-default-dark";
+export const DEFAULT_DARK_THEME = "blue-storm";
+export const DEFAULT_DARK_NAME = PALETTES.find((p) => p.id === DEFAULT_DARK_THEME)!.name;
 export type ThemeName = "dark" | "light";
 export function currentTheme(): ThemeName {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
@@ -31,9 +33,17 @@ export function applyPalette(id: string) {
   try { localStorage.setItem(KEY, id); } catch { /* private mode */ }
 }
 export function restoreTheme() {
-  try { applyPalette(localStorage.getItem(KEY) ?? DEFAULT_DARK_THEME); } catch { applyPalette(DEFAULT_DARK_THEME); }
+  try {
+    let saved = localStorage.getItem(KEY);
+    if (localStorage.getItem(DEFAULT_KEY) !== DEFAULT_DARK_THEME) {
+      // Move the previous default once; Studio Sessions remains selectable afterward.
+      if (saved === "studio-sessions") saved = DEFAULT_DARK_THEME;
+      localStorage.setItem(DEFAULT_KEY, DEFAULT_DARK_THEME);
+    }
+    applyPalette(saved ?? DEFAULT_DARK_THEME);
+  } catch { applyPalette(DEFAULT_DARK_THEME); }
 }
-/** The toolbar alternates between Default Light and Studio Sessions. */
+/** The toolbar alternates between Default Light and the default dark palette. */
 export function toggleTheme() { applyTheme(currentTheme() === "light" ? "dark" : "light"); }
 export function useThemeName() {
   const [name, setName] = useState(currentPalette);

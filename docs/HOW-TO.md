@@ -156,7 +156,7 @@ Every bundled effect has a **Factory default** entry. The original Studio effect
 
 Marker lines extend through tracks and clips. With Snap enabled, either clip edge catches a marker within ten screen pixels. With Snap off, hold Ctrl while dragging to enable the marker magnet temporarily. Move farther than the catch zone to continue past the marker. With Snap enabled, Ctrl still locks time for vertical moves. Alt-drag shows the stationary original plus a translucent copy while dragging, then commits the copy at the shown time and compatible destination track.
 
-Select a palette under **Settings > General > Appearance theme**. Studio Sessions is the default dark theme, with fuchsia Effects category headings. Dark Night preserves the original dark appearance. All 35 supplied palettes remain available, with dark tinted surfaces and contrast-adjusted text. The toolbar Light/Dark button switches between Default Light and Studio Sessions. Ctrl+wheel over track information continues to resize tracks.
+Select a palette under **Settings > General > Appearance theme**. Blue Storm is the default dark theme. Studio Sessions remains available with its fuchsia Effects headings, and Dark Night preserves the original dark appearance. All 35 supplied palettes remain available, with dark tinted surfaces and contrast-adjusted text. The toolbar Light/Dark button switches between Default Light and Blue Storm. Ctrl+wheel over track information continues to resize tracks.
 
 ### Record loop takes on separate tracks
 

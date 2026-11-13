@@ -1,5 +1,5 @@
 import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { currentTheme, toggleTheme, useThemeName } from "../theme";
+import { currentTheme, DEFAULT_DARK_NAME, toggleTheme, useThemeName } from "../theme";
 import { clamp, cx, formatDb, parseDb } from "../util";
 
 /** Keeps a crash in one panel from blanking the whole window. */
@@ -206,7 +206,7 @@ export function ThemeToggle() {
   useThemeName();
   const light = currentTheme() === "light";
   return (
-    <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? "Switch to Studio Sessions (default dark)" : "Switch to the default light theme"}
+    <button className={cx("btn sm ghost theme-toggle", light && "on")} title={light ? `Switch to ${DEFAULT_DARK_NAME} (default dark)` : "Switch to the default light theme"}
       onClick={() => { toggleTheme(); }}>
       {light ? "Dark" : "Light"}
     </button>

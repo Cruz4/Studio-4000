@@ -74,16 +74,38 @@ async function openPage() {
 try {
   const page = await openPage();
   await page.go(UI);
+  const defaultTheme = await page.eval(async () => {
+    const theme = await import("/src/theme.ts");
+    const key = "studio4000-theme", migration = "studio4000-default-dark", results = [];
+    localStorage.removeItem(key); localStorage.removeItem(migration); theme.restoreTheme(); results.push(theme.currentPalette());
+    localStorage.setItem(key, "studio-sessions"); localStorage.removeItem(migration); theme.restoreTheme(); results.push(theme.currentPalette());
+    theme.applyPalette("studio-sessions"); theme.restoreTheme(); results.push(theme.currentPalette());
+    theme.applyPalette("light"); localStorage.removeItem(migration); theme.restoreTheme(); results.push(theme.currentPalette());
+    document.querySelector('.theme-toggle').click(); results.push(theme.currentPalette());
+    theme.applyPalette("neon-midnight"); localStorage.removeItem(migration); theme.restoreTheme(); results.push(theme.currentPalette());
+    theme.applyPalette("dark"); results.push(theme.currentPalette());
+    return results;
+  });
+  if (JSON.stringify(defaultTheme) !== JSON.stringify(["blue-storm", "blue-storm", "studio-sessions", "light", "blue-storm", "neon-midnight", "blue-storm"])) throw new Error("Default theme or saved preference regression: " + defaultTheme);
+  console.log("DEFAULT THEME CHECKS PASSED", JSON.stringify(defaultTheme));
   await page.eval(async () => {
     const url = performance.getEntriesByType("resource").map((e) => e.name).find((u) => new URL(u).pathname === "/src/store.ts");
     const store = await import(url ?? "/src/store.ts");
+    window.__topbarStore = store;
     await store.act("project.new", { name: "A longer project title for toolbar spacing", template: "vocal" });
     await store.act("recording.loopTakes.configure", { enabled: true, takeCount: 4, mutePrevious: true });
     store.useStore.setState({ aboutOpen: false });
   });
+  const settingsThemes = await page.eval(async () => {
+    const store = window.__topbarStore; store.useStore.setState({ settingsOpen: "general" });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const options = [...document.querySelectorAll('.modal select option')].map(o => ({ value: o.value, label: o.textContent }));
+    store.useStore.setState({ settingsOpen: null }); return options;
+  });
+  if (settingsThemes.filter(o => o.value === "blue-storm").length !== 1 || !settingsThemes.some(o => o.value === "blue-storm" && o.label === "Blue Storm (Default Dark)") || !settingsThemes.some(o => o.value === "studio-sessions" && o.label === "Studio Sessions")) throw new Error("Appearance theme options are incorrect: " + JSON.stringify(settingsThemes));
   await sleep(350);
   const results = [];
-  for (const theme of ["studio-sessions", "light"]) {
+  for (const theme of ["blue-storm", "light"]) {
     await page.eval(async (theme) => (await import("/src/theme.ts")).applyPalette(theme), theme);
   for (const width of [1920, 1680, 1600, 1536, 1480, 1440, 1366, 1280]) {
     await page.viewport(width); await sleep(100);

@@ -8,7 +8,7 @@ import { act, loadCatalogue, loadDevices, toast, useStore } from "../store";
 import { Icon, Modal, Spinner, Tabs } from "./ui";
 import { cx } from "../util";
 import { PALETTES } from "../palettes";
-import { applyPalette, useThemeName } from "../theme";
+import { applyPalette, DEFAULT_DARK_NAME, DEFAULT_DARK_THEME, useThemeName } from "../theme";
 
 type TabId = "audio" | "plugins" | "ai" | "agent" | "collab" | "general";
 
@@ -329,13 +329,13 @@ function GeneralTab() {
     <div className="col" style={{ gap: 14 }}>
       <label className="field"><span>Appearance theme</span>
         <select className="input" value={palette} onChange={(e) => applyPalette(e.target.value)}>
-          <option value="studio-sessions">Studio Sessions (Default Dark)</option>
+          <option value={DEFAULT_DARK_THEME}>{DEFAULT_DARK_NAME} (Default Dark)</option>
           <option value="light">Default Light</option>
           <option value="dark-night">Dark Night</option>
-          {PALETTES.filter((p) => p.id !== "studio-sessions").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {PALETTES.filter((p) => p.id !== DEFAULT_DARK_THEME).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </label>
-      <span className="small dim">The toolbar switches between Default Light and Studio Sessions. Dark Night keeps the original dark theme.</span>
+      <span className="small dim">The toolbar switches between Default Light and {DEFAULT_DARK_NAME}. Dark Night keeps the original dark theme.</span>
       <div className="row"><img className="wordmark sm" src={wordmark} alt="Studio 4000" /><span className="pill">{info?.version}</span></div>
       <div className="row">
         <span className="grow">Game controller</span>

@@ -34,9 +34,9 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Clip gain and fade controls stay behind track headers when you scroll.",
   ] },
   { title: "Make it yours", color: "#f2cf87", items: [
-    "Studio Sessions is the default dark theme, with fuchsia Effects headings.",
+    "Blue Storm is the default dark theme. Studio Sessions remains available in Settings.",
     "Find the original dark look as Dark Night, plus 35 color palettes in Settings.",
-    "The top-right switch takes you between Light and Studio Sessions.",
+    "The top-right switch takes you between Light and Blue Storm.",
     "Light mode keeps its original gray appearance, with slightly darker, bolder text.",
     "EQ type labels stay readable.",
     "Light-mode browser headings use darker, bolder text against the original gray.",
