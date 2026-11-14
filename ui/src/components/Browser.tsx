@@ -147,7 +147,7 @@ export function Browser() {
 
         {tab === "chains" && (
           <>
-            <div className="small dim" style={{ padding: "8px 10px" }}>96 complete chains. Choose a sound to preview its effects.</div>
+            <div className="small dim" style={{ padding: "8px 10px" }}>{TRACK_CHAINS.length} complete chains. Choose a sound to preview its effects.</div>
             {CHAIN_CATEGORIES.map((category, index) => {
               const items = TRACK_CHAINS.filter((p) => p.category === category && q.toLowerCase().split(/\s+/).every((word) => `${p.category} ${p.name} ${p.description} ${p.plugins.map((e) => e.name + " " + e.setting).join(" ")}`.toLowerCase().includes(word)));
               if (!items.length) return null;

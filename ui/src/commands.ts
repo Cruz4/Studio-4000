@@ -53,7 +53,7 @@ export async function importAudio(trackId?: string, start?: number) {
   if (!files?.length) return;
   let target = trackId ?? selectedTrack()?.id;
   if (!target || S().project?.tracks.find((t) => t.id === target)?.kind !== "audio") {
-    const ids = await act("track.add", { kind: "audio", name: "Audio" });
+    const ids = await act("track.add", { kind: "audio" });
     target = ids?.[0];
   }
   let at = start ?? live.tick.t;

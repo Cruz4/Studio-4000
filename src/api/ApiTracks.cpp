@@ -145,6 +145,60 @@ namespace
     {
         return has (p, "channels") && (int) num (p, "channels") <= 1 ? 1 : 2;
     }
+
+    bool trackNameExists (te::Edit& edit, const String& name, const te::Track* except = nullptr)
+    {
+        bool found = false;
+        edit.visitAllTracksRecursive ([&] (te::Track& track)
+        {
+            if (&track != except && track.getName().equalsIgnoreCase (name)) found = true;
+            return ! found;
+        });
+        return found;
+    }
+
+    String uniqueTrackName (te::Edit& edit, const String& requested, const String& kind, const te::Track* except = nullptr)
+    {
+        const String prefix = kind == TrackKind::group ? "Bus"
+                            : kind == TrackKind::instrument ? "Instrument"
+                            : kind == TrackKind::fxReturn ? "FX Return" : "Audio";
+        String candidate = requested.trim().isNotEmpty() ? requested.trim() : prefix + " 01";
+        if (! trackNameExists (edit, candidate, except)) return candidate;
+
+        String root = candidate;
+        int digitStart = root.length();
+        while (digitStart > 0 && juce::CharacterFunctions::isDigit (root[digitStart - 1])) --digitStart;
+        int next = 2;
+        if (digitStart < root.length() && digitStart > 0 && juce::CharacterFunctions::isWhitespace (root[digitStart - 1]))
+        {
+            next = juce::jmax (2, root.substring (digitStart).getIntValue() + 1);
+            root = root.substring (0, digitStart).trimEnd();
+        }
+        for (;; ++next)
+        {
+            candidate = root + " " + String (next).paddedLeft ('0', 2);
+            if (! trackNameExists (edit, candidate, except)) return candidate;
+        }
+    }
+
+    void setTrackFamilyColour (te::Track& track, juce::Colour colour)
+    {
+        track.setColour (colour);
+        if (auto* audio = dynamic_cast<te::AudioTrack*> (&track))
+            for (auto* clip : audio->getClips()) clip->setColour (colour);
+        if (auto* folder = dynamic_cast<te::FolderTrack*> (&track))
+            for (auto* child : folder->getAllSubTracks (true))
+            {
+                child->setColour (colour);
+                if (auto* audio = dynamic_cast<te::AudioTrack*> (child))
+                    for (auto* clip : audio->getClips()) clip->setColour (colour);
+            }
+    }
+
+    void inheritGroupColour (te::Track& track, te::FolderTrack* parent)
+    {
+        if (parent != nullptr && parent->isSubmixFolder()) setTrackFamilyColour (track, parent->getColour());
+    }
 }
 
 juce::Colour nextTrackColour (te::Edit& edit)
@@ -246,8 +300,9 @@ te::Track::Ptr createTrack (AppEngine& app, const String& kind, const String& na
     if (track == nullptr)
         throw RpcError ("Could not create the track");
 
-    track->setName (name.isNotEmpty() ? name : (kind == TrackKind::group ? "Group" : kind == TrackKind::instrument ? "Instrument" : "Audio"));
+    track->setName (uniqueTrackName (edit, name, kind, track.get()));
     track->setColour (nextTrackColour (edit));
+    inheritGroupColour (*track, parent);
     return track;
 }
 
@@ -331,7 +386,7 @@ void registerTrackApi (AppEngine& app)
         if (copy == nullptr)
             throw RpcError ("Could not duplicate the track");
 
-        copy->setName (t.getName() + " copy");
+        copy->setName (uniqueTrackName (app.edit(), t.getName() + " copy", getTrackKind (t), copy.get()));
         return var (copy->itemID.toString());
     });
 
@@ -386,6 +441,7 @@ void registerTrackApi (AppEngine& app)
             throw RpcError ("A group can't be moved into itself");
 
         app.edit().moveTrack (&t, te::TrackInsertPoint (parent, after));
+        inheritGroupColour (t, parent);
         return var (true);
     });
 
@@ -410,7 +466,12 @@ void registerTrackApi (AppEngine& app)
         }
 
         if (has (p, "name"))    t.setName (str (p, "name"));
-        if (has (p, "colour"))  t.setColour (colourFromString (str (p, "colour"), t.getColour()));
+        if (has (p, "colour"))
+        {
+            auto colour = colourFromString (str (p, "colour"), t.getColour());
+            if (dynamic_cast<te::FolderTrack*> (&t) != nullptr) setTrackFamilyColour (t, colour);
+            else t.setColour (colour);
+        }
         if (has (p, "mute"))    t.setMute (flag (p, "mute"));
         if (has (p, "solo"))    t.setSolo (flag (p, "solo"));
         if (has (p, "role"))    t.state.setProperty ("s3role", str (p, "role"), &app.edit().getUndoManager());
@@ -443,6 +504,7 @@ void registerTrackApi (AppEngine& app)
                         throw RpcError ("That routing would create a feedback loop");
                     if (folder->getParentFolderTrack() != bus)
                         app.edit().moveTrack (folder, te::TrackInsertPoint (bus, lastChildOf (*bus)));
+                    inheritGroupColour (*folder, bus);
                 }
                 else
                     throw RpcError ("A bus can output to the master or another bus");
@@ -479,6 +541,7 @@ void registerTrackApi (AppEngine& app)
             else if (auto* bus = dynamic_cast<te::FolderTrack*> (app.findTrack (out)))
             {
                 routeIntoBus (app.edit(), *at, *bus);
+                inheritGroupColour (*at, bus);
             }
             else
             {
@@ -658,7 +721,7 @@ void registerTrackApi (AppEngine& app)
     {
         auto* ids = p["trackIds"].getArray();
         te::Track* first = (ids != nullptr && ! ids->isEmpty()) ? app.findTrack ((*ids)[0].toString()) : nullptr;
-        auto group = createTrack (app, TrackKind::group, str (p, "name", "Group"),
+        auto group = createTrack (app, TrackKind::group, str (p, "name"),
                                   first != nullptr ? first->getSiblingTrack (-1, false) : nullptr, nullptr, nullptr,
                                   requestedChannels (p));
         auto* folder = dynamic_cast<te::FolderTrack*> (group.get());
@@ -666,7 +729,10 @@ void registerTrackApi (AppEngine& app)
         if (ids != nullptr && folder != nullptr)
             for (auto& id : *ids)
                 if (auto* t = app.findTrack (id.toString()); t != nullptr && t != folder)
+                {
                     app.edit().moveTrack (t, te::TrackInsertPoint (folder, lastChildOf (*folder)));
+                    inheritGroupColour (*t, folder);
+                }
 
         return var (group->itemID.toString());
     });

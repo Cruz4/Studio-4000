@@ -6940,5 +6940,2384 @@
         }
       }
     ]
+  },
+  {
+    "id": "mastering-vocal-mixes--clear-vocal-single",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Clear Vocal Single",
+    "description": "A restrained final chain that clears low mids, anchors the centre and protects vocal peaks.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -13,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 96,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--warm-vocal-single",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Warm Vocal Single",
+    "description": "Tape colour and gentle dynamics give a finished vocal song a warmer, smoother presentation.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tape finish",
+        "values": {
+          "type": 0,
+          "drive": 2.5,
+          "tone": -3,
+          "output": -0.3,
+          "mix": 65
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -12,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--rap-vocal-forward",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Rap Vocal Forward",
+    "description": "Controlled low mids, firm but blended glue and fast peak recovery keep bars clearly in front.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.8,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - dense modern",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 8,
+          "attack": 18,
+          "release": 120,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 75
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 96,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 2.5,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--ballad-vocal-open",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Ballad Vocal Open",
+    "description": "Slow master compression and conservative width preserve phrasing while adding a little air.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.8,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 150
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--bright-vocal-control",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Bright Vocal Control",
+    "description": "Broad upper-mid softening, centred imaging and slower limiting calm an overly bright vocal mix.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - harsh mix soften",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b5freq": 3300,
+          "b5gain": -0.9,
+          "b5q": 1,
+          "b6freq": 7200,
+          "b6gain": -0.5,
+          "b6q": 0.8,
+          "b7freq": 14000,
+          "b7gain": 0.3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -13,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 96,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 150
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--dark-vocal-lift",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Dark Vocal Lift",
+    "description": "Broad high-frequency recovery and subtle tube colour open a dark mix without hardening it.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - dark mix recovery",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b4freq": 450,
+          "b4gain": -0.5,
+          "b4q": 0.8,
+          "b6freq": 6500,
+          "b6gain": 0.7,
+          "b6q": 0.7,
+          "b7freq": 13000,
+          "b7gain": 1.1,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tube polish",
+        "values": {
+          "type": 1,
+          "drive": 2,
+          "tone": 4,
+          "output": -0.4,
+          "mix": 55
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--dense-vocal-modern",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Dense Vocal Modern",
+    "description": "Parallel-leaning compression, dark peak rounding and assertive limiting create modern density.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - dense modern",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 8,
+          "attack": 18,
+          "release": 120,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 85
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - dark soft clip",
+        "values": {
+          "type": 0,
+          "drive": 4,
+          "tone": -12,
+          "output": -1,
+          "mix": 35
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - loud modern",
+        "values": {
+          "inputGain": 4,
+          "ceiling": -0.8,
+          "release": 45
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--acoustic-vocal-dynamic",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Acoustic Vocal Dynamic",
+    "description": "Minimal tonal shaping and very slow control keep natural vocal and instrument movement intact.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 104,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 0.8,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--backing-stack-master",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Backing Stack Master",
+    "description": "A slightly narrowed image and smooth compression keep layered vocals cohesive behind the lead.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.3,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -14,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000deesser",
+        "name": "De-esser",
+        "setting": "Backing stack - soft top",
+        "values": {
+          "frequency": 6500,
+          "threshold": -28,
+          "range": 6,
+          "listen": 0
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 92,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--spoken-vocal-master",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Spoken Vocal Master",
+    "description": "Conservative EQ, slow RMS control and a lower peak ceiling suit spoken-word and narration delivery.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -13,
+          "ratio": 1.6,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Podcast mono",
+        "values": {
+          "width": 15,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -1.5,
+          "release": 160
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--airy-pop-vocal",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Airy Pop Vocal",
+    "description": "Controlled low mids, restrained air and stereo safety create a bright but still centred pop finish.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 1,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -13,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - clean density",
+        "values": {
+          "type": 0,
+          "drive": 1.5,
+          "tone": 0,
+          "output": -0.2,
+          "mix": 40
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-vocal-mixes--vintage-vocal-finish",
+    "category": "Mastering - Vocal Mixes",
+    "name": "Vintage Vocal Finish",
+    "description": "Dark tape saturation and slow glue round the transients for a deliberately softer vintage master.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": -0.2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - dark soft clip",
+        "values": {
+          "type": 0,
+          "drive": 3,
+          "tone": -12,
+          "output": -1,
+          "mix": 45
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 340,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--trap-low-end-focus",
+    "category": "Mastering - Instrumentals",
+    "name": "Trap Low-End Focus",
+    "description": "Mono low bass, a controlled low-mid pocket and firm peak handling keep an 808-led beat focused.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - instrumental low-end focus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b3freq": 75,
+          "b3gain": 0.7,
+          "b3q": 0.8,
+          "b4freq": 240,
+          "b4gain": -0.7,
+          "b4q": 1,
+          "b7freq": 11500,
+          "b7gain": 0.4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 40,
+          "release": 160,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - mono bass wide top",
+        "values": {
+          "width": 125,
+          "bassMono": 220,
+          "output": -0.6
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--hip-hop-punch",
+    "category": "Mastering - Instrumentals",
+    "name": "Hip-Hop Punch",
+    "description": "Long-attack compression retains drums while subtle saturation and limiting add competitive density.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - instrumental low-end focus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b3freq": 75,
+          "b3gain": 0.4,
+          "b3q": 0.8,
+          "b4freq": 240,
+          "b4gain": -0.7,
+          "b4q": 1,
+          "b7freq": 11500,
+          "b7gain": 0.4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 40,
+          "release": 160,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - clean density",
+        "values": {
+          "type": 0,
+          "drive": 1.5,
+          "tone": 0,
+          "output": -0.2,
+          "mix": 40
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--r-b-velvet",
+    "category": "Mastering - Instrumentals",
+    "name": "R&B Velvet",
+    "description": "Warm tape colour, gentle glue and restrained width produce a smooth, vocal-ready instrumental.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tape finish",
+        "values": {
+          "type": 0,
+          "drive": 2.5,
+          "tone": -3,
+          "output": -0.3,
+          "mix": 65
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--pop-open",
+    "category": "Mastering - Instrumentals",
+    "name": "Pop Open",
+    "description": "Broad air, safe stereo expansion and transparent dynamics make a polished open pop instrumental.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - dark mix recovery",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b4freq": 450,
+          "b4gain": -0.5,
+          "b4q": 0.8,
+          "b6freq": 6500,
+          "b6gain": 0.7,
+          "b6q": 0.7,
+          "b7freq": 13000,
+          "b7gain": 0.8,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - instrumental open",
+        "values": {
+          "width": 116,
+          "bassMono": 170,
+          "output": -0.4
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--rock-impact",
+    "category": "Mastering - Instrumentals",
+    "name": "Rock Impact",
+    "description": "Midrange control, slower punch compression and quick limiting retain guitars and drum transients.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 350,
+          "b3gain": -0.8,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 45,
+          "release": 160,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tube polish",
+        "values": {
+          "type": 1,
+          "drive": 2,
+          "tone": 4,
+          "output": -0.4,
+          "mix": 40
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--acoustic-natural",
+    "category": "Mastering - Instrumentals",
+    "name": "Acoustic Natural",
+    "description": "Very gentle dynamics, minimal width and conservative limiting preserve acoustic detail and depth.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 103,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 0.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--electronic-wide",
+    "category": "Mastering - Instrumentals",
+    "name": "Electronic Wide",
+    "description": "Centred sub-bass and broader upper stereo energy create scale without destabilising the low end.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - instrumental low-end focus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b3freq": 75,
+          "b3gain": 0.3,
+          "b3q": 0.8,
+          "b4freq": 240,
+          "b4gain": -0.7,
+          "b4q": 1,
+          "b7freq": 11500,
+          "b7gain": 0.4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - mono bass wide top",
+        "values": {
+          "width": 125,
+          "bassMono": 220,
+          "output": -0.6
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - loud modern",
+        "values": {
+          "inputGain": 4,
+          "ceiling": -0.8,
+          "release": 45
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--dark-beat-recovery",
+    "category": "Mastering - Instrumentals",
+    "name": "Dark Beat Recovery",
+    "description": "Broad top recovery and restrained tube harmonics restore definition to a veiled instrumental.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - dark mix recovery",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b4freq": 450,
+          "b4gain": -0.5,
+          "b4q": 0.8,
+          "b6freq": 6500,
+          "b6gain": 0.7,
+          "b6q": 0.7,
+          "b7freq": 13000,
+          "b7gain": 1.1,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tube polish",
+        "values": {
+          "type": 1,
+          "drive": 2,
+          "tone": 4,
+          "output": -0.4,
+          "mix": 55
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - instrumental open",
+        "values": {
+          "width": 112,
+          "bassMono": 170,
+          "output": -0.4
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--bright-beat-tamer",
+    "category": "Mastering - Instrumentals",
+    "name": "Bright Beat Tamer",
+    "description": "Upper-mid softening and dark peak rounding calm sharp hats and synths before final limiting.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - harsh mix soften",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b5freq": 3300,
+          "b5gain": -0.9,
+          "b5q": 1,
+          "b6freq": 7200,
+          "b6gain": -0.5,
+          "b6q": 0.8,
+          "b7freq": 14000,
+          "b7gain": 0.3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - dark soft clip",
+        "values": {
+          "type": 0,
+          "drive": 4,
+          "tone": -12,
+          "output": -1,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3,
+          "ceiling": -1,
+          "release": 70
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--lo-fi-controlled",
+    "category": "Mastering - Instrumentals",
+    "name": "Lo-Fi Controlled",
+    "description": "Deliberate tape shade and narrow-safe imaging keep a textured instrumental controlled for release.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": -0.5,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - tape finish",
+        "values": {
+          "type": 0,
+          "drive": 3.5,
+          "tone": -3,
+          "output": -0.3,
+          "mix": 75
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 98,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--keys-and-piano-master",
+    "category": "Mastering - Instrumentals",
+    "name": "Keys and Piano Master",
+    "description": "Slow control, low-mid cleanup and gentle width preserve keyboard transients and harmonic detail.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 420,
+          "b3gain": -0.7,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - instrumental open",
+        "values": {
+          "width": 110,
+          "bassMono": 170,
+          "output": -0.4
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-instrumentals--cinematic-dynamic",
+    "category": "Mastering - Instrumentals",
+    "name": "Cinematic Dynamic",
+    "description": "Conservative tone, long release and minimal peak drive preserve large dynamic contrasts and ambience.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 450,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -1.5,
+          "release": 160
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--streaming-balanced",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Streaming Balanced",
+    "description": "A neutral streaming chain with subtle glue, mono-safe bass and a conservative final ceiling.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 2,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--modern-loud",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Modern Loud",
+    "description": "Denser compression and soft peak rounding feed a stronger limiter for an assertive modern release.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - dense modern",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 8,
+          "attack": 18,
+          "release": 120,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 85
+        }
+      },
+      {
+        "type": "s4000saturator",
+        "name": "Saturator",
+        "setting": "Master - dark soft clip",
+        "values": {
+          "type": 0,
+          "drive": 4,
+          "tone": -12,
+          "output": -1,
+          "mix": 30
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - loud modern",
+        "values": {
+          "inputGain": 5.5,
+          "ceiling": -0.8,
+          "release": 45
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--broadcast-conservative",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Broadcast Conservative",
+    "description": "Minimal tonal change, slow dynamics and a lower ceiling prepare material for loudness-normalised broadcast.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.3,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 100,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -2,
+          "release": 160
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--podcast-delivery",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Podcast Delivery",
+    "description": "Centred imaging and vocal-weighted tone with conservative peak protection suit spoken programme delivery.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -16,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Podcast mono",
+        "values": {
+          "width": 15,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -1.5,
+          "release": 160
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--mono-translation-check",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Mono Translation Check",
+    "description": "A fully mono image with gentle control exposes phase and balance problems before final delivery.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Mono",
+        "values": {
+          "width": 0,
+          "bassMono": 0,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -2,
+          "release": 160
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--club-weight",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Club Weight",
+    "description": "Focused lows, safe bass centring and stronger limiting give club-oriented material more weight and level.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - instrumental low-end focus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b3freq": 75,
+          "b3gain": 0.7,
+          "b3q": 0.8,
+          "b4freq": 240,
+          "b4gain": -0.7,
+          "b4q": 1,
+          "b7freq": 11500,
+          "b7gain": 0.4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 40,
+          "release": 160,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - mono bass wide top",
+        "values": {
+          "width": 125,
+          "bassMono": 220,
+          "output": -0.6
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - loud modern",
+        "values": {
+          "inputGain": 5,
+          "ceiling": -0.8,
+          "release": 45
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--gentle-print",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Gentle Print",
+    "description": "Tiny tonal moves and very slow gain control create a safe, minimally processed client listening copy.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.3,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.3,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -9,
+          "ratio": 1.2,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 102,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 0.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--small-speaker-translation",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Small-Speaker Translation",
+    "description": "Low-mid cleanup, centred imaging and controlled peaks help a mix remain intelligible on compact playback.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.4,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.2,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - transparent glue",
+        "values": {
+          "threshold": -10,
+          "ratio": 1.5,
+          "knee": 12,
+          "attack": 35,
+          "release": 280,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 90,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 96,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - streaming transparent",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1,
+          "release": 100
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--vocal-forward-full-mix",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Vocal-Forward Full Mix",
+    "description": "Creates a little vocal space while keeping the stereo bed restrained and the overall level controlled.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.6,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - vocal mix glue",
+        "values": {
+          "threshold": -13,
+          "ratio": 1.8,
+          "knee": 10,
+          "attack": 25,
+          "release": 220,
+          "makeup": 0.5,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 110,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - vocal center",
+        "values": {
+          "width": 98,
+          "bassMono": 180,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - vocal mix safety",
+        "values": {
+          "inputGain": 1.5,
+          "ceiling": -1.2,
+          "release": 120
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--instrumental-release",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Instrumental Release",
+    "description": "A low-end-aware, moderately wide chain for beats delivered without a lead vocal.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - instrumental low-end focus",
+        "values": {
+          "b1on": 1,
+          "b1freq": 25,
+          "b1slope": 0,
+          "b3freq": 75,
+          "b3gain": 0.7,
+          "b3q": 0.8,
+          "b4freq": 240,
+          "b4gain": -0.7,
+          "b4q": 1,
+          "b7freq": 11500,
+          "b7gain": 0.4,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "threshold": -12,
+          "ratio": 2,
+          "knee": 8,
+          "attack": 40,
+          "release": 160,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 80,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - instrumental open",
+        "values": {
+          "width": 116,
+          "bassMono": 170,
+          "output": -0.4
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--social-preview",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Social Preview",
+    "description": "Fast recovery and moderate density make a short preview sound present without using the loudest settings.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - vocal clarity",
+        "values": {
+          "b1on": 1,
+          "b1freq": 28,
+          "b1slope": 0,
+          "b3freq": 320,
+          "b3gain": -0.8,
+          "b3q": 0.9,
+          "b5freq": 2800,
+          "b5gain": 0.4,
+          "b5q": 0.8,
+          "b7freq": 12500,
+          "b7gain": 0.7,
+          "output": 0
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - dense modern",
+        "values": {
+          "threshold": -16,
+          "ratio": 2.5,
+          "knee": 8,
+          "attack": 18,
+          "release": 120,
+          "makeup": 1,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 100,
+          "mix": 70
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 108,
+          "bassMono": 160,
+          "output": -0.2
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - instrumental punch",
+        "values": {
+          "inputGain": 3.5,
+          "ceiling": -1,
+          "release": 55
+        }
+      }
+    ]
+  },
+  {
+    "id": "mastering-delivery-and-utility--mastering-handoff",
+    "category": "Mastering - Delivery and Utility",
+    "name": "Mastering Handoff",
+    "description": "Subsonic cleanup and peak safety retain headroom for a dedicated mastering engineer or later session.",
+    "plugins": [
+      {
+        "type": "s4000eq",
+        "name": "Parametric EQ",
+        "setting": "Master - transparent balance",
+        "values": {
+          "b1on": 1,
+          "b1freq": 24,
+          "b1slope": 0,
+          "b3freq": 260,
+          "b3gain": -0.6,
+          "b3q": 0.8,
+          "b6freq": 8500,
+          "b6gain": 0.5,
+          "b6q": 0.7,
+          "b7freq": 14000,
+          "b7gain": 0.6,
+          "output": -1
+        }
+      },
+      {
+        "type": "s4000comp",
+        "name": "Compressor",
+        "setting": "Master - acoustic dynamics",
+        "values": {
+          "threshold": -6,
+          "ratio": 1.1,
+          "knee": 14,
+          "attack": 45,
+          "release": 350,
+          "makeup": 0,
+          "autoMakeup": 0,
+          "detect": 1,
+          "scHpf": 70,
+          "mix": 100
+        }
+      },
+      {
+        "type": "s4000width",
+        "name": "Stereo Width",
+        "setting": "Master - translation safe",
+        "values": {
+          "width": 100,
+          "bassMono": 160,
+          "output": -0.5
+        }
+      },
+      {
+        "type": "s4000limiter",
+        "name": "Limiter",
+        "setting": "Master - broadcast safe",
+        "values": {
+          "inputGain": 0,
+          "ceiling": -3,
+          "release": 160
+        }
+      }
+    ]
   }
 ]

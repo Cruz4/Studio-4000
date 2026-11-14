@@ -6,6 +6,11 @@ export interface Preset { name: string; values: Record<string, number>; descript
 const g = (db: number) => Math.pow(10, db / 20);
 
 export const EQ_PRESETS: Preset[] = [
+  { name: "Master - transparent balance", values: { b1on: 1, b1freq: 24, b1slope: 0, b3freq: 260, b3gain: -0.6, b3q: 0.8, b6freq: 8500, b6gain: 0.5, b6q: 0.7, b7freq: 14000, b7gain: 0.6, output: 0 }, description: "Subsonic cleanup with sub-decibel low-mid and top shaping for a finished mix." },
+  { name: "Master - vocal clarity", values: { b1on: 1, b1freq: 28, b1slope: 0, b3freq: 320, b3gain: -0.8, b3q: 0.9, b5freq: 2800, b5gain: 0.6, b5q: 0.8, b7freq: 12500, b7gain: 0.7, output: 0 }, description: "Makes room around vocal fundamentals while gently lifting intelligibility and air." },
+  { name: "Master - instrumental low-end focus", values: { b1on: 1, b1freq: 25, b1slope: 0, b3freq: 75, b3gain: 0.7, b3q: 0.8, b4freq: 240, b4gain: -0.7, b4q: 1, b7freq: 11500, b7gain: 0.4, output: 0 }, description: "Adds restrained bass weight while reducing low-mid masking in an instrumental." },
+  { name: "Master - dark mix recovery", values: { b1on: 1, b1freq: 24, b1slope: 0, b4freq: 450, b4gain: -0.5, b4q: 0.8, b6freq: 6500, b6gain: 0.7, b6q: 0.7, b7freq: 13000, b7gain: 1.1, output: -0.2 }, description: "Broad, conservative high-frequency lift for a mix that feels veiled." },
+  { name: "Master - harsh mix soften", values: { b1on: 1, b1freq: 25, b1slope: 0, b5freq: 3300, b5gain: -0.9, b5q: 1, b6freq: 7200, b6gain: -0.5, b6q: 0.8, b7freq: 14000, b7gain: 0.3, output: 0 }, description: "Broadly reduces forward upper mids while retaining a small amount of air." },
   {"name": "Rap vocal - controlled presence", "values": {"b1on": 1, "b1freq": 85, "b1slope": 1, "b3freq": 300, "b3gain": -3, "b3q": 1.2, "b5freq": 3200, "b5gain": 2, "b5q": 0.9, "b7freq": 11000, "b7gain": 1.5}, "description": "High-pass at 85 Hz, less 300 Hz boxiness, a restrained presence lift."},
   {"name": "Vocal - tame nasal resonance", "values": {"b1on": 1, "b1freq": 75, "b4freq": 1000, "b4gain": -3, "b4q": 1.8, "b7gain": 1}, "description": "Broad attenuation around 1 kHz; move this band to the actual nasal resonance."},
   {"name": "Vocal - reduce proximity boom", "values": {"b1on": 1, "b1freq": 95, "b2freq": 160, "b2gain": -3, "b3freq": 280, "b3gain": -2, "b3q": 0.9}, "description": "Cuts the low shelf and low mids for an overly close microphone."},
@@ -44,6 +49,11 @@ export const CLASSIC_EQ_PRESETS: Preset[] = [
 ];
 
 export const COMP_PRESETS: Preset[] = [
+  { name: "Master - transparent glue", values: { threshold: -10, ratio: 1.5, knee: 12, attack: 35, release: 280, makeup: 0, autoMakeup: 0, detect: 1, scHpf: 90, mix: 100 }, description: "Slow RMS compression with a high-pass detector for roughly one or two dB of mix glue." },
+  { name: "Master - vocal mix glue", values: { threshold: -13, ratio: 1.8, knee: 10, attack: 25, release: 220, makeup: 0.5, autoMakeup: 0, detect: 1, scHpf: 110, mix: 100 }, description: "Gentle bus control that keeps a vocal-forward mix stable without crushing consonants." },
+  { name: "Master - instrumental punch", values: { threshold: -12, ratio: 2, knee: 8, attack: 40, release: 160, makeup: 0, autoMakeup: 0, detect: 1, scHpf: 80, mix: 100 }, description: "Longer attack preserves drums while moderate release adds cohesion." },
+  { name: "Master - dense modern", values: { threshold: -16, ratio: 2.5, knee: 8, attack: 18, release: 120, makeup: 1, autoMakeup: 0, detect: 1, scHpf: 100, mix: 85 }, description: "Parallel-leaning master compression for a denser contemporary presentation." },
+  { name: "Master - acoustic dynamics", values: { threshold: -9, ratio: 1.3, knee: 14, attack: 45, release: 350, makeup: 0, autoMakeup: 0, detect: 1, scHpf: 70, mix: 100 }, description: "Very gentle, slow compression intended to retain acoustic movement." },
   {"name": "Rap lead - fast peak control", "values": {"threshold": -18, "ratio": 5, "knee": 4, "attack": 3, "release": 80, "makeup": 2, "autoMakeup": 0, "detect": 0, "scHpf": 90, "mix": 100}, "description": "Peak detector, 5:1 ratio and 3 ms attack. Adjust threshold for the take."},
   {"name": "Ballad - gentle RMS leveling", "values": {"threshold": -24, "ratio": 2.2, "knee": 12, "attack": 30, "release": 280, "makeup": 2, "autoMakeup": 0, "detect": 1, "scHpf": 90, "mix": 100}, "description": "Soft knee, slow attack and gentle ratio preserve phrasing."},
   {"name": "Spoken voice - clear consonants", "values": {"threshold": -22, "ratio": 3, "knee": 9, "attack": 15, "release": 160, "makeup": 2, "autoMakeup": 0, "detect": 1, "scHpf": 100, "mix": 100}, "description": "Moderate attack leaves consonant transients intact."},
@@ -84,6 +94,11 @@ export const CLASSIC_COMP_PRESETS: Preset[] = [
 ];
 
 export const LIMITER_PRESETS: Preset[] = [
+  { name: "Master - streaming transparent", values: { inputGain: 2, ceiling: -1, release: 100 }, description: "Moderate drive and a -1 dBFS sample ceiling for streaming delivery." },
+  { name: "Master - vocal mix safety", values: { inputGain: 1.5, ceiling: -1.2, release: 120 }, description: "A slightly slower release keeps vocal-led mixes from sounding edgy." },
+  { name: "Master - instrumental punch", values: { inputGain: 3, ceiling: -1, release: 55 }, description: "Faster recovery retains rhythmic impact while catching peaks." },
+  { name: "Master - loud modern", values: { inputGain: 5.5, ceiling: -0.8, release: 45 }, description: "More assertive limiting; level-match and listen for pumping before committing." },
+  { name: "Master - broadcast safe", values: { inputGain: 0, ceiling: -2, release: 160 }, description: "Conservative peak safety for broadcast-oriented loudness workflows." },
   {"name": "Lead vocal - peak catch", "values": {"inputGain": 0, "ceiling": -3, "release": 70}, "description": "No input boost; a -3 dBFS ceiling catches peaks only."},
   {"name": "Backing stack - safety", "values": {"inputGain": 0, "ceiling": -2, "release": 140}, "description": "A slower release and no input boost for a vocal stack."},
 
@@ -187,6 +202,10 @@ export const TUNE_PRESETS: Preset[] = [
 ];
 
 export const SATURATOR_PRESETS: Preset[] = [
+  { name: "Master - tape finish", values: { type: 0, drive: 2.5, tone: -3, output: -0.3, mix: 65 }, description: "Low-drive tape colour blended conservatively for master-bus density." },
+  { name: "Master - tube polish", values: { type: 1, drive: 2, tone: 4, output: -0.4, mix: 55 }, description: "A small amount of tube colour for presence without obvious distortion." },
+  { name: "Master - clean density", values: { type: 0, drive: 1.5, tone: 0, output: -0.2, mix: 40 }, description: "Very restrained harmonic density for already balanced mixes." },
+  { name: "Master - dark soft clip", values: { type: 0, drive: 4, tone: -12, output: -1, mix: 50 }, description: "Darker saturation that rounds hard peaks before final limiting." },
   {"name": "Rap vocal - parallel edge", "values": {"type": 1, "drive": 7, "tone": -5, "output": -1, "mix": 25}, "description": "Tube-style colour blended lightly under the dry vocal."},
   {"name": "Ad-lib - hard grit", "values": {"type": 2, "drive": 20, "tone": -10, "output": -4, "mix": 75}, "description": "Harder clipping for deliberate ad-lib distortion."},
   {"name": "Backing stack - gentle tape", "values": {"type": 0, "drive": 4, "tone": 0, "output": -0.5, "mix": 35}, "description": "A restrained tape-style saturation blend."},
@@ -290,6 +309,10 @@ export const DOUBLER_PRESETS: Preset[] = [
 ];
 
 export const WIDTH_PRESETS: Preset[] = [
+  { name: "Master - translation safe", values: { width: 108, bassMono: 160, output: -0.2 }, description: "A restrained width lift with the low end folded to mono for safer translation." },
+  { name: "Master - vocal center", values: { width: 96, bassMono: 180, output: 0 }, description: "Slightly narrows side energy so a centered lead vocal remains anchored." },
+  { name: "Master - instrumental open", values: { width: 116, bassMono: 170, output: -0.4 }, description: "Moderate upper-band expansion for instrumentals with adequate mono compatibility." },
+  { name: "Master - mono bass wide top", values: { width: 125, bassMono: 220, output: -0.6 }, description: "Centers bass through 220 Hz while opening the remaining stereo field." },
   {"name": "Vocal stack - moderate expansion", "values": {"width": 135, "bassMono": 170, "output": -0.5}, "description": "Expands existing stereo side content. Mono vocals need the Doubler first."},
   {"name": "Vocal bus - narrow centre", "values": {"width": 75, "bassMono": 150, "output": 0}, "description": "Reduces side content for a stronger centre; keeps low bass mono."},
 

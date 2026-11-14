@@ -23,9 +23,9 @@ Right-click Record to set up and arm loop takes without starting recording. A LO
 Recording waveforms stay steady as the take grows. ASIO interfaces appear in the driver list, pending input changes settle before capture, and driver latency is compensated. The audio-load badge stays still and leaves padding around the toolbar's search button.
 
 ### Find your sound
-96 complete track chains, with 12 per category: clean vocals, warm vocals, creative vocals, individual drum hits, drum loops and buses, bass, instruments, and mix/group processing. Browse, search and preview their effect order in Chains, or choose a factory chain in the effects rack. Replace or append effects in one undo step; instruments and mixer controls are preserved.
+132 complete track chains, with 12 per category: clean vocals, warm vocals, creative vocals, individual drum hits, drum loops and buses, bass, instruments, mix/group processing, vocal mastering, instrumental mastering, and delivery/utility mastering. Browse, search and preview their effect order in Chains, or choose a factory chain in the effects rack. Replace or append effects in one undo step; instruments and mixer controls are preserved.
 
-Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enhancer join 355 curated effect presets and genuine factory defaults for all 229 bundled effects. These are adjustable starting points. Hard Limiter controls sample peaks; it is not a true-peak limiter.
+Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enhancer join 378 curated effect presets and genuine factory defaults for all 229 bundled effects. New master-bus starting points cover EQ, compression, saturation, width and limiting for vocal mixes, instrumentals, streaming, broadcast and translation checks. These are adjustable starting points. Hard Limiter controls sample peaks; it is not a true-peak limiter.
 
 ### Edit with confidence
 Selected clips have a fuchsia outline and a subtle brightness lift. Time selections have a clearer fill and edges. Drag the ruler with any tool to select a range, then right-click to split all tracks at both boundaries. Markers extend through the tracks and magnetically catch clips. Ctrl-drag catches markers when Snap is off.
@@ -47,7 +47,11 @@ Bus meters now follow the summed post-fader signal, including buses nested insid
 
 Buses can now output into another bus, with feedback-loop protection. Reference-source recordings are written as stereo 32-bit float WAV files instead of reducing the captured stream to 16-bit.
 
+New audio tracks, instrument tracks, buses and FX returns receive collision-free two-digit names such as Audio 01, Audio 02, Bus 01 and Bus 02. Tracks moved into a group inherit its colour, and grouped track headers and clips stay visually uniform; changing a bus colour updates its family.
+
 Every track, bus and the master has a Mono toggle for checking left/right compatibility. It averages the channels for playback and restores stereo when switched off, without changing the recording format.
+
+Exports now suggest the editable suffix `_4kmix` on the project name so finished mixes are easy to identify. You can remove or rename the suffix before choosing the destination.
 
 ### Make it yours
 Blue Storm is the default dark theme. The top-right switch alternates between Light and Blue Storm. Existing use of the previous Studio Sessions default moves to Blue Storm once; Studio Sessions can still be selected in Settings afterward. Dark Night preserves the original dark appearance, Plotting has its shorter name, and all 35 supplied palettes remain in Settings.

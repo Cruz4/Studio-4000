@@ -3,11 +3,12 @@ import { CHAIN_CATEGORIES, TRACK_CHAINS } from "./trackChains";
 
 describe("complete track chains", () => {
   it("includes twelve useful chains in every category and 36 vocal chains", () => {
-    expect(CHAIN_CATEGORIES).toHaveLength(8);
-    expect(TRACK_CHAINS).toHaveLength(96);
-    expect(new Set(TRACK_CHAINS.map((p) => p.id)).size).toBe(96);
+    expect(CHAIN_CATEGORIES).toHaveLength(11);
+    expect(TRACK_CHAINS).toHaveLength(132);
+    expect(new Set(TRACK_CHAINS.map((p) => p.id)).size).toBe(132);
     for (const category of CHAIN_CATEGORIES) expect(TRACK_CHAINS.filter((p) => p.category === category)).toHaveLength(12);
     expect(TRACK_CHAINS.filter((p) => p.category.startsWith("Vocals"))).toHaveLength(36);
+    expect(TRACK_CHAINS.filter((p) => p.category.startsWith("Mastering"))).toHaveLength(36);
   });
   it("uses finite real values and multiple processors in every chain", () => {
     for (const chain of TRACK_CHAINS) {

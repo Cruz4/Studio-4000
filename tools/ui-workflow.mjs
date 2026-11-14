@@ -74,8 +74,7 @@ async function openPage() {
 try {
  const page=await openPage();await page.go(UI);
  await page.eval(async()=>{
-  const urls=performance.getEntriesByType("resource").map(e=>e.name);
-  const store=await import(urls.find(u=>new URL(u).pathname==="/src/store.ts"));
+  const store=await import("/src/store.ts");
   const theme=await import("/src/theme.ts");const {TRACK_CHAINS}=await import("/src/trackChains.ts");
   localStorage.setItem("studio4000.referenceProfiles.v1",JSON.stringify([{id:"workflow-reference",name:"Workflow reference",spectrum:Array.from({length:160},(_,i)=>-82+i*.24),width:88,created:new Date().toISOString()}]));
   window.__test={store,theme,chains:TRACK_CHAINS};

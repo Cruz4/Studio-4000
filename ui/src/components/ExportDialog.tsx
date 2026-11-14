@@ -14,6 +14,11 @@ const TARGETS = [
 
 type Range = "all" | "loop" | "selection";
 
+export const defaultMixName = (projectName: string) => {
+  const base = projectName.trim() || "Mix";
+  return /_4kmix$/i.test(base) ? base : `${base}_4kmix`;
+};
+
 export function ExportDialog() {
   const open = useStore((s) => s.exportOpen);
   const project = useStore((s) => s.project);
@@ -33,7 +38,7 @@ export function ExportDialog() {
   const audioTracks = useMemo(() => project?.tracks.filter((t) => t.kind === "audio" || t.kind === "instrument") ?? [], [project]);
   useEffect(() => {
     if (open && project) {
-      setName(project.name);
+      setName(defaultMixName(project.name));
       setTracks(new Set(audioTracks.map((t) => t.id)));
       if (selectedClips.length) setRange("selection");
       else if (project.looping) setRange("loop");

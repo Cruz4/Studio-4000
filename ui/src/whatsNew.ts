@@ -24,9 +24,9 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Live waveforms stay steady, with driver latency compensation and ASIO support.",
   ] },
   { title: "Find your vocal sound", color: "#7ee7ff", items: [
-    "96 complete track chains, including 36 vocal sounds. Preview them in Chains.",
-    "12 chains per category for vocals, drum hits, drum buses, bass and instruments.",
-    "New vocal processors, 355 effect presets, and factory defaults for every effect.",
+    "132 complete track chains, including 36 vocal sounds and 36 mastering chains.",
+    "Master vocal mixes, instrumentals, delivery formats and translation checks.",
+    "New vocal processors, 378 effect presets, and factory defaults for every effect.",
     "Capture an FFT noise print, preview cleanup live, and print a cleaned track.",
   ] },
   { title: "Edit with confidence", color: "#ff92c9", items: [
@@ -49,6 +49,8 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Clip gain and fade controls stay behind track headers when you scroll.",
     "Mixer pan and toggle rows stay separated and readable in the compact dock.",
     "Route a bus into another bus, and capture references as 32-bit float audio.",
+    "New tracks and buses use unique numbered names and inherit a group's colour.",
+    "Exports suggest an editable _4kmix suffix so finished files are easy to spot.",
   ] },
   { title: "Make it yours", color: "#f2cf87", items: [
     "Blue Storm is the default dark theme. Studio Sessions remains available in Settings.",

@@ -72,7 +72,7 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         check ("curated presets use valid real units and parameter IDs", presetCount >= 300, String (presetCount));
 
         const auto chainCatalogue = juce::JSON::parse (manifest.getSiblingFile ("track-chains.test.json").loadFileAsString());
-        check ("track chain catalogue has 96 complete chains", chainCatalogue.isArray() && chainCatalogue.size() == 96);
+        check ("track chain catalogue has 132 complete chains", chainCatalogue.isArray() && chainCatalogue.size() == 132);
         auto chainTrack = call ("track.add", Obj().set ("kind", "audio").set ("name", "Chain validation"))[0].toString();
         int chainCount = 0;
         std::map<String, int> categories;
@@ -95,9 +95,9 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             check ("track chain applies real native settings: " + chain["name"].toString(), settingsMatch);
             ++chainCount; ++categories[chain["category"].toString()];
         }
-        bool countsMatch = categories.size() == 8;
+        bool countsMatch = categories.size() == 11;
         for (auto& count : categories) countsMatch = countsMatch && count.second == 12;
-        check ("every track-chain category contains twelve presets", chainCount == 96 && countsMatch);
+        check ("every track-chain category contains twelve presets", chainCount == 132 && countsMatch);
         auto oldEffects = describeTrack (app, app.track (chainTrack))["plugins"];
         app.edit().getUndoManager().clearUndoHistory();
         call ("chain.applyPreset", Obj().set ("trackId", chainTrack).set ("plugins", chainCatalogue[0]["plugins"]).set ("replace", true));
@@ -339,6 +339,20 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         check ("group bounce undoes the printed track and source mute together", app.findTrack (groupPrinted["trackId"].toString()) == nullptr && ! app.track (bus).isMuted (false));
         call ("edit.redo");
         check ("group bounce redo restores the print and bus mute", app.findTrack (groupPrinted["trackId"].toString()) != nullptr && app.track (bus).isMuted (false));
+
+        auto unnamedAudio1 = call ("track.add", Obj().set ("kind", "audio"))[0].toString();
+        auto unnamedAudio2 = call ("track.add", Obj().set ("kind", "audio"))[0].toString();
+        auto unnamedBus1 = call ("track.add", Obj().set ("kind", "group"))[0].toString();
+        auto unnamedBus2 = call ("track.add", Obj().set ("kind", "group"))[0].toString();
+        check ("new tracks and buses receive collision-free numbered names",
+               app.track (unnamedAudio1).getName() == "Audio 01" && app.track (unnamedAudio2).getName() == "Audio 02"
+                   && app.track (unnamedBus1).getName() == "Bus 01" && app.track (unnamedBus2).getName() == "Bus 02");
+
+        call ("track.set", Obj().set ("id", bus).set ("colour", "#ff6bd5"));
+        const auto groupColour = app.track (bus).getColour();
+        auto* groupedClip = app.audioTrack (printSource).getClips().isEmpty() ? nullptr : app.audioTrack (printSource).getClips()[0];
+        check ("a group colour keeps its track panels and clips uniform",
+               app.track (printSource).getColour() == groupColour && groupedClip != nullptr && groupedClip->getColour() == groupColour);
 
         auto outerBus = call ("track.add", Obj().set ("kind", "group").set ("name", "Outer bus"))[0].toString();
         call ("track.set", Obj().set ("id", bus).set ("output", outerBus));

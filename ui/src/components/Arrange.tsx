@@ -407,7 +407,8 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, f
     }
   }
   const affected = preview != null && preview.ids.includes(clip.id);
-  const colour = clip.colour || track.colour;
+  // Submixes use one visual identity: clips inside a group follow the inherited track colour.
+  const colour = track.parent ? track.colour : (clip.colour || track.colour);
   const left = start * pps, width = Math.max(2, (end - start) * pps);
   if (left > view.left + view.width + 400 || left + width < view.left - 400) return null;
   const moved = affected && preview?.mode === "move" && preview.trackDelta !== 0;
