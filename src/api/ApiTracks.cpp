@@ -430,13 +430,29 @@ void registerTrackApi (AppEngine& app)
 
         if (has (p, "output"))
         {
-            auto* at = dynamic_cast<te::AudioTrack*> (&t);
-
-            if (at == nullptr)
-                throw RpcError ("Only audio tracks have a routable output");
-
             auto out = str (p, "output");
             const bool direct = out == "master" || out == "none" || out.startsWith ("device:");
+
+            if (auto* folder = dynamic_cast<te::FolderTrack*> (&t))
+            {
+                if (out == "master")
+                    leaveSubmix (app.edit(), *folder);
+                else if (auto* bus = dynamic_cast<te::FolderTrack*> (app.findTrack (out)))
+                {
+                    if (bus == folder || bus->isAChildOf (*folder))
+                        throw RpcError ("That routing would create a feedback loop");
+                    if (folder->getParentFolderTrack() != bus)
+                        app.edit().moveTrack (folder, te::TrackInsertPoint (bus, lastChildOf (*bus)));
+                }
+                else
+                    throw RpcError ("A bus can output to the master or another bus");
+
+                return var (true);
+            }
+
+            auto* at = dynamic_cast<te::AudioTrack*> (&t);
+            if (at == nullptr)
+                throw RpcError ("This track does not have a routable output");
 
             if (direct)
                 leaveSubmix (app.edit(), *at);

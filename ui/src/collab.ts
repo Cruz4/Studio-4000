@@ -91,8 +91,16 @@ export function isBuiltInServer(server: string) {
 }
 
 function asWebSocket(host: string) {
-  const text = host.replace(/[\u00ad\u200b-\u200f\u202a-\u202e\u2060\ufeff\s]/g, "").trim();
-  return /^wss?:\/\//i.test(text) ? text : `ws://${text}`;
+  // Some chat clients render a soft wrap inside an IPv4 address as a visible dash.
+  const text = host.replace(/[\u00ad\u200b-\u200f\u202a-\u202e\u2060\ufeff\s]/g, "")
+    .replace(/(?<=\d)[\-\u2010-\u2015](?=\d)/g, "").trim();
+  const candidate = /^wss?:\/\//i.test(text) ? text : `ws://${text}`;
+  try {
+    const url = new URL(candidate);
+    if (!url.hostname || !/^wss?:$/.test(url.protocol)) return "";
+    if (/^\d+(?:\.\d+){3}$/.test(url.hostname) && url.hostname.split(".").some((part) => +part > 255)) return "";
+    return url.toString().replace(/\/$/, "");
+  } catch { return ""; }
 }
 
 /** A private or local address. Trying one of these from another network fails fast. */
@@ -109,10 +117,7 @@ export function parseJoinCode(raw: string): { room: string; servers: string[] } 
   const at = text.indexOf("@");
   if (at > 0 && at < text.length - 1) {
     const room = text.slice(0, at).trim().toUpperCase();
-    const servers = text.slice(at + 1).split(/[,;]+/).map(asWebSocket).filter((s) => {
-      if (s === "ws://") return false;
-      try { const u = new URL(s); return !!u.hostname; } catch { return false; }
-    });
+    const servers = text.slice(at + 1).split(/[,;]+/).map(asWebSocket).filter(Boolean);
     return { room, servers };
   }
   return { room: text.toUpperCase(), servers: [] };
@@ -198,7 +203,7 @@ export async function startSession(opts: { servers: string[]; room: string; name
   if (opts.turn) {
     try { iceServers = [{ urls: "stun:stun.l.google.com:19302" }, ...JSON.parse(opts.turn)]; } catch { /* keep defaults */ }
   }
-  const servers = opts.servers.filter(Boolean);
+  const servers = opts.servers.map(asWebSocket).filter(Boolean);
   useCollab.setState({ status: "connecting", error: null, role: opts.role, room: opts.room.toUpperCase(), invite: opts.invite ?? "", server: servers[0] ?? "", chat: [], notes: "", peers: [], activity: [] });
 
   doc = new Y.Doc();

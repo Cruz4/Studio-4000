@@ -1,6 +1,6 @@
 // The floating plug-in window: picks the dedicated editor for each effect type, with a full parameter list as a second tab.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { act, useStore } from "../../store";
+import { act, changeHistory, useStore } from "../../store";
 import type { Plugin } from "../../types";
 import { cx } from "../../util";
 import { ErrorBoundary, Icon } from "../ui";
@@ -107,6 +107,10 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
         {plugin.hasEditor && (
           <button className="btn sm" onClick={() => act("plugin.openEditor", { id: plugin.id })} title="Open the plug-in's own window"><Icon name="window" size={12} /> Plug-in UI</button>
         )}
+        <div className="fx-history-controls" title="Undo or redo changes without closing this effect">
+          <button className="btn sm ghost icon" disabled={!project?.canUndo} onClick={() => void changeHistory("undo")} title={project?.undoName ? `Undo ${project.undoName}` : "Nothing to undo"}><Icon name="undo" size={13} /></button>
+          <button className="btn sm ghost icon" disabled={!project?.canRedo} onClick={() => void changeHistory("redo")} title={project?.redoName ? `Redo ${project.redoName}` : "Nothing to redo"}><Icon name="redo" size={13} /></button>
+        </div>
         {canReset && <button className="btn sm ghost" onClick={fx.resetAll} title="Reset every control to its default"><Icon name="undo" size={12} /> Reset</button>}
         <button className={cx("fx-power", plugin.enabled && "on")} onClick={() => act("plugin.set", { id: plugin.id, enabled: !plugin.enabled })}
           title={plugin.enabled ? "On — click to bypass" : "Off — click to turn on"}>

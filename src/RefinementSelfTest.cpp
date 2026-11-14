@@ -104,6 +104,19 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         call ("edit.undo");
         check ("replacing a chain undoes as one step", juce::JSON::toString (describeTrack (app, app.track (chainTrack))["plugins"]) == juce::JSON::toString (oldEffects));
         call ("edit.redo");
+        auto undoEffectId = describeTrack (app, app.track (chainTrack))["plugins"][0]["id"].toString();
+        auto& undoEffect = app.plugin (undoEffectId);
+        auto* undoParam = undoEffect.getAutomatableParameters()[0];
+        const float undoBefore = undoParam->getCurrentValue();
+        const float undoAfter = std::abs (undoBefore - undoParam->valueRange.start) > std::abs (undoBefore - undoParam->valueRange.end)
+                              ? undoParam->valueRange.start : undoParam->valueRange.end;
+        app.edit().getUndoManager().clearUndoHistory();
+        call ("plugin.setParam", Obj().set ("id", undoEffectId).set ("paramId", undoParam->paramID).set ("value", undoAfter));
+        call ("edit.undo");
+        const auto undoSnapshot = buildProjectSnapshot (app);
+        const bool effectUndone = std::abs (undoParam->getCurrentValue() - undoBefore) < .0001f && (bool) undoSnapshot["canRedo"];
+        call ("edit.redo");
+        check ("effect parameter undo enables redo and redo restores the change", effectUndone && std::abs (undoParam->getCurrentValue() - undoAfter) < .0001f);
         const auto beforeInvalid = juce::JSON::toString (describeTrack (app, app.track (chainTrack))["plugins"]);
         auto invalid = juce::JSON::parse ("[{\"type\":\"s4000comp\",\"values\":{\"notAParameter\":1}}]");
         auto rejected = app.rpc.call ("chain.applyPreset", Obj().set ("trackId", chainTrack).set ("plugins", invalid).set ("replace", true), "selftest");
@@ -136,6 +149,20 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             if (fx == nullptr) throw RpcError ("Processor has no offline test path");
             fx->processOffline (b, rate);
         };
+
+        {
+            auto denoise = make (NoiseReductionPlugin::xmlTypeName);
+            auto* learned = dynamic_cast<NoiseReductionPlugin*> (denoise.get());
+            std::vector<float> print ((1 << 11) / 2 + 1, 100000.0f);
+            learned->setNoisePrint (print);
+            auto input = tone (48000, 1000.0f, .2f, 1);
+            const float before = input.getRMSLevel (0, 4096, input.getNumSamples() - 4096);
+            process (*learned, input, 48000);
+            const float after = input.getRMSLevel (0, 4096, input.getNumSamples() - 4096);
+            const auto telemetry = learned->getTelemetry (false, false);
+            check ("learned noise reduction processes live audio and exposes its print",
+                   std::isfinite (after) && after < before * .8f && telemetry["noisePrint"].size() == 128);
+        }
         for (double rate : { 32000.0, 44100.0, 48000.0, 96000.0 })
         {
             const auto label = String ((int) rate) + " Hz ";
@@ -312,6 +339,13 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         check ("group bounce undoes the printed track and source mute together", app.findTrack (groupPrinted["trackId"].toString()) == nullptr && ! app.track (bus).isMuted (false));
         call ("edit.redo");
         check ("group bounce redo restores the print and bus mute", app.findTrack (groupPrinted["trackId"].toString()) != nullptr && app.track (bus).isMuted (false));
+
+        auto outerBus = call ("track.add", Obj().set ("kind", "group").set ("name", "Outer bus"))[0].toString();
+        call ("track.set", Obj().set ("id", bus).set ("output", outerBus));
+        check ("a bus can feed another bus", describeTrack (app, app.track (bus))["output"].toString() == outerBus
+                                                   && app.track (bus).getParentFolderTrack() == &app.track (outerBus));
+        auto feedback = app.rpc.call ("track.set", Obj().set ("id", outerBus).set ("output", bus), "selftest");
+        check ("nested bus routing rejects feedback", !(bool) feedback["ok"]);
 
         auto monoReturn = call ("track.add", Obj().set ("kind", "return").set ("name", "Mono return"))[0].toString();
         for (auto id : { printSource, splitMidi, bus, monoReturn })

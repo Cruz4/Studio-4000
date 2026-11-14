@@ -13,6 +13,9 @@ describe("session codes", () => {
     expect(parseJoinCode("5HCJTT@192.1\u00ad68.1.153:303\u00ad1,100.12.184\u00ad.155:3031")).toEqual({
       room: "5HCJTT", servers: ["ws://192.168.1.153:3031", "ws://100.12.184.155:3031"],
     });
+    expect(parseJoinCode("5HCJTT@192.1-68.1.153:303-1,100.12.184.155:3031")).toEqual({
+      room: "5HCJTT", servers: ["ws://192.168.1.153:3031", "ws://100.12.184.155:3031"],
+    });
     expect(isBuiltInServer("")).toBe(true);
     expect(isBuiltInServer("ws://localhost:3031")).toBe(true);
     expect(isBuiltInServer("ws://127.0.0.1:3031")).toBe(true);

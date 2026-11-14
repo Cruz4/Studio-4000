@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { on, rpc } from "./bridge";
 import type { AppInfo, CatalogueEntry, PlanCall, Project, Tick } from "./types";
 import { seenNotes, versionLabel } from "./whatsNew";
+import { settleEffectWrites } from "./effectWrites";
 
 export type BottomTab = "effects" | "mixer" | "editor" | "smart";
 export type SidePanel = "assistant" | "collab" | null;
@@ -90,6 +91,8 @@ interface State {
   typing: boolean;
   octave: number;
   velocity: number;
+  /** Forces open effect editors to reload after undo, redo or a history jump. */
+  historyRevision: number;
   set: (s: Partial<State>) => void;
 }
 
@@ -162,6 +165,7 @@ export const useStore = create<State>((set) => ({
   typing: false,
   octave: 4,
   velocity: 100,
+  historyRevision: 0,
   set: (s) => set(s),
 }));
 
@@ -221,6 +225,23 @@ export async function refreshProject() {
   if (opening) offerWhatsNew();
 }
 
+/** Undo/redo only after live effect drags have reached the engine, then resync every open editor. */
+export async function changeHistory(direction: "undo" | "redo") {
+  await settleEffectWrites();
+  const changed = await rpc<boolean>(`edit.${direction}`);
+  await refreshProject();
+  useStore.setState((s) => ({ historyRevision: s.historyRevision + 1 }));
+  return changed;
+}
+
+export async function jumpHistory(steps: number) {
+  await settleEffectWrites();
+  const changed = await rpc<boolean>("edit.jump", { steps });
+  await refreshProject();
+  useStore.setState((s) => ({ historyRevision: s.historyRevision + 1 }));
+  return changed;
+}
+
 export async function loadCatalogue() {
   const r = await rpc<{ plugins: CatalogueEntry[] }>("plugins.list");
   useStore.setState({ catalogue: r.plugins });
@@ -245,7 +266,6 @@ export function openPlugin(id: string, from?: Element | null) {
   const r = from?.getBoundingClientRect();
   useStore.setState((s) => ({
     selectedPlugin: id,
-    selectedClips: [],
     openPlugins: s.openPlugins.includes(id) ? s.openPlugins : [...s.openPlugins, id],
     pluginPings: { ...s.pluginPings, [id]: (s.pluginPings[id] ?? 0) + 1 },
     pluginAnchors: r ? { ...s.pluginAnchors, [id]: { left: r.left, top: r.top, right: r.right, bottom: r.bottom } } : s.pluginAnchors,

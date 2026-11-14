@@ -27,15 +27,18 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "96 complete track chains, including 36 vocal sounds. Preview them in Chains.",
     "12 chains per category for vocals, drum hits, drum buses, bass and instruments.",
     "New vocal processors, 355 effect presets, and factory defaults for every effect.",
+    "Capture an FFT noise print, preview cleanup live, and print a cleaned track.",
   ] },
   { title: "Edit with confidence", color: "#ff92c9", items: [
     "Fuchsia clip selection and a clearer time highlight show exactly what you picked.",
     "Drag anywhere on the ruler to select time, whichever tool is active.",
     "Right-click a selected range to split all tracks at both boundaries.",
     "Alt-drag previews a duplicate and crossfades overlaps immediately.",
+    "Clip moves stay visible across tracks; Ctrl links fades and trims on selected clips.",
   ] },
   { title: "A smoother session", color: "#8cddbc", items: [
     "Hear EQ nodes, knobs, sliders and effects change while you move them.",
+    "Undo and Redo inside every effect restores live control changes reliably.",
     "Markers extend through every track and catch dragged clips magnetically.",
     "History has readable rows, step counts and clear Undo and Redo sections.",
     "Bounce with Effects to New Track prints your sound directly below the source.",
@@ -44,6 +47,8 @@ export const WHATS_NEW: WhatsNewGroup[] = [
     "Check mono playback with a Mono toggle on tracks, buses and the master.",
     "The shorter CPU badge stays still, with room around the search button.",
     "Clip gain and fade controls stay behind track headers when you scroll.",
+    "Mixer pan and toggle rows stay separated and readable in the compact dock.",
+    "Route a bus into another bus, and capture references as 32-bit float audio.",
   ] },
   { title: "Make it yours", color: "#f2cf87", items: [
     "Blue Storm is the default dark theme. Studio Sessions remains available in Settings.",

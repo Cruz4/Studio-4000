@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { rpc } from "../bridge";
-import { act, toast, useStore } from "../store";
+import { act, changeHistory, toast, useStore } from "../store";
 import type { Analysis, Plan } from "../types";
 import { cx, formatDb } from "../util";
 import { Icon, Spinner } from "./ui";
@@ -46,7 +46,7 @@ export function SmartPanel() {
 
   const apply = () => plan && run("apply", async () => {
     const r = await rpc<Plan>(`smart.${plan.kind}`, { ...plan.params, apply: true });
-    toast(r.summary, "success", { action: { label: "Undo", run: () => act("edit.undo") } });
+    toast(r.summary, "success", { action: { label: "Undo", run: () => changeHistory("undo") } });
     setPlan(null);
     analyze();
   });

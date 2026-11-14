@@ -1,4 +1,4 @@
-Updates from November 12–13, 2026
+Updates from November 12–14, 2026
 
 ### Reference another app
 Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden. The Reference Match bar loads saved spectra, explicitly chooses a target track and applies EQ without reopening the analyzer, and can be closed completely when it is not needed. Saved profiles draw their own amber trace, and applying one immediately opens the new editable Parametric EQ. Studio 4000 also shows the live reference spectrum, stereo field and an optional DAW-master overlay, and can record the source to a stereo Reference track.
@@ -6,6 +6,8 @@ Add a Reference Track from the track toolbar, then choose a Windows app, window 
 The AKAsheet button now looks for an installed AKAsheet web-app shortcut first. If it is not installed, the website opens with an install suggestion.
 
 EQ nodes and their frequency knobs use the same logarithmic range during a drag, so the selected knob follows the dot smoothly instead of jumping up and down. Every bundled effect editor now also sends its newest EQ, knob, slider and graph value to the audio engine while the pointer is moving, so a playing or looped passage responds before the control is released.
+
+Noise Reduction adds an Audition-style learned noise-print workflow. Select a noise-only range over an audio clip, capture its FFT profile, then hear Noise Reduction, Reduce By and Noise Floor changes in real time. The spectrum shows the learned print, Output Noise Only auditions exactly what is being removed, bypass gives instant before/after, and Print Cleaned Track creates a baked copy when the cleanup is ready.
 
 ### Collaboration codes that survive copy and paste
 Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.
@@ -32,12 +34,18 @@ Clip gain, fade, trim and take controls stay behind the track information panels
 
 Alt-drag shows a live ghost copy, applies overlap crossfades during the drag, and keeps them on drop. Copies retain independent effects and automation. History has readable names, fixed-height rows, clear Undo/Redo sections and exact step counts.
 
+Normal clip moves now remain visible as a translucent ghost while crossing compatible tracks. Hold Ctrl while trimming or changing a fade on a multi-clip selection to apply the same edit to every selected clip.
+
+Every effect window has local Undo and Redo controls backed by the same reliable engine history as the app toolbar. Continuous control drags coalesce into one step. The compact mixer keeps pan and Mute/Solo/Mono/Arm controls on separate rows so they do not overlap.
+
 ### Print your effects
 Choose Bounce with Effects to New Track from a track's menu. The track and its inserts are rendered to audio below the original, with room for effect tails. The original stays editable and is muted for comparison, avoiding doubled playback.
 
 Groups have **Bounce Group with Effects to New Track**. It renders all child tracks through the group's inserts and fader onto a stereo track directly after the group. The result is visibly marked **FX PRINT**, and the editable source group is muted automatically so the processed signal does not play twice.
 
 Bus meters now follow the summed post-fader signal, including buses nested inside other buses.
+
+Buses can now output into another bus, with feedback-loop protection. Reference-source recordings are written as stereo 32-bit float WAV files instead of reducing the captured stream to 16-bit.
 
 Every track, bus and the master has a Mono toggle for checking left/right compatibility. It averages the channels for playback and restores stereo when switched off, without changing the recording format.
 

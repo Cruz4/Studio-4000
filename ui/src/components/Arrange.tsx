@@ -436,7 +436,7 @@ const ClipView = memo(function ClipView({ clip, track, pps, selected, preview, f
   const lo = Math.min(...pitches, 60) - 2, hi = Math.max(...pitches, 72) + 2;
 
   return (
-    <div className={cx("clip", selected && "selected", clip.muted && "muted")} style={style} data-clip={clip.id} data-track-index={trackIndex}
+    <div className={cx("clip", selected && "selected", affected && preview?.mode === "move" && "dragging", clip.muted && "muted")} style={style} data-clip={clip.id} data-track-index={trackIndex}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         if (wantsEditor(clip)) { e.stopPropagation(); return; }
@@ -1131,7 +1131,8 @@ export function Arrange() {
       if (!tracks.includes(owner.id)) selectTrack(owner.id, "toggle");
     } else if (owner) selectTrack(owner.id);
     useStore.setState({ selectedClips: ids, selectedPlugin: null, editorClip: st.bottom === "editor" ? clip.id : st.editorClip });
-    const moveIds = mode === "move" ? ids : [clip.id];
+    const linkedEdit = (e.ctrlKey || e.metaKey) && ["l", "r", "fi", "fo"].includes(mode);
+    const moveIds = mode === "move" || linkedEdit ? ids : [clip.id];
     const trackIndex = st.project!.tracks.findIndex((t) => t.id === owner?.id);
     let moved = false;
     let last: DragPreview = { ids: moveIds, mode, dt: 0, trackDelta: 0, dy: 0, copy: false };

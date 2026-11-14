@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { applyPlan, getKey, loadConfig, PROVIDERS, runAgent, saveConfig, type AiConfig, type Msg, type ProposedPlan, type Provider } from "../ai";
-import { act, toast, useStore } from "../store";
+import { changeHistory, toast, useStore } from "../store";
 import { cx } from "../util";
 import { Icon, Spinner } from "./ui";
 
@@ -105,7 +105,7 @@ export function Assistant() {
     let failed = false;
     try {
       await applyPlan(plan);
-      toast(plan.summary, "success", { title: "Applied", action: { label: "Undo", run: () => act("edit.undo") } });
+      toast(plan.summary, "success", { title: "Applied", action: { label: "Undo", run: () => changeHistory("undo") } });
       note = `Done. ${plan.summary} Undo puts this back.`;
     } catch (e) {
       failed = true;

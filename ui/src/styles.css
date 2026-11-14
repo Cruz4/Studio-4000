@@ -379,6 +379,8 @@ textarea.input { height: auto; padding: 8px 10px; resize: vertical; line-height:
 .io-chip.off { color: var(--faint); border-style: dashed; }
 /* Keep every clip control below the sticky track header, even with a high local z-index. */
 .lane { position: relative; flex: none; isolation: isolate; }
+.track-row:has(.clip.dragging) { position: relative; z-index: 20; }
+.clip.dragging { opacity: .72; outline: 1px dashed var(--text); filter: saturate(.78); pointer-events: none; }
 .master-row .track-head { cursor: default; background: linear-gradient(90deg, rgba(var(--primary-rgb), .22), rgba(var(--secondary-rgb), .08)), var(--bg2); }
 .lane.master-lane { background: linear-gradient(90deg, rgba(var(--primary-rgb), .18), rgba(var(--secondary-rgb), .06) 240px), var(--bg3); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), .28); }
 .lane.drop { background: rgba(var(--primary-rgb), .08); outline: 1px dashed rgba(var(--primary-rgb), .6); outline-offset: -2px; }
@@ -495,8 +497,8 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .strip-controls { flex: none; height: 28px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .strip.master .strip-controls { justify-content: center; }
 .strip.master .strip-controls > :first-child { flex: 1 1 0; min-width: 0; width: 0; }
-.strip-toggles { display: flex; gap: 3px; }
-.strip-toggles .toggle { min-width: 20px; padding: 0 4px; }
+.strip-toggles { width: 100%; min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; }
+.strip-toggles .toggle, .strip-toggles .toggle.sum-mono { width: 100%; min-width: 0; padding: 0 2px; overflow: hidden; }
 .strip-db { flex: none; height: 14px; line-height: 14px; font-size: 11px; text-align: center; color: var(--dim); }
 .strip-foot { flex: none; width: 100%; }
 .slot { flex: none; font-size: 11px; height: 22px; padding: 0 6px; border-radius: 5px; background: var(--bg1); border: 1px solid var(--line); display: flex; align-items: center; gap: 4px; cursor: pointer; min-width: 0; }
@@ -529,15 +531,15 @@ body.reordering, body.reordering * { cursor: grabbing !important; }
 .dock-body { display: flex; flex-direction: column; }
 .dock-body > * { flex: 1; min-height: 0; }
 .dock .mixer { padding: 4px 8px; gap: 6px; }
-.dock .strip { width: 118px; gap: 2px; padding: 4px; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(18px, 1fr) auto minmax(52px, 1.6fr) auto auto; align-content: stretch; }
+.dock .strip { width: 118px; gap: 2px; padding: 4px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(18px, 1fr) auto auto minmax(52px, 1.6fr) auto auto; align-content: stretch; }
 .dock .strip.master { width: 132px; }
 .dock .strip-name, .dock .strip-rack, .dock .fader-area, .dock .strip-db, .dock .strip > .input, .dock .strip-foot { grid-column: 1 / -1; }
 .dock .strip .strip-name { height: 16px; font-size: 10.5px; line-height: 14px; padding: 0 4px; }
 .dock .strip-rack { min-height: 0; max-height: none; gap: 2px; padding-bottom: 0; overflow: auto; }
 .dock .slot { height: 18px; font-size: 10px; padding: 0 4px; }
 .dock .strip select.input { height: 20px; font-size: 10px; padding: 0 4px; }
-.dock .strip-pan { grid-column: 1; min-width: 0; }
-.dock .strip-controls { grid-column: 2; height: auto; justify-content: flex-end; }
+.dock .strip-pan { grid-column: 1 / -1; min-width: 0; }
+.dock .strip-controls { grid-column: 1 / -1; width: 100%; height: 24px; justify-content: center; }
 .dock .strip.master .strip-controls { grid-column: 1 / -1; }
 .dock .strip-db { height: 12px; line-height: 12px; font-size: 10px; }
 .dock .fader-area { min-height: 52px; height: 100%; gap: 4px; }
@@ -780,6 +782,14 @@ button.template.akasheet-card { width: 108px; text-align: center; }
 .fx-row.knobs.wrap { padding: 4px 0; background: none; border: 0; gap: 14px; }
 .fx-section { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fx-section-head { display: flex; justify-content: space-between; align-items: center; font: 600 10px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.noise-reduction-editor { padding: 2px; gap: 10px; }
+.noise-print-graph { position: relative; height: 220px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #090d13; }
+.noise-print-graph svg { width: 100%; height: calc(100% - 22px); }
+.noise-print-graph line { stroke: rgba(255,255,255,.1); stroke-width: .35; }
+.noise-print-graph polyline { fill: rgba(0,209,255,.13); stroke: #00d1ff; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.noise-print-graph .empty { position: absolute; inset: 0; display: grid; place-items: center; color: #aeb8c8; }
+.noise-axis { position: absolute; left: 8px; right: 8px; bottom: 4px; display: flex; justify-content: space-between; color: #9aa5b7; font-size: 10px; }
+.noise-axis span { flex: 1; text-align: center; }
 .fx-curve-box { width: 220px; flex: none; }
 .fx-canvas { display: block; width: 100%; height: 100%; border-radius: 10px; background: #090b14; border: 1px solid var(--line); touch-action: none; }
 .fx-canvas.square { aspect-ratio: 1; height: auto; }

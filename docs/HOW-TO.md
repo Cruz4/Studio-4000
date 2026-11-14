@@ -57,6 +57,8 @@ Arrow keys nudge a selected clip. Shift nudges by a bar. The tools above the arr
 
 **F3** is the full-page mixer. Every fader is the same height. Right-click empty mixer space to add a track.
 
+The compact mixer keeps pan on its own row above Mute, Solo, Mono and Arm, so every control remains available at narrow dock sizes. A bus can choose another bus as its output; Studio 4000 blocks routes that would feed back into themselves.
+
 ## Recording and MIDI
 
 The dot arms a track. The monitor button cycles Auto, On, and Off. Auto hears the input only while that track is actually recording.
@@ -72,6 +74,14 @@ Instrument tracks play from a MIDI keyboard, and from the computer keyboard whil
 **C** toggles the metronome. **Shift+C** cycles the count-in. Loop a range and record to stack takes, then comp them in the editor (**E**).
 
 ## Effects
+
+Effect controls update the audio engine continuously while you drag. Use the Undo and Redo arrows in any effect window to move backward or forward through parameter changes without closing it. A whole drag is stored as one history step, and the toolbar shares the same history.
+
+### Learned Noise Reduction
+
+Add **Noise Reduction** from the browser's Noise Reduction category. Select one audio clip, then drag a time range over a section containing only the steady unwanted sound. Open the effect and choose **Capture Noise Print**. The graph displays the learned FFT profile.
+
+Loop the part you want to clean and adjust **Noise Reduction**, **Reduce By**, and **Noise Floor** while listening; changes are live. **Output Noise Only** lets you hear what the processor removes. Use the effect power button for instant before/after. When satisfied, choose **Print Cleaned Track** to create a baked audio track while retaining the editable source. Short, representative noise-only captures work best; excessive reduction can create watery or flanged artifacts.
 
 Click an effect to select it. Double-click to open it. You can leave several open. Clicking the page does not close them. Delete removes the selected effect when no clip is selected.
 

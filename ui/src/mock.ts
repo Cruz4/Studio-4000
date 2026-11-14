@@ -67,6 +67,7 @@ export function createMock(emit: Emit) {
   let last = performance.now();
   const undoStack: { before: Project; name: string }[] = [];
   const redoStack: { before: Project; name: string }[] = [];
+  let lastUndoKey = "", lastUndoAt = 0;
   const stampHistory = () => {
     if (!project) return;
     project.canUndo = undoStack.length > 0;
@@ -290,7 +291,7 @@ export function createMock(emit: Emit) {
       { id: "reverb", name: "Reverb", vendor: "Studio 4000", category: "Reverb", synth: false, format: "Built-in" },
       { id: "delay", name: "Delay", vendor: "Studio 4000", category: "Delay", synth: false, format: "Built-in" },
       { id: "4osc", name: "4OSC Synth", vendor: "Studio 4000", category: "Instrument", synth: true, format: "Built-in" },
-      ...[["s4000tune", "Pitch Correction", "Pitch"], ["s4000gate", "Noise Gate", "Dynamics"], ["s4000deesser", "De-esser", "Dynamics"],
+      ...[["s4000tune", "Pitch Correction", "Pitch"], ["s4000gate", "Noise Gate", "Dynamics"], ["s4000noisereduction", "Noise Reduction", "Noise Reduction"], ["s4000deesser", "De-esser", "Dynamics"],
         ["s4000transient", "Transient Shaper", "Dynamics"], ["s4000saturator", "Saturator", "Saturation"], ["s4000crusher", "Bit Crusher", "Saturation"],
         ["s4000delay", "Stereo Delay", "Delay"], ["s4000doubler", "Vocal Doubler", "Stereo"], ["s4000width", "Stereo Width", "Stereo"],
         ["s4000tremolo", "Tremolo / Auto-pan", "Modulation"],
@@ -383,7 +384,15 @@ export function createMock(emit: Emit) {
     "plugin.telemetry": (p) => {
       const pl = findPlugin(p.id);
       const host = project?.tracks.find((tr) => tr.plugins.some((x) => x.id === p.id));
-      return pl ? mockTelemetry(pl, p, playing || !!host?.live) : {};
+      const result = pl ? mockTelemetry(pl, p, playing || !!host?.live) : {};
+      if (pl?.type === "s4000noisereduction") Object.assign(result, { noisePrint: (pl as Plugin & { noisePrint?: number[] }).noisePrint ?? [], reduction: playing ? 28 : 0 });
+      return result;
+    },
+    "noise.capture": (p) => {
+      const pl = findPlugin(p.id) as (Plugin & { noisePrint?: number[] }) | undefined;
+      if (!pl || pl.type !== "s4000noisereduction") throw new Error("Choose a Noise Reduction effect");
+      pl.noisePrint = Array.from({ length: 128 }, (_, i) => -58 - Math.log10(1 + i) * 24 + Math.sin(i * .31) * 2);
+      changed(); return structuredClone(pl.noisePrint);
     },
     "plugin.openEditor": () => false,
     "chain.list": () => [...savedChains.keys()].map((name) => ({ name, file: name })),
@@ -524,20 +533,26 @@ export function createMock(emit: Emit) {
         const h = handlers[method];
         await new Promise((r) => setTimeout(r, 5));
         if (!h) return { ok: true, result: null };
-        const undoable = new Set(["track.add", "track.remove", "track.set", "track.arm", "track.move", "track.duplicate",
+        const undoable = new Set(["track.add", "track.remove", "track.set", "track.arm", "track.move", "track.duplicate", "track.bounce",
           "clip.move", "clip.slip", "clip.trim", "clip.split", "clip.delete", "clip.duplicate", "clip.set", "clip.setGainPoints", "clip.setPanPoints", "clip.importAudio", "clip.addMidi", "clip.normalize", "clip.stretch",
-          "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "master.set", "chain.load", "chain.applyPreset", "batch.run",
+          "plugin.add", "plugin.remove", "plugin.move", "plugin.duplicate", "plugin.set", "plugin.setParam", "plugin.setParams", "master.set", "chain.load", "chain.applyPreset", "batch.run",
           "midi.setNotes", "midi.addNote", "midi.quantize", "midi.transpose"]);
         if (project && undoable.has(method)) {
+          const valueKeys = p?.values && typeof p.values === "object" ? Object.keys(p.values).sort().join(",") : "";
+          const undoKey = `${method}|${p?.id ?? p?.trackId ?? ""}|${p?.paramId ?? valueKeys}`;
+          const now = performance.now(), coalesced = undoKey === lastUndoKey && now - lastUndoAt <= 1000;
           const names: Record<string, string> = {
             "plugin.add": "Add effect", "plugin.remove": "Remove effect", "plugin.move": "Reorder effect", "plugin.duplicate": "Duplicate effect",
-            "plugin.set": "Effect bypass", "chain.load": "Load effect chain", "chain.applyPreset": "Apply track chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
+            "plugin.set": "Effect bypass", "plugin.setParam": "Effect change", "plugin.setParams": "Effect change", "track.bounce": "Print effects", "chain.load": "Load effect chain", "chain.applyPreset": "Apply track chain", "clip.move": "Move clip", "clip.delete": "Delete clip",
             "clip.split": "Split", "clip.duplicate": "Duplicate", "clip.trim": "Trim", "clip.slip": "Slip", "clip.set": "Clip change",
             "clip.addMidi": "New MIDI clip", "clip.normalize": "Normalize", "clip.setGainPoints": "Clip gain", "clip.setPanPoints": "Clip pan", "track.add": "New track", "track.remove": "Delete track",
             "master.set": "Master volume", "midi.setNotes": "Edit notes", "batch.run": "Edit",
           };
-          undoStack.push({ before: structuredClone(project), name: method === "batch.run" ? (p?.label || "Edit") : (names[method] ?? "Edit") });
-          redoStack.length = 0;
+          if (!coalesced) {
+            undoStack.push({ before: structuredClone(project), name: method === "batch.run" ? (p?.label || "Edit") : (names[method] ?? "Edit") });
+            redoStack.length = 0;
+          }
+          lastUndoKey = undoKey; lastUndoAt = now;
         }
         try {
           return { ok: true, result: h(p ?? {}) };

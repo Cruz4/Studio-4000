@@ -8,6 +8,7 @@ import type { Param } from "../../types";
 import { cx } from "../../util";
 import { useThemeName } from "../../theme";
 import { clamp } from "./dsp";
+import { registerEffectActivity } from "../../effectWrites";
 
 export interface Telemetry {
   sampleRate?: number;
@@ -89,15 +90,19 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
   const busy = useRef(false);
   const gestureDepth = useRef(0);
   const lastWrite = useRef(0);
+  const loadSequence = useRef(0);
   const project = useStore((s) => s.project);
+  const historyRevision = useStore((s) => s.historyRevision);
 
   const load = useCallback(() => {
+    const sequence = ++loadSequence.current;
     rpc<Param[] | null>("plugin.params", { id })
-      .then((r) => { if (Array.isArray(r)) setParams(r); setReady(true); })
-      .catch(() => setReady(true));
+      .then((r) => { if (sequence !== loadSequence.current) return; if (Array.isArray(r)) setParams(r); setReady(true); })
+      .catch(() => { if (sequence === loadSequence.current) setReady(true); });
   }, [id]);
 
   useEffect(() => { setParams(Array.isArray(seed) ? seed : []); load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => registerEffectActivity(() => busy.current || !!Object.keys(pendingValues.current).length || !!Object.keys(pendingNorm.current).length), []);
 
   // Undo, automation or the assistant can change values too; resync when the project changes and we are not mid-drag.
   useEffect(() => {
@@ -105,6 +110,7 @@ export function useFx(id: string, seed: Param[] = [], type?: string): Fx {
     const t = setTimeout(load, 120);
     return () => clearTimeout(t);
   }, [project, load]);
+  useEffect(() => { if (historyRevision) load(); }, [historyRevision, load]);
 
   const merge = (updated: Param[]) => {
     const byId = new Map(updated.filter(Boolean).map((p) => [p.id, p]));

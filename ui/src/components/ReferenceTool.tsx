@@ -17,19 +17,19 @@ function storedProfiles(): Profile[] {
 function saveProfiles(items: Profile[]) { localStorage.setItem(PROFILE_KEY, JSON.stringify(items)); }
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-function wavBlob(chunks: Float32Array[][], sampleRate: number) {
+export function wavBlob(chunks: Float32Array[][], sampleRate: number) {
   const frames = chunks.reduce((n, c) => n + (c[0]?.length || 0), 0);
-  const out = new ArrayBuffer(44 + frames * 4);
+  const out = new ArrayBuffer(44 + frames * 8);
   const v = new DataView(out);
   const text = (at: number, s: string) => [...s].forEach((c, i) => v.setUint8(at + i, c.charCodeAt(0)));
-  text(0, "RIFF"); v.setUint32(4, 36 + frames * 4, true); text(8, "WAVE"); text(12, "fmt ");
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
-  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true);
-  text(36, "data"); v.setUint32(40, frames * 4, true);
+  text(0, "RIFF"); v.setUint32(4, 36 + frames * 8, true); text(8, "WAVE"); text(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 3, true); v.setUint16(22, 2, true);
+  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 8, true); v.setUint16(32, 8, true); v.setUint16(34, 32, true);
+  text(36, "data"); v.setUint32(40, frames * 8, true);
   let p = 44;
   for (const c of chunks) for (let i = 0; i < c[0].length; i++) {
-    v.setInt16(p, clamp(c[0][i], -1, 1) * 32767, true); p += 2;
-    v.setInt16(p, clamp((c[1] || c[0])[i], -1, 1) * 32767, true); p += 2;
+    v.setFloat32(p, clamp(c[0][i], -1, 1), true); p += 4;
+    v.setFloat32(p, clamp((c[1] || c[0])[i], -1, 1), true); p += 4;
   }
   return new Blob([out], { type: "audio/wav" });
 }

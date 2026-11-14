@@ -702,6 +702,13 @@ var describeTrack (AppEngine& app, te::Track& t)
 
     o.set ("plugins", inserts).set ("sends", sends);
 
+    if (dynamic_cast<te::FolderTrack*> (&t) != nullptr)
+    {
+        auto* parent = t.getParentFolderTrack();
+        o.set ("output", parent != nullptr && parent->isSubmixFolder()
+                           ? parent->itemID.toString() : String ("master"));
+    }
+
     if (auto* at = dynamic_cast<te::AudioTrack*> (&t))
     {
         if (auto* vp = at->getVolumePlugin())

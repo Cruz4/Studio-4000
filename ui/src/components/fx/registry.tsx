@@ -8,6 +8,7 @@ import { EqEditor } from "./EqEditor";
 import { GenericEditor } from "./GenericEditor";
 import { ChorusEditor, DelayEditor, DoublerEditor, ReverbEditor, TremoloEditor, WidthEditor } from "./SpaceEditors";
 import { TuneEditor } from "./TuneEditor";
+import { NoiseReductionEditor } from "./NoiseReductionEditor";
 
 export interface EditorEntry { render: (fx: Fx, id: string, type?: string) => ReactNode; width: number; accent: string; kind: string }
 
@@ -23,6 +24,7 @@ export const EDITORS: Record<string, EditorEntry> = {
   compressor: { kind: "Dynamics", accent: COLORS.amber, width: 780, render: (fx) => <ClassicCompressorEditor fx={fx} /> },
   s4000limiter: { kind: "Dynamics", accent: COLORS.red, width: 720, render: (fx, id) => <LimiterEditor fx={fx} pluginId={id} /> },
   s4000gate: { kind: "Dynamics", accent: COLORS.green, width: 820, render: (fx, id) => <GateEditor fx={fx} pluginId={id} /> },
+  s4000noisereduction: { kind: "Restoration", accent: COLORS.cyan, width: 820, render: (fx, id) => <NoiseReductionEditor fx={fx} pluginId={id} /> },
   s4000deesser: { kind: "Dynamics", accent: COLORS.pink, width: 820, render: (fx, id) => <DeEsserEditor fx={fx} pluginId={id} /> },
   s4000transient: { kind: "Dynamics", accent: COLORS.orange, width: 760, render: (fx, id) => <TransientEditor fx={fx} pluginId={id} /> },
   s4000tune: { kind: "Pitch", accent: COLORS.cyan, width: 940, render: (fx, id) => <TuneEditor fx={fx} pluginId={id} /> },
@@ -56,7 +58,7 @@ export const EDITORS: Record<string, EditorEntry> = {
 const SHORT_NAMES: Record<string, string> = {
   s4000leveler: "Level", s4000hardlimit: "Hard", s4000tubecomp: "Tube", s4000vocaldynamics: "V.Dyn", s4000vocalenhancer: "V.Enh",
   s4000eq: "EQ", "4bandEq": "EQ", s4000comp: "Comp", compressor: "Comp", s4000limiter: "Limit", s4000gate: "Gate", s4000deesser: "De-ess",
-  s4000transient: "Punch", s4000tune: "Tune", s4000saturator: "Sat", s4000crusher: "Crush", s4000delay: "Delay", s4000doubler: "Double",
+  s4000transient: "Punch", s4000noisereduction: "Denoise", s4000tune: "Tune", s4000saturator: "Sat", s4000crusher: "Crush", s4000delay: "Delay", s4000doubler: "Double",
   s4000width: "Width", s4000tremolo: "Trem", chorus: "Chorus", reverb: "Verb",
   s4000autofilter: "A.Filt", s4000autopan: "A.Pan", s4000channel: "Chan", s4000channel2: "Chan 2",
   s4000djeq: "DJ EQ", s4000dualfilter: "2 Filt", s4000expander: "Expand", s4000flanger: "Flange",

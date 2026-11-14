@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { rpc } from "../bridge";
 import { historyEntries } from "../history";
-import { useStore } from "../store";
+import { jumpHistory, useStore } from "../store";
 import { Icon } from "./ui";
 
 interface HistorySnapshot { undo: string[]; redo: string[] }
@@ -61,7 +61,7 @@ export function History() {
   async function jump(steps: number) {
     if (busy) return;
     setBusy(true); setError("");
-    try { await rpc("edit.jump", { steps }); setReload((n) => n + 1); }
+    try { await jumpHistory(steps); setReload((n) => n + 1); }
     catch { setError("Could not change history. Try again."); }
     finally { setBusy(false); }
   }

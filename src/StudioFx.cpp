@@ -121,6 +121,140 @@ void FxScope::push (const float* l, const float* r, int n)
     while (highest > cur && ! peak.compare_exchange_weak (cur, highest, std::memory_order_relaxed)) {}
 }
 
+//==============================================================================
+NoiseReductionPlugin::NoiseReductionPlugin (te::PluginCreationInfo info)
+    : StudioFxPlugin (info, {
+        { "amount", "Noise Reduction", 0.0f, 100.0f, 55.0f, "%", 50.0f },
+        { "reduce", "Reduce By", 0.0f, 40.0f, 14.0f, "dB", 12.0f },
+        { "threshold", "Noise Floor", -18.0f, 18.0f, 0.0f, "dB", 0.0f },
+        { "noiseonly", "Output Noise Only", 0.0f, 1.0f, 0.0f, "", 0.0f, { "Off", "On" } },
+    })
+{}
+
+void NoiseReductionPlugin::initialise (const te::PluginInitialisationInfo& info)
+{
+    StudioFxPlugin::initialise (info);
+    loadNoisePrint();
+}
+
+void NoiseReductionPlugin::loadNoisePrint()
+{
+    auto values = juce::StringArray::fromTokens (state.getProperty ("s4NoisePrint").toString(), ",", "");
+    for (int i = 0; i < juce::jmin (bins, values.size()); ++i)
+        noise[(size_t) i].store (values[i].getFloatValue(), std::memory_order_relaxed);
+}
+
+void NoiseReductionPlugin::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& property)
+{
+    StudioFxPlugin::valueTreePropertyChanged (tree, property);
+    if (property == juce::Identifier ("s4NoisePrint")) loadNoisePrint();
+}
+
+void NoiseReductionPlugin::prepare()
+{
+    for (auto* list : { &input, &overlap, &work })
+        for (auto& channel : *list)
+            channel.assign (fftSize * (list == &work ? 2 : 1), 0.0f);
+    clear();
+}
+
+void NoiseReductionPlugin::clear()
+{
+    for (auto* list : { &input, &overlap, &work })
+        for (auto& channel : *list)
+            std::fill (channel.begin(), channel.end(), 0.0f);
+    ring = 0; untilFrame = hop;
+}
+
+void NoiseReductionPlugin::setNoisePrint (const std::vector<float>& magnitudes)
+{
+    String serialised;
+    for (int i = 0; i < bins; ++i)
+    {
+        const float v = i < (int) magnitudes.size() ? juce::jmax (0.0f, magnitudes[(size_t) i]) : 0.0f;
+        noise[(size_t) i].store (v, std::memory_order_relaxed);
+        if (i != 0) serialised << ',';
+        serialised << String (v, 8);
+    }
+    state.setProperty ("s4NoisePrint", serialised, getUndoManager());
+}
+
+std::vector<float> NoiseReductionPlugin::getNoisePrint() const
+{
+    std::vector<float> result (bins);
+    for (int i = 0; i < bins; ++i) result[(size_t) i] = noise[(size_t) i].load (std::memory_order_relaxed);
+    return result;
+}
+
+void NoiseReductionPlugin::processFrame()
+{
+    const float amount = value (0) * 0.01f;
+    const float floorScale = std::pow (10.0f, value (2) * 0.05f);
+    const float minimum = std::pow (10.0f, -value (1) * 0.05f);
+    float reduced = 0.0f;
+
+    for (int ch = 0; ch < 2; ++ch)
+    {
+        auto& w = work[(size_t) ch];
+        for (int i = 0; i < fftSize; ++i)
+            w[(size_t) i] = input[(size_t) ch][(size_t) ((ring + i) % fftSize)];
+        std::fill (w.begin() + fftSize, w.end(), 0.0f);
+        window.multiplyWithWindowingTable (w.data(), fftSize);
+        fft.performRealOnlyForwardTransform (w.data());
+
+        for (int bin = 0; bin < bins; ++bin)
+        {
+            const int re = bin == bins - 1 ? 1 : bin * 2, im = bin == 0 || bin == bins - 1 ? -1 : re + 1;
+            const float real = w[(size_t) re], imag = im < 0 ? 0.0f : w[(size_t) im];
+            const float magnitude = std::sqrt (real * real + imag * imag);
+            const float learned = noise[(size_t) bin].load (std::memory_order_relaxed) * floorScale;
+            const float ratio = learned > 1.0e-9f ? magnitude / learned : 1000.0f;
+            const float detected = juce::jlimit (0.0f, 1.0f, 1.5f - ratio);
+            const float gain = 1.0f - amount * detected * (1.0f - minimum);
+            reduced += 1.0f - gain;
+            w[(size_t) re] *= gain;
+            if (im >= 0) w[(size_t) im] *= gain;
+        }
+
+        fft.performRealOnlyInverseTransform (w.data());
+        for (int i = 0; i < fftSize; ++i)
+        {
+            const int at = (ring + i) % fftSize;
+            overlap[(size_t) ch][(size_t) at] += w[(size_t) i] * 2.0f / 3.0f;
+        }
+    }
+    reductionNow.store (100.0f * reduced / (float) (bins * 2), std::memory_order_relaxed);
+}
+
+void NoiseReductionPlugin::process (float* left, float* right, int count)
+{
+    const bool noiseOnly = choice (3) != 0;
+    for (int i = 0; i < count; ++i)
+    {
+        const float dryL = left[i], dryR = right[i];
+        input[0][(size_t) ring] = dryL; input[1][(size_t) ring] = dryR;
+        const float wetL = overlap[0][(size_t) ring], wetR = overlap[1][(size_t) ring];
+        overlap[0][(size_t) ring] = overlap[1][(size_t) ring] = 0.0f;
+        left[i] = noiseOnly ? dryL - wetL : wetL;
+        right[i] = noiseOnly ? dryR - wetR : wetR;
+        ring = (ring + 1) % fftSize;
+        if (--untilFrame == 0) { processFrame(); untilFrame = hop; }
+    }
+}
+
+void NoiseReductionPlugin::addTelemetry (juce::DynamicObject& o)
+{
+    o.setProperty ("reduction", reductionNow.load (std::memory_order_relaxed));
+    juce::Array<var> curve;
+    const auto print = getNoisePrint();
+    for (int i = 0; i < 128; ++i)
+    {
+        const int bin = juce::jlimit (0, bins - 1, (int) std::round (std::pow ((double) i / 127.0, 2.0) * (bins - 1)));
+        curve.add (juce::Decibels::gainToDecibels (print[(size_t) bin] / (float) fftSize, -140.0f));
+    }
+    o.setProperty ("noisePrint", curve);
+}
+
 void FxScope::read (std::vector<float>& l, std::vector<float>& r, int n) const
 {
     n = juce::jlimit (0, size, n);
@@ -1266,6 +1400,7 @@ void registerStudioEffects (te::PluginManager& pm)
 {
     pm.createBuiltInType<TunePlugin>();
     pm.createBuiltInType<GatePlugin>();
+    pm.createBuiltInType<NoiseReductionPlugin>();
     pm.createBuiltInType<SaturatorPlugin>();
     pm.createBuiltInType<StereoWidthPlugin>();
     pm.createBuiltInType<TremoloPlugin>();
@@ -1288,6 +1423,7 @@ std::vector<std::array<const char*, 3>> studioEffectCatalogue()
         { TunePlugin::xmlTypeName,              TunePlugin::getPluginName(),            "Pitch" },
         { DeEsserPlugin::xmlTypeName,           DeEsserPlugin::getPluginName(),         "Dynamics" },
         { GatePlugin::xmlTypeName,              GatePlugin::getPluginName(),            "Dynamics" },
+        { NoiseReductionPlugin::xmlTypeName,    NoiseReductionPlugin::getPluginName(),  "Noise Reduction" },
         { TransientShaperPlugin::xmlTypeName,   TransientShaperPlugin::getPluginName(), "Dynamics" },
         { SaturatorPlugin::xmlTypeName,         SaturatorPlugin::getPluginName(),       "Saturation" },
         { BitCrusherPlugin::xmlTypeName,        BitCrusherPlugin::getPluginName(),      "Saturation" },

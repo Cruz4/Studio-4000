@@ -168,6 +168,36 @@ private:
     std::atomic<float> gainNow { 0.0f };
 };
 
+/** Learned broadband-noise reduction. A selected noise-only range supplies the spectral print. */
+class NoiseReductionPlugin : public StudioFxPlugin
+{
+public:
+    explicit NoiseReductionPlugin (te::PluginCreationInfo);
+    S4_FX_IDENTITY (NoiseReductionPlugin, "s4000noisereduction", "Noise Reduction", "Denoise")
+    double getLatencySeconds() override { return fftSize / juce::jmax (1.0, sampleRate); }
+
+    void initialise (const te::PluginInitialisationInfo&) override;
+    void setNoisePrint (const std::vector<float>& magnitudes);
+    std::vector<float> getNoisePrint() const;
+
+private:
+    void prepare() override;
+    void clear() override;
+    void process (float*, float*, int) override;
+    void addTelemetry (juce::DynamicObject&) override;
+    void processFrame();
+    void loadNoisePrint();
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
+
+    static constexpr int order = 11, fftSize = 1 << order, hop = fftSize / 4, bins = fftSize / 2 + 1;
+    juce::dsp::FFT fft { order };
+    juce::dsp::WindowingFunction<float> window { fftSize, juce::dsp::WindowingFunction<float>::hann, false };
+    std::array<std::atomic<float>, bins> noise {};
+    std::array<std::vector<float>, 2> input, overlap, work;
+    int ring = 0, untilFrame = hop;
+    std::atomic<float> reductionNow { 0.0f };
+};
+
 class SaturatorPlugin : public StudioFxPlugin
 {
 public:

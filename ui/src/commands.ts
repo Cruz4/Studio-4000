@@ -2,7 +2,7 @@ import { native, rpc } from "./bridge";
 import { COFFEE_URL, supportMailto } from "./support";
 import { panic, shiftOctave, toggleTyping } from "./keys";
 import { usePad } from "./gamepad/pad";
-import { act, disarmLoopRange, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
+import { act, changeHistory, disarmLoopRange, type BrowserTab, live, refreshInfo, selectTrack, toast, useStore } from "./store";
 import type { Clip, Track } from "./types";
 import { AUDIO_FILTER, gridSeconds, secondsPerBar, secondsPerBeat } from "./util";
 
@@ -214,7 +214,7 @@ export async function vocalChain(trackId?: string, style: "pop" | "warm" | "podc
   const id = trackId ?? selectedTrack()?.id;
   if (!id) return toast("Select a vocal track first");
   const r = await act("smart.vocalChain", { trackId: id, style, apply: true });
-  if (r) toast(r.summary, "success", { action: { label: "Undo", run: () => act("edit.undo") } });
+  if (r) toast(r.summary, "success", { action: { label: "Undo", run: () => changeHistory("undo") } });
 }
 
 /** Overlapping clips on the same track fade into each other across the overlap. */
@@ -332,9 +332,9 @@ export const commands: Command[] = [
   { id: "punch", group: "Transport", title: "Toggle punch in/out (records only inside the loop)", keys: "P", run: () => act("transport.setPunch", { enabled: !S().project?.punch }), when: hasProject },
   { id: "marker", group: "Transport", title: "Add marker at playhead", keys: "M", run: () => act("marker.add", { time: live.tick.t }), when: hasProject },
 
-  { id: "undo", group: "Edit", title: "Undo", keys: "Ctrl+Z", run: () => act("edit.undo"), when: hasProject },
+  { id: "undo", group: "Edit", title: "Undo", keys: "Ctrl+Z", run: () => changeHistory("undo"), when: hasProject },
   { id: "history", group: "Edit", title: "History", run: () => useStore.setState((s) => ({ historyOpen: !s.historyOpen })), when: hasProject },
-  { id: "redo", group: "Edit", title: "Redo", keys: "Ctrl+Y", run: () => act("edit.redo"), when: hasProject },
+  { id: "redo", group: "Edit", title: "Redo", keys: "Ctrl+Y", run: () => changeHistory("redo"), when: hasProject },
   { id: "split", group: "Edit", title: "Split at playhead", keys: "S", run: splitAtPlayhead, when: hasProject },
   { id: "toolMove", group: "Edit", title: "Move tool", keys: "1", when: hasProject, run: () => useStore.setState({ tool: "move" }) },
   { id: "toolTime", group: "Edit", title: "Time tool", keys: "2", when: hasProject, run: () => useStore.setState({ tool: "time" }) },

@@ -12,6 +12,51 @@ namespace
 {
     using K = Rpc::Kind;
 
+    class ParameterValueAction final : public juce::UndoableAction
+    {
+    public:
+        ParameterValueAction (te::AutomatableParameter& p, float newValue)
+            : parameter (&p), before (p.getCurrentValue()), after (newValue) {}
+
+        ParameterValueAction (te::AutomatableParameter::Ptr p, float oldValue, float newValue)
+            : parameter (std::move (p)), before (oldValue), after (newValue) {}
+
+        bool perform() override { return set (after); }
+        bool undo() override    { return set (before); }
+        int getSizeInUnits() override { return 1; }
+
+        juce::UndoableAction* createCoalescedAction (juce::UndoableAction* next) override
+        {
+            if (auto* other = dynamic_cast<ParameterValueAction*> (next);
+                other != nullptr && other->parameter == parameter)
+                return new ParameterValueAction (parameter, before, other->after);
+
+            return nullptr;
+        }
+
+    private:
+        bool set (float value)
+        {
+            if (parameter == nullptr)
+                return false;
+
+            parameter->setParameter (value, juce::sendNotification);
+            return true;
+        }
+
+        te::AutomatableParameter::Ptr parameter;
+        float before = 0.0f, after = 0.0f;
+    };
+
+    bool setParameterUndoably (te::Edit& edit, te::AutomatableParameter& parameter, float value)
+    {
+        value = parameter.valueRange.snapToLegalValue (value);
+        if (juce::approximatelyEqual (parameter.getCurrentValue(), value))
+            return false;
+
+        return edit.getUndoManager().perform (new ParameterValueAction (parameter, value));
+    }
+
     struct BuiltIn
     {
         String type, name, category;
@@ -535,10 +580,10 @@ void registerPluginApi (AppEngine& app)
         auto& plugin = app.plugin (reqStr (p, "id"));
         auto& param = app.parameter (plugin, reqStr (p, "paramId"));
 
-        if (has (p, "norm"))
-            param.setNormalisedParameter (juce::jlimit (0.0f, 1.0f, (float) num (p, "norm")), juce::sendNotification);
-        else
-            param.setParameter (param.valueRange.snapToLegalValue ((float) reqNum (p, "value")), juce::sendNotification);
+        const auto value = has (p, "norm")
+            ? param.valueRange.convertFrom0to1 (juce::jlimit (0.0f, 1.0f, (float) num (p, "norm")))
+            : (float) reqNum (p, "value");
+        setParameterUndoably (app.edit(), param, value);
 
         return describeParameter (param);
     });
@@ -553,7 +598,7 @@ void registerPluginApi (AppEngine& app)
             for (auto& prop : o->getProperties())
             {
                 auto& param = app.parameter (plugin, prop.name.toString());
-                param.setParameter (param.valueRange.snapToLegalValue ((float) static_cast<double> (prop.value)), juce::sendNotification);
+                setParameterUndoably (app.edit(), param, (float) static_cast<double> (prop.value));
                 changed.add (describeParameter (param));
             }
 
@@ -572,6 +617,53 @@ void registerPluginApi (AppEngine& app)
             return var (Obj().set ("grDb", std::round (limiter->lastReductionDb.load() * 10.0f) / 10.0f));
 
         return var (Obj());
+    });
+
+    rpc.add ("noise.capture", K::write, "Learns a Noise Reduction print from a noise-only range in an audio clip",
+             "{id, clipId, start, end}", [&app] (const var& p)
+    {
+        auto* effect = dynamic_cast<NoiseReductionPlugin*> (&app.plugin (reqStr (p, "id")));
+        auto* clip = dynamic_cast<te::AudioClipBase*> (&app.clip (reqStr (p, "clipId")));
+        if (effect == nullptr || clip == nullptr) throw RpcError ("Select an audio clip and a Noise Reduction effect");
+
+        const double from = reqNum (p, "start"), to = reqNum (p, "end");
+        if (to - from < 0.1) throw RpcError ("Select at least 0.1 seconds containing only noise");
+        const auto position = clip->getPosition();
+        const double begin = juce::jmax (from, position.getStart().inSeconds());
+        const double finish = juce::jmin (to, position.getEnd().inSeconds());
+        if (finish - begin < 0.1) throw RpcError ("The selected range must overlap the chosen audio clip");
+
+        std::unique_ptr<juce::AudioFormatReader> reader (app.getEngine().getAudioFileFormatManager().readFormatManager
+                                                             .createReaderFor (clip->getCurrentSourceFile()));
+        if (reader == nullptr) throw RpcError ("The clip audio could not be read");
+        constexpr int order = 11, size = 1 << order, bins = size / 2 + 1, hop = size / 4;
+        const double speed = clip->getSpeedRatio();
+        const juce::int64 first = (juce::int64) std::round ((position.getOffset().inSeconds() + (begin - position.getStart().inSeconds()) * speed) * reader->sampleRate);
+        const juce::int64 samples = (juce::int64) std::round ((finish - begin) * speed * reader->sampleRate);
+        juce::dsp::FFT fft (order); juce::dsp::WindowingFunction<float> window (size, juce::dsp::WindowingFunction<float>::hann, false);
+        juce::AudioBuffer<float> block (2, size); std::vector<float> work (size * 2), average (bins, 0.0f);
+        int frames = 0;
+        for (juce::int64 at = 0; at + size <= samples; at += hop)
+        {
+            block.clear(); reader->read (&block, 0, size, first + at, true, true);
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                const float* source = block.getReadPointer (juce::jmin (ch, block.getNumChannels() - 1));
+                std::copy (source, source + size, work.begin()); std::fill (work.begin() + size, work.end(), 0.0f);
+                window.multiplyWithWindowingTable (work.data(), size); fft.performRealOnlyForwardTransform (work.data());
+                for (int bin = 0; bin < bins; ++bin)
+                {
+                    const int re = bin == bins - 1 ? 1 : bin * 2, im = bin == 0 || bin == bins - 1 ? -1 : re + 1;
+                    const float real = work[(size_t) re], imag = im < 0 ? 0.0f : work[(size_t) im];
+                    average[(size_t) bin] += std::sqrt (real * real + imag * imag);
+                }
+                ++frames;
+            }
+        }
+        if (frames == 0) throw RpcError ("Select a longer noise-only range");
+        for (auto& value : average) value /= (float) frames;
+        effect->setNoisePrint (average);
+        return effect->getTelemetry (false, false)["noisePrint"];
     });
 
     rpc.add ("plugin.factoryPreset", K::read, "Fresh factory parameter values for a bundled processor", "{id}", [&app] (const var& p)

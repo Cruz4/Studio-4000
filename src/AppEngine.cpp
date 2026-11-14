@@ -61,6 +61,7 @@ namespace
             { "plugin.add", "Add effect" }, { "plugin.remove", "Remove effect" }, { "plugin.move", "Reorder effect" },
             { "plugin.duplicate", "Duplicate effect" }, { "chain.load", "Load effect chain" },
             { "plugin.set", "Effect bypass" }, { "plugin.setParams", "Effect change" }, { "plugin.setParam", "Effect change" },
+            { "noise.capture", "Capture noise print" },
             { "plugin.setSidechain", "Sidechain" }, { "clip.move", "Move clip" }, { "clip.delete", "Delete clip" },
             { "clip.split", "Split" }, { "clip.duplicate", "Duplicate" }, { "clip.trim", "Trim" }, { "clip.slip", "Slip" },
             { "clip.importAudio", "Import audio" }, { "clip.addMidi", "New MIDI clip" }, { "clip.normalize", "Normalize" },

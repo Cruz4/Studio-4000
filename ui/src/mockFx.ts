@@ -29,6 +29,8 @@ const SPECS: Record<string, Spec[]> = {
     ["speed", "Retune speed", 0, 400, 20, "ms", 60], ["amount", "Amount", 0, 100, 100, "%"], ["tolerance", "Tolerance", 0, 50, 0, "cents"], ["mix", "Mix", 0, 100, 100, "%"]],
   s4000gate: [["threshold", "Threshold", -80, 0, -45, "dB"], ["range", "Range", -90, 0, -60, "dB"], ["attack", "Attack", 0.05, 50, 1, "ms", 5],
     ["hold", "Hold", 0, 500, 40, "ms", 80], ["release", "Release", 5, 2000, 120, "ms", 200]],
+  s4000noisereduction: [["amount", "Noise Reduction", 0, 100, 55, "%", 50], ["reduce", "Reduce By", 0, 40, 14, "dB", 12],
+    ["threshold", "Noise Floor", -18, 18, 0, "dB"], ["noiseonly", "Output Noise Only", 0, 1, 0, "", 0, offOn]],
   s4000deesser: [["frequency", "Frequency", 2000, 12000, 6000, "Hz", 5500], ["threshold", "Threshold", -60, 0, -30, "dB"], ["range", "Max reduction", 0, 24, 10, "dB"],
     ["listen", "Listen to S", 0, 1, 0, "", 0, offOn]],
   s4000transient: [["attack", "Attack", -100, 100, 0, "%"], ["sustain", "Sustain", -100, 100, 0, "%"], ["output", "Output", -12, 12, 0, "dB"]],
@@ -79,8 +81,12 @@ export function paramsFor(type: string): Param[] | null {
 export function updateParam(list: Param[], pid: string, how: { value?: number; norm?: number }): Param | null {
   const i = list.findIndex((p) => p.id === pid);
   if (i < 0) return null;
-  const m = meta.get(list[i]);
-  if (!m) return null;
+  let m = meta.get(list[i]);
+  if (!m) {
+    const p = list[i];
+    const spec: Spec = [p.id, p.name, p.min, p.max, p.def ?? p.value, "", p.centre, p.options?.map((o) => o.label)];
+    m = { spec, skew: skewFor(p.min, p.max, p.centre) };
+  }
   const [, , min, max] = m.spec;
   const value = how.norm !== undefined ? min + Math.pow(clamp(how.norm, 0, 1), 1 / m.skew) * (max - min) : how.value ?? list[i].value;
   list[i] = describe(m.spec, value, m.skew);

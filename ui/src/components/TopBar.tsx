@@ -5,7 +5,7 @@ import { native } from "../bridge";
 import { runCommand, toggleMixerView, toggleRecord } from "../commands";
 import { AKASHEET_TIP } from "../support";
 import { useMeterCanvas } from "../meters";
-import { act, live, onTick, useStore } from "../store";
+import { act, changeHistory, live, onTick, useStore } from "../store";
 import { cx, formatBars, formatTime } from "../util";
 import { openMenu } from "./ContextMenu";
 import { Icon } from "./ui";
@@ -124,8 +124,8 @@ export function TopBar() {
           <span className={cx(view === "mixer" && "on")}><Icon name="mixer" size={13} /> Mixer</span>
         </button>
         <div className="seg">
-          <button className="btn ghost icon" title={project.undoName ? `Undo ${project.undoName} (Ctrl+Z)` : "Undo (Ctrl+Z)"} disabled={!project.canUndo} onClick={() => act("edit.undo")}><Icon name="undo" /></button>
-          <button className="btn ghost icon" title={project.redoName ? `Redo ${project.redoName} (Ctrl+Y)` : "Redo (Ctrl+Y)"} disabled={!project.canRedo} onClick={() => act("edit.redo")}><Icon name="redo" /></button>
+          <button className="btn ghost icon" title={project.undoName ? `Undo ${project.undoName} (Ctrl+Z)` : "Undo (Ctrl+Z)"} disabled={!project.canUndo} onClick={() => void changeHistory("undo")}><Icon name="undo" /></button>
+          <button className="btn ghost icon" title={project.redoName ? `Redo ${project.redoName} (Ctrl+Y)` : "Redo (Ctrl+Y)"} disabled={!project.canRedo} onClick={() => void changeHistory("redo")}><Icon name="redo" /></button>
           <button className={cx("btn ghost", historyOpen && "on")} title="History" data-history-toggle aria-expanded={historyOpen} aria-controls="edit-history" onClick={() => useStore.setState((s) => ({ historyOpen: !s.historyOpen }))}>History</button>
         </div>
       </div>
