@@ -1,4 +1,4 @@
-Updates from November 12–14, 2026
+Updates from November 12–15, 2026
 
 ### Reference another app
 Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden. The Reference Match bar loads saved spectra, explicitly chooses a target track and applies EQ without reopening the analyzer, and can be closed completely when it is not needed. Saved profiles draw their own amber trace, and applying one immediately opens the new editable Parametric EQ. Studio 4000 also shows the live reference spectrum, stereo field and an optional DAW-master overlay, and can record the source to a stereo Reference track.
@@ -35,6 +35,8 @@ Vocal Leveler, Hard Limiter, Tube-style Compressor, Vocal Dynamics and Vocal Enh
 
 ### Edit with confidence
 Selected clips have a fuchsia outline and a subtle brightness lift. Time selections have a clearer fill and edges. Drag the ruler with any tool to select a range, then right-click to split all tracks at both boundaries. Markers extend through the tracks and magnetically catch clips. Ctrl-drag catches markers when Snap is off.
+
+Time selection now uses one live preview across the bottom editor, ruler and track view. Every surface follows the pointer together, and the preview remains in place until the engine confirms the saved range, eliminating the old-range flash and release-time skip.
 
 Clip gain, fade, trim and take controls stay behind the track information panels when scrolling horizontally. Hidden controls no longer draw or receive clicks over track headers.
 

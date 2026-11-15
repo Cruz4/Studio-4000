@@ -31,6 +31,7 @@ export const WHATS_NEW: WhatsNewGroup[] = [
   ] },
   { title: "Edit with confidence", color: "#ff92c9", items: [
     "Fuchsia clip selection and a clearer time highlight show exactly what you picked.",
+    "Editor, ruler and track highlights stay together while you drag and release.",
     "Drag anywhere on the ruler to select time, whichever tool is active.",
     "Right-click a selected range to split all tracks at both boundaries.",
     "Alt-drag previews a duplicate and crossfades overlaps immediately.",

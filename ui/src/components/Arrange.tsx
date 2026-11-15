@@ -136,9 +136,16 @@ function Ruler({ project, pps, view, grid, onTimeSelection }: { project: Project
           const a = Math.min(t, b), end = Math.max(t, b);
           setLoopPreview([a, end]); onTimeSelection({ a, b: end });
         }, () => {
-          setLoopPreview(null); onTimeSelection(null);
-          if (dragged && Math.abs(b - t) > .05) { armLoopRange(); act("transport.setLoop", { start: Math.min(t, b), end: Math.max(t, b), enabled: true }); }
-          else if (!dragged) act("transport.setPosition", { time: t });
+          if (dragged && Math.abs(b - t) > .05) {
+            const range: [number, number] = [Math.min(t, b), Math.max(t, b)];
+            armLoopRange();
+            void act("transport.setLoop", { start: range[0], end: range[1], enabled: true }).then(() => {
+              setLoopPreview(null); onTimeSelection(null);
+            });
+          } else {
+            setLoopPreview(null); onTimeSelection(null);
+            if (!dragged) void act("transport.setPosition", { time: t });
+          }
         });
       }} onContextMenu={(e) => { const items = rangeSelectionItems(); if (items.length) openMenu(e, items); else e.preventDefault(); }}>
       <canvas ref={ref} style={{ position: "absolute", left: 0, top: 0, width: view.width, height: 34 }} />
@@ -163,8 +170,9 @@ let setLoopPreview: (v: [number, number] | null) => void = () => {};
 
 function LoopBar({ project, pps, viewLeft, grid }: { project: Project; pps: number; viewLeft: number; grid: Grid }) {
   const [preview, setPreview] = useState<[number, number] | null>(null);
+  const sharedPreview = useStore((state) => state.loopPreview);
   setLoopPreview = setPreview;
-  const [s, e] = preview ?? project.loop;
+  const [s, e] = preview ?? sharedPreview ?? project.loop;
   if (e - s <= 0.01) return null;
   const edges = () => clipEdges(project, []);
   const resize = (ev: React.PointerEvent, side: "l" | "r") => {
@@ -966,6 +974,7 @@ export function Arrange() {
   const selectedTrack = useStore((s) => s.selectedTrack);
   const selectedTracks = useStore((s) => s.selectedTracks);
   const selectedClips = useStore((s) => s.selectedClips);
+  const loopPreview = useStore((s) => s.loopPreview);
   const automationOpen = useStore((s) => s.automationOpen);
   const recording = useStore((s) => s.transport.recording);
   const referenceOpen = useStore((s) => s.referenceOpen);
@@ -1272,13 +1281,26 @@ export function Arrange() {
     startDrag(e, (dx, _dy, ev) => {
       if (Math.abs(dx) > 3) dragged = true;
       end = at(ev);
-      setTimeDrag({ a: Math.min(anchor, end), b: Math.max(anchor, end) });
+      const range = { a: Math.min(anchor, end), b: Math.max(anchor, end) };
+      setTimeDrag(range);
+      useStore.setState({ loopPreview: [range.a, range.b] });
     }, () => {
-      setTimeDrag(null);
-      if (!dragged) act("transport.setPosition", { time: anchor });
+      if (!dragged) {
+        setTimeDrag(null);
+        useStore.setState({ loopPreview: null });
+        void act("transport.setPosition", { time: anchor });
+      }
       else if (Math.abs(end - anchor) > 0.02) {
+        const range: [number, number] = [Math.min(anchor, end), Math.max(anchor, end)];
         armLoopRange();
-        act("transport.setLoop", { start: Math.min(anchor, end), end: Math.max(anchor, end), enabled: true });
+        void act("transport.setLoop", { start: range[0], end: range[1], enabled: true }).then(() => {
+          setTimeDrag(null);
+          useStore.setState((state) => state.loopPreview && Math.abs(state.loopPreview[0] - range[0]) < .0005 && Math.abs(state.loopPreview[1] - range[1]) < .0005
+            ? { loopPreview: null } : {});
+        });
+      } else {
+        setTimeDrag(null);
+        useStore.setState({ loopPreview: null });
       }
     });
   };
@@ -1421,7 +1443,9 @@ export function Arrange() {
     backgroundSize: `${barPx}px 100%${showStep ? `, ${stepPx}px 100%` : ""}`,
   };
 
-  const loopVisible = project.loop[1] - project.loop[0] > 0.01;
+  const shownLoop = loopPreview ?? project.loop;
+  const loopVisible = shownLoop[1] - shownLoop[0] > 0.01;
+  const shownTimeRange = timeDrag ?? (loopPreview ? { a: loopPreview[0], b: loopPreview[1] } : null);
 
   return (
     <div className={cx("arrange", `tool-${arrangeTool}`)} style={{ ["--header-w" as string]: `${headerW}px` }} onDragLeave={(e) => { if (e.currentTarget === e.target) { setFileDrag(false); setDropLane(null); } }}>
@@ -1482,7 +1506,10 @@ export function Arrange() {
               <button className="btn sm ghost icon" title="Smaller tracks (Ctrl+wheel over the track names)" onClick={() => resizeAllTracks(-16)}>−</button>
               <button className="btn sm ghost icon" title="Taller tracks (Ctrl+wheel over the track names)" onClick={() => resizeAllTracks(16)}>+</button>
             </div>
-            <Ruler project={project} pps={pps} view={view} grid={grid} onTimeSelection={setTimeDrag} />
+            <Ruler project={project} pps={pps} view={view} grid={grid} onTimeSelection={(range) => {
+              setTimeDrag(range);
+              useStore.setState({ loopPreview: range ? [range.a, range.b] : null });
+            }} />
           </div>
 
           {tracks.map((track, i) => {
@@ -1544,7 +1571,7 @@ export function Arrange() {
           </div>
 
           {loopVisible && project.looping && (
-            <div className="loop-selection" style={{ left: headerW + project.loop[0] * pps, width: (project.loop[1] - project.loop[0]) * pps }} />
+            <div className="loop-selection" style={{ left: headerW + shownLoop[0] * pps, width: (shownLoop[1] - shownLoop[0]) * pps }} />
           )}
           <div className="marker-lines" style={{ left: view.left + headerW, width: Math.max(0, laneW - view.left) }} aria-hidden="true">
             {project.markers.map((m) => <div key={m.id} className="marker-line" style={{ left: m.time * pps - view.left }} />)}
@@ -1554,7 +1581,7 @@ export function Arrange() {
             <div className="tool-ghost" style={{ transform: `translateX(${headerW + ghost * pps}px)` }} />
           )}
           <PeerCursors pps={pps} scrollLeft={view.left} />
-          {timeDrag && <div className="time-range" style={{ left: headerW + timeDrag.a * pps, width: Math.max(1, (timeDrag.b - timeDrag.a) * pps) }} />}
+          {shownTimeRange && <div className="time-range" style={{ left: headerW + shownTimeRange.a * pps, width: Math.max(1, (shownTimeRange.b - shownTimeRange.a) * pps) }} />}
           {rubber && <div className="rubber" style={{ left: rubber.x, top: rubber.y, width: rubber.w, height: rubber.h }} />}
         </div>
         {!tracks.length && (

@@ -73,11 +73,25 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
     playhead.current.style.transform = `translateX(${x}px)`;
   }) as () => void, [clip.start, pps, contentW]);
 
-  const chosenRange: [number, number] | null = selectionDraft ?? (loop[1] > loop[0] && loop[0] < clip.end && loop[1] > clip.start
+  const loopPreview = useStore((s) => s.loopPreview);
+  const previewInClip: [number, number] | null = loopPreview && loopPreview[1] > clip.start && loopPreview[0] < clip.end
+    ? [Math.max(loopPreview[0], clip.start), Math.min(loopPreview[1], clip.end)] : null;
+  const chosenRange: [number, number] | null = selectionDraft ?? previewInClip ?? (loop[1] > loop[0] && loop[0] < clip.end && loop[1] > clip.start
     ? [Math.max(loop[0], clip.start), Math.min(loop[1], clip.end)] : null);
+  const clearCommittedPreview = (range: [number, number]) => {
+    setSelectionDraft(null);
+    useStore.setState((s) => s.loopPreview && Math.abs(s.loopPreview[0] - range[0]) < .0005 && Math.abs(s.loopPreview[1] - range[1]) < .0005
+      ? { loopPreview: null } : {});
+  };
+  const commitRange = async (range: [number, number]) => {
+    setSelectionDraft(range);
+    useStore.setState({ loopPreview: range });
+    await act("transport.setLoop", { start: range[0], end: range[1], enabled: true });
+    clearCommittedPreview(range);
+  };
   const selectWholeClip = () => {
     useStore.setState({ selectedClips: [clip.id], editorClip: clip.id });
-    void act("transport.setLoop", { start: clip.start, end: clip.end, enabled: true });
+    void commitRange([clip.start, clip.end]);
   };
   const openNoiseReduction = async () => {
     useStore.setState({ selectedClips: [clip.id], editorClip: clip.id });
@@ -95,11 +109,19 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
     if (tool === "erase") { void act("clip.delete", { id: clip.id }); return; }
     if (tool === "time") {
       let end = at;
-      setSelectionDraft([at, at]);
-      startDrag(e, (dx) => { end = clamp(at + dx / pps, clip.start, clip.end); setSelectionDraft([Math.min(at, end), Math.max(at, end)]); }, () => {
-        setSelectionDraft(null);
-        if (Math.abs(end - at) >= .025) void act("transport.setLoop", { start: Math.min(at, end), end: Math.max(at, end), enabled: true });
-        else void act("transport.setPosition", { time: at });
+      const showRange = () => {
+        const range: [number, number] = [Math.min(at, end), Math.max(at, end)];
+        setSelectionDraft(range);
+        useStore.setState({ loopPreview: range });
+      };
+      showRange();
+      startDrag(e, (dx) => { end = clamp(at + dx / pps, clip.start, clip.end); showRange(); }, () => {
+        if (Math.abs(end - at) >= .025) void commitRange([Math.min(at, end), Math.max(at, end)]);
+        else {
+          setSelectionDraft(null);
+          useStore.setState({ loopPreview: null });
+          void act("transport.setPosition", { time: at });
+        }
       });
       return;
     }

@@ -48,6 +48,8 @@ interface State {
   /** Every track in the current selection. The last one clicked stays in selectedTrack. */
   selectedTracks: string[];
   selectedClips: string[];
+  /** Live time-range preview shared by the editor, ruler and arrangement while a drag is active or being committed. */
+  loopPreview: [number, number] | null;
   /** Delete clears the loop range when the purple bar was the last thing clicked or moved. */
   loopTargeted: boolean;
   editorClip: string | null;
@@ -129,6 +131,7 @@ export const useStore = create<State>((set) => ({
   selectedTrack: null,
   selectedTracks: [],
   selectedClips: [],
+  loopPreview: null,
   loopTargeted: false,
   editorClip: null,
   automationOpen: {},
