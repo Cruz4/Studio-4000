@@ -390,7 +390,7 @@ void registerTrackApi (AppEngine& app)
         return var (copy->itemID.toString());
     });
 
-    rpc.add ("track.bounce", K::write, "Bakes a track or group and its effects to a new audio track directly below it", "{id,tailSeconds?:0..30,muteSource?:true}", [&app] (const var& p)
+    rpc.add ("track.bounce", K::write, "Bakes a track or group and its effects to a new audio track directly below it", "{id,start?,end?,tailSeconds?:0..30,muteSource?:true}", [&app] (const var& p)
     {
         auto& edit = app.edit();
         if (edit.getTransport().isRecording()) throw RpcError ("Stop recording before bouncing a track");
@@ -411,6 +411,11 @@ void registerTrackApi (AppEngine& app)
         includeClips (source);
         if (auto* folder = dynamic_cast<te::FolderTrack*> (&source))
             for (auto* child : folder->getAllSubTracks (true)) includeClips (*child);
+        if (has (p, "start") && has (p, "end"))
+        {
+            start = juce::jmax (start, num (p, "start"));
+            end = juce::jmin (end, num (p, "end"));
+        }
         if (start == std::numeric_limits<double>::max() || end <= start) throw RpcError (isGroup ? "This group has no clips to bounce" : "This track has no clips to bounce");
         const String printName = source.getName() + (isGroup ? " - group FX print" : " - FX print");
         auto file = bounceTrackToWav (app, source, { seconds (start), seconds (end) }, printName, num (p, "tailSeconds", 4), ! isGroup);
@@ -465,7 +470,15 @@ void registerTrackApi (AppEngine& app)
                 applyBusChannels (app, *ft, width);
         }
 
-        if (has (p, "name"))    t.setName (str (p, "name"));
+        if (has (p, "name"))
+        {
+            const auto name = str (p, "name");
+            t.setName (name);
+            if (getTrackKind (t) == TrackKind::fxReturn)
+                for (auto* plugin : t.pluginList)
+                    if (auto* ret = dynamic_cast<te::AuxReturnPlugin*> (plugin))
+                        app.edit().setAuxBusName (ret->busNumber.get(), name);
+        }
         if (has (p, "colour"))
         {
             auto colour = colourFromString (str (p, "colour"), t.getColour());

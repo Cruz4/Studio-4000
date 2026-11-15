@@ -8,10 +8,15 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
   const project = useStore((s) => s.project)!;
   const selected = useStore((s) => s.selectedClips);
   const [busy, setBusy] = useState(false);
+  const [capturedCurve, setCapturedCurve] = useState<number[] | null>(null);
   const telemetry = useTelemetry(pluginId, {}, 12);
-  const curve = (telemetry.noisePrint as number[] | undefined) ?? [];
-  const clip = useMemo(() => project.tracks.flatMap((t) => t.clips).find((c) => selected.includes(c.id) && c.kind === "audio"), [project, selected]);
-  const host = project.tracks.find((t) => t.plugins.some((p) => p.id === pluginId));
+  const curve = capturedCurve ?? (telemetry.noisePrint as number[] | undefined) ?? [];
+  const owner = project.tracks.map((track) => ({ track, clip: track.clips.find((c) => c.plugins?.some((p) => p.id === pluginId)) }))
+    .find(({ track, clip }) => track.plugins.some((p) => p.id === pluginId) || !!clip);
+  // A clip effect remains tied to its clip even if opening the window changes focus.
+  // Track effects still follow the currently selected audio clip.
+  const clip = useMemo(() => owner?.clip ?? project.tracks.flatMap((t) => t.clips).find((c) => selected.includes(c.id) && c.kind === "audio"), [owner?.clip, project, selected]);
+  const host = owner?.track;
   const [start, end] = project.loop;
   const rangeOk = !!clip && end - start >= .1 && start < clip.end && end > clip.start;
   const points = curve.length ? curve.map((db, i) => `${(i / (curve.length - 1)) * 100},${100 - Math.max(0, Math.min(100, (db + 140) / 120 * 100))}`).join(" ") : "";
@@ -20,17 +25,18 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
     if (!rangeOk || !clip) return toast("Select a noise-only time range over one audio clip first", "warning");
     setBusy(true);
     try {
-      await rpc("noise.capture", { id: pluginId, clipId: clip.id, start, end });
+      const learned = await rpc<number[]>("noise.capture", { id: pluginId, clipId: clip.id, start, end });
+      setCapturedCurve(learned);
       toast(`Captured ${(end - start).toFixed(2)} seconds as the noise print`, "success");
     } catch (e) { toast((e as Error).message, "error"); }
     finally { setBusy(false); }
   };
 
-  const print = async () => {
+  const print = async (selectionOnly: boolean) => {
     if (!host) return;
-    await act("track.bounce", { id: host.id });
+    await act("track.bounce", { id: host.id, ...(selectionOnly && rangeOk ? { start, end, muteSource: false } : {}) });
     await refreshProject();
-    toast("Printed the cleaned track with Noise Reduction baked in", "success");
+    toast(selectionOnly ? "Printed the selected cleaned range to a new track" : "Printed the cleaned track with Noise Reduction baked in", "success");
   };
 
   return <div className="noise-reduction-editor col">
@@ -65,6 +71,10 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
         <Toggle fx={fx} pid="noiseonly" label="Output Noise Only" />
       </div>
     </Section>
-    <div className="row end"><span className="small dim grow">Use the effect power button for instant before/after. Keep it live, or print a new track when ready.</span><button className="btn" disabled={!host || !points} onClick={print}>Print Cleaned Track</button></div>
+    <div className="row wrap"><span className="small dim grow">The editor time selection controls what you audition and can print. Use Output Noise Only and the effect power button for before/after.</span>
+      <button className="btn" disabled={!rangeOk} onClick={async () => { await act("transport.setLoop", { start, end, enabled: true }); await act("transport.setPosition", { time: start }); await act("transport.play"); }}>Preview selection</button>
+      <button className="btn" disabled={!host || !points || !rangeOk} onClick={() => print(true)}>Print Selected Range</button>
+      <button className="btn" disabled={!host || !points} onClick={() => print(false)}>Print Full Track</button>
+    </div>
   </div>;
 }

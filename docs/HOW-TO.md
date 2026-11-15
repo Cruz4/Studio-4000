@@ -81,13 +81,19 @@ Effect controls update the audio engine continuously while you drag. Use the Und
 
 ### Learned Noise Reduction
 
-Add **Noise Reduction** from the browser's Noise Reduction category. Select one audio clip, then drag a time range over a section containing only the steady unwanted sound. Open the effect and choose **Capture Noise Print**. The graph displays the learned FFT profile.
+Open an audio clip in the bottom editor. Its toolbar supports **Move**, **Time**, **Split**, **Slip** and **Erase**, while the waveform keeps its fade, gain, pan and edge-trim controls. The clip-details panel starts at a compact width; drag the divider at its right edge when you need more room.
 
-Loop the part you want to clean and adjust **Noise Reduction**, **Reduce By**, and **Noise Floor** while listening; changes are live. **Output Noise Only** lets you hear what the processor removes. Use the effect power button for instant before/after. When satisfied, choose **Print Cleaned Track** to create a baked audio track while retaining the editable source. Short, representative noise-only captures work best; excessive reduction can create watery or flanged artifacts.
+Choose **Time** and drag a section containing only the steady unwanted sound, then click **Noise Reduction** in that same toolbar. The effect is inserted on the clip and the graph stays connected to it even when focus changes. Choose **Capture Noise Print** to learn and display its FFT profile. You can also add Noise Reduction from the browser and use the currently selected audio clip.
+
+Select the part you want to clean and choose **Preview selection**. Adjust **Noise Reduction**, **Reduce By**, and **Noise Floor** while listening; changes are live. **Output Noise Only** lets you hear what the processor removes. Use the effect power button for instant before/after. **Print Selected Range** makes a new processed track without muting the source; **Print Full Track** bakes the complete track and mutes the editable source to prevent doubled playback. Short, representative noise-only captures work best; excessive reduction can create watery or flanged artifacts.
+
+Every built-in effect window has **Detach**. It opens a resizable native parameter window that can be dragged to another monitor. Closing the detached window does not remove the effect or its settings.
 
 Click an effect to select it. Double-click to open it. You can leave several open. Clicking the page does not close them. Delete removes the selected effect when no clip is selected.
 
 Track effects and Clip effects each have a Dry / Wet bar, shown next to the tab that is selected. Dry is the sound before that chain. Wet is the full chain. Double-click the bar for fully wet.
+
+Sends are available in both Arrange and Mixer views. In a track header, scroll a send chip to change its level, right-click to bypass or remove it, and use **Send** to choose an existing return or create a reverb/delay return. Renaming an FX return also renames its entries in every send menu. Group/bus tracks can send to other returns or buses as long as the route does not feed back into itself.
 
 The Chains browser includes 132 complete multi-effect starting points. Three mastering categories contain 12 vocal-mix masters, 12 instrumental masters, and 12 delivery/utility masters. These use conservative, real parameter values across EQ, compression, saturation, stereo width and limiting; always level-match and adjust them for the actual song rather than treating a preset as automatic mastering.
 

@@ -703,9 +703,6 @@ void registerPluginApi (AppEngine& app)
     {
         auto& plugin = app.plugin (reqStr (p, "id"));
 
-        if (dynamic_cast<te::ExternalPlugin*> (&plugin) == nullptr)
-            return var (false);
-
         plugin.showWindowExplicitly();
         return var (true);
     });

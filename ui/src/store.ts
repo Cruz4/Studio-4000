@@ -294,6 +294,7 @@ export function initEvents() {
     const ids = new Set(p?.tracks.flatMap((t) => t.clips.map((c) => c.id)) ?? []);
     const pluginIds = new Set([
       ...(p?.tracks.flatMap((t) => t.plugins.map((pl) => pl.id)) ?? []),
+      ...(p?.tracks.flatMap((t) => t.clips.flatMap((c) => (c.plugins ?? []).map((pl) => pl.id))) ?? []),
       ...(p?.master.plugins.map((pl) => pl.id) ?? []),
     ]);
     const opening = p != null && s.project == null;

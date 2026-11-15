@@ -348,6 +348,29 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
                app.track (unnamedAudio1).getName() == "Audio 01" && app.track (unnamedAudio2).getName() == "Audio 02"
                    && app.track (unnamedBus1).getName() == "Bus 01" && app.track (unnamedBus2).getName() == "Bus 02");
 
+        auto duplicateSource = call ("track.add", Obj().set ("kind", "audio").set ("name", "Independent source"))[0].toString();
+        auto sourceEffect = call ("plugin.add", Obj().set ("trackId", duplicateSource).set ("plugin", "s4000eq"))["id"].toString();
+        auto duplicateTrack = call ("track.duplicate", Obj().set ("id", duplicateSource)).toString();
+        const auto duplicateDescription = describeTrack (app, app.track (duplicateTrack));
+        const auto duplicateEffect = duplicateDescription["plugins"][0]["id"].toString();
+        call ("plugin.setParam", Obj().set ("id", duplicateEffect).set ("paramId", "b3gain").set ("value", 5));
+        check ("duplicated tracks own independent effects and IDs",
+               duplicateTrack != duplicateSource && duplicateEffect != sourceEffect
+                   && std::abs (app.parameter (app.plugin (duplicateEffect), "b3gain").getCurrentValue() - 5) < .001
+                   && std::abs (app.parameter (app.plugin (sourceEffect), "b3gain").getCurrentValue() - 5) > .001);
+
+        const int renamedReturnBus = (int) call ("bus.create", Obj().set ("name", "Original return").set ("effect", "reverb"));
+        String renamedReturnTrack;
+        app.edit().visitAllTracksRecursive ([&] (te::Track& track)
+        {
+            for (auto* plugin : track.pluginList)
+                if (auto* ret = dynamic_cast<te::AuxReturnPlugin*> (plugin); ret != nullptr && ret->busNumber.get() == renamedReturnBus)
+                    renamedReturnTrack = track.itemID.toString();
+            return true;
+        });
+        call ("track.set", Obj().set ("id", renamedReturnTrack).set ("name", "Artist Verb"));
+        check ("renamed FX returns use the new name in send menus", app.edit().getAuxBusName (renamedReturnBus) == "Artist Verb");
+
         call ("track.set", Obj().set ("id", bus).set ("colour", "#ff6bd5"));
         const auto groupColour = app.track (bus).getColour();
         auto* groupedClip = app.audioTrack (printSource).getClips().isEmpty() ? nullptr : app.audioTrack (printSource).getClips()[0];

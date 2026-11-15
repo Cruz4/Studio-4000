@@ -90,6 +90,18 @@ export function createMock(emit: Emit) {
     return p.trackId === "master" ? project!.master.plugins : findTrack(p.trackId!)!.plugins;
   };
   const findClip = (id: string) => project?.tracks.flatMap((x) => x.clips).find((c) => c.id === id);
+  const uniqueTrackName = (wanted: string | undefined, kind: Track["kind"]) => {
+    const prefix = kind === "group" ? "Bus" : kind === "instrument" ? "Instrument" : kind === "return" ? "FX Return" : "Audio";
+    const names = new Set(project?.tracks.map((t) => t.name.toLowerCase()) ?? []);
+    let candidate = wanted?.trim() || `${prefix} 01`;
+    if (!names.has(candidate.toLowerCase())) return candidate;
+    const match = candidate.match(/^(.*?)(?:\s+(\d+))?$/)!;
+    const root = match[1] || candidate;
+    for (let n = Math.max(2, Number(match[2] || 1) + 1); ; n++) {
+      candidate = `${root} ${String(n).padStart(2, "0")}`;
+      if (!names.has(candidate.toLowerCase())) return candidate;
+    }
+  };
   const changed = () => { stampHistory(); emit("project", project ? structuredClone(project) : null); };
 
   setInterval(() => {
@@ -167,14 +179,25 @@ export function createMock(emit: Emit) {
     "transport.jumpMarker": () => true,
     "project.setTempo": (p) => { project!.bpm = p.bpm; changed(); return true; },
     "project.setTimeSig": (p) => { project!.timeSig = [p.numerator, p.denominator]; changed(); return true; },
-    "track.add": (p) => { const tr = track(p.name || (p.kind === "instrument" ? "Instrument" : p.kind === "group" ? "Bus" : "Audio"), p.kind || "audio", "#4dd4ff"); if (p.kind === "audio" || p.kind === "group" || !p.kind) tr.channels = p.channels === 1 ? 1 : 2; tr.parent = p.parentId || null; project!.tracks.push(tr); changed(); return [tr.id]; },
+    "track.add": (p) => { const kind = (p.kind || "audio") as Track["kind"]; const tr = track(uniqueTrackName(p.name, kind), kind, "#4dd4ff"); if (kind === "audio" || kind === "group") tr.channels = p.channels === 1 ? 1 : 2; tr.parent = p.parentId || null; if (kind === "return") { tr.returnBus = Math.max(-1, ...project!.buses.map((b) => b.bus)) + 1; project!.buses.push({ bus: tr.returnBus, name: tr.name }); } project!.tracks.push(tr); changed(); return [tr.id]; },
     "track.remove": (p) => { project!.tracks = project!.tracks.filter((x) => x.id !== p.id); changed(); return true; },
+    "track.duplicate": (p) => {
+      const source = findTrack(p.id)!;
+      const copy = structuredClone(source);
+      copy.id = nid(); copy.name = uniqueTrackName(`${source.name} copy`, source.kind); copy.volumePluginId = nid();
+      copy.plugins.forEach((pl) => { pl.id = nid(); });
+      copy.clips.forEach((clip) => { clip.id = nid(); clip.plugins?.forEach((pl) => { pl.id = nid(); }); });
+      copy.sends.forEach((send) => { send.id = nid(); });
+      project!.tracks.splice(project!.tracks.indexOf(source) + 1, 0, copy); changed(); return copy.id;
+    },
     "track.bounce": (p) => {
       const source = findTrack(p.id)!;
       const members = source.kind === "group" ? project!.tracks.filter((t) => t.parent === source.id) : [source];
       const clips = members.flatMap((t) => t.clips);
       if (!clips.length) throw new Error(source.kind === "group" ? "This group has no clips to bounce" : "This track has no clips to bounce");
-      const start = Math.min(...clips.map((c) => c.start)), end = Math.max(...clips.map((c) => c.end));
+      const fullStart = Math.min(...clips.map((c) => c.start)), fullEnd = Math.max(...clips.map((c) => c.end));
+      const start = p.start !== undefined ? Math.max(fullStart, p.start) : fullStart;
+      const end = p.end !== undefined ? Math.min(fullEnd, p.end) : fullEnd;
       const isGroup = source.kind === "group", name = `${source.name} - ${isGroup ? "group FX print" : "FX print"}`;
       const dest = track(name, "audio", source.colour, [audioClip(name, start, end - start, source.colour)]);
       dest.parent = source.parent; dest.bouncedFrom = source.id; dest.bouncedGroup = isGroup; source.mute = p.muteSource !== false;
@@ -188,9 +211,20 @@ export function createMock(emit: Emit) {
         tr.parent = bus ? bus.id : project!.tracks.some((x) => x.id === tr.parent && x.kind === "group") ? null : tr.parent;
       }
       Object.assign(tr, { ...p, id: tr.id });
+      if (p.name && tr.kind === "return" && tr.returnBus !== undefined) {
+        const bus = project!.buses.find((b) => b.bus === tr.returnBus); if (bus) bus.name = p.name;
+        for (const owner of project!.tracks) for (const send of owner.sends) if (send.bus === tr.returnBus) send.busName = p.name;
+      }
       changed();
       return true;
     },
+    "bus.create": (p) => {
+      const id = (handlers["track.add"]({ kind: "return", name: p.name || "FX Return" }) as string[])[0];
+      const tr = findTrack(id)!; if (p.effect) tr.plugins.push(plugin(p.effect, p.effect === "delay" ? "Delay" : "Reverb")); changed(); return tr.returnBus;
+    },
+    "send.add": (p) => { const tr = findTrack(p.trackId)!; const bus = project!.buses.find((b) => b.bus === p.bus); const send = { id: nid(), bus: p.bus, busName: bus?.name || `Bus ${p.bus}`, gainDb: p.gainDb ?? -12, enabled: true }; tr.sends.push(send); changed(); return send.id; },
+    "send.set": (p) => { for (const tr of project!.tracks) { const send = tr.sends.find((s) => s.id === p.id); if (send) Object.assign(send, p, { id: send.id }); } changed(); return true; },
+    "send.remove": (p) => { for (const tr of project!.tracks) tr.sends = tr.sends.filter((s) => s.id !== p.id); changed(); return true; },
     "track.arm": (p) => { const t = findTrack(p.id)!; t.armed = p.armed; t.live = isLive(t); changed(); return true; },
     "track.setMonitor": (p) => { const t = findTrack(p.id)!; t.monitor = p.mode; t.live = isLive(t); changed(); return true; },
     "track.setInput": (p) => { findTrack(p.id)!.input = p.input; changed(); return true; },

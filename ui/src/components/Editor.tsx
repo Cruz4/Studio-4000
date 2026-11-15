@@ -3,7 +3,7 @@ import { runCommand, splitClipAt } from "../commands";
 import { audioEditorBindings, midiEditorBindings, type EditorMode } from "../gamepad/editorPad";
 import { useGamepadSurface } from "../gamepad/surfaces";
 import { noteOff, noteOn } from "../keys";
-import { act, onTick, useStore } from "../store";
+import { act, onTick, openPlugin, useStore, type ArrangeTool } from "../store";
 import type { Clip, Project, Track } from "../types";
 import { bendOfFade, clamp, cx, fadeInPaths, fadeOutPaths, formatDb, noteName, secondsPerBeat } from "../util";
 import { ClipGain } from "./ClipGain";
@@ -38,6 +38,7 @@ function Num({ label, value, onCommit, step = 0.1, min, max, suffix }: { label: 
 
 function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const loop = project.loop;
+  const tool = useStore((s) => s.tool);
   const [stretch, setStretch] = useState(String((clip.end - clip.start).toFixed(3)));
   useEffect(() => setStretch(String((clip.end - clip.start).toFixed(3))), [clip.end, clip.start]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -46,13 +47,15 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
   const [scroll, setScroll] = useState(0);
   const [liveGain, setLiveGain] = useState<[number, number][] | null>(null);
   const [liveFade, setLiveFade] = useState<{ fadeIn: number; fadeOut: number; inBend?: number; outBend?: number } | null>(null);
+  const [selectionDraft, setSelectionDraft] = useState<[number, number] | null>(null);
+  const [inspectorWidth, setInspectorWidth] = useState(() => clamp(Number(localStorage.getItem("studio4000-editor-inspector") || 220), 180, 420));
   useGamepadSurface({
     id: "editor-audio",
     region: "editor",
     active: () => true,
     bindings: () => audioEditorBindings(clip),
   });
-  useEffect(() => { setZoom(1); setScroll(0); setLiveGain(null); setLiveFade(null); }, [clip.id]);
+  useEffect(() => { setZoom(1); setScroll(0); setLiveGain(null); setLiveFade(null); setSelectionDraft(null); }, [clip.id]);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(() => scroller.current && setW(scroller.current.clientWidth));
     if (scroller.current) ro.observe(scroller.current);
@@ -70,9 +73,51 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
     playhead.current.style.transform = `translateX(${x}px)`;
   }) as () => void, [clip.start, pps, contentW]);
 
+  const chosenRange: [number, number] | null = selectionDraft ?? (loop[1] > loop[0] && loop[0] < clip.end && loop[1] > clip.start
+    ? [Math.max(loop[0], clip.start), Math.min(loop[1], clip.end)] : null);
+  const selectWholeClip = () => {
+    useStore.setState({ selectedClips: [clip.id], editorClip: clip.id });
+    void act("transport.setLoop", { start: clip.start, end: clip.end, enabled: true });
+  };
+  const openNoiseReduction = async () => {
+    useStore.setState({ selectedClips: [clip.id], editorClip: clip.id });
+    let plugin = clip.plugins?.find((p) => p.type === "s4000noisereduction");
+    if (!plugin) plugin = await act("plugin.add", { clipId: clip.id, plugin: "s4000noisereduction" });
+    if (plugin?.id) openPlugin(plugin.id);
+  };
+  const handleTool = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".fade-h,.editor-edge,.gain-pt,.gain-hit,.pan-pt,.pan-hit")) return;
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const at = clamp(clip.start + (e.clientX - rect.left) / pps, clip.start, clip.end);
+    useStore.setState({ selectedClips: [clip.id], editorClip: clip.id, selectedPlugin: null });
+    if (tool === "split") { void splitClipAt(clip.id, at); return; }
+    if (tool === "erase") { void act("clip.delete", { id: clip.id }); return; }
+    if (tool === "time") {
+      let end = at;
+      setSelectionDraft([at, at]);
+      startDrag(e, (dx) => { end = clamp(at + dx / pps, clip.start, clip.end); setSelectionDraft([Math.min(at, end), Math.max(at, end)]); }, () => {
+        setSelectionDraft(null);
+        if (Math.abs(end - at) >= .025) void act("transport.setLoop", { start: Math.min(at, end), end: Math.max(at, end), enabled: true });
+        else void act("transport.setPosition", { time: at });
+      });
+      return;
+    }
+    if (tool === "slip") {
+      let next = clip.offset ?? 0;
+      startDrag(e, (dx) => { next = Math.max(0, (clip.offset ?? 0) + dx / pps); }, () => void act("clip.slip", { id: clip.id, offset: next }));
+      return;
+    }
+    let start = clip.start;
+    startDrag(e, (dx) => { start = Math.max(0, clip.start + dx / pps); }, () => {
+      if (Math.abs(start - clip.start) > .001) void act("clip.move", { id: clip.id, start });
+      else void act("transport.setPosition", { time: at });
+    });
+  };
+
   return (
     <div className="editor">
-      <div className="inspector">
+      <div className="inspector" style={{ width: inspectorWidth }}>
         <div className="section-title">Audio clip</div>
         <label className="field"><span>Name</span><input className="input sm" defaultValue={clip.name} key={clip.id + clip.name} onBlur={(e) => e.target.value !== clip.name && act("clip.set", { id: clip.id, name: e.target.value })} /></label>
         <div className="row">
@@ -127,9 +172,17 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
         )}
         <span className="small faint ellipsis" title={clip.file}>{clip.file?.split(/[\\/]/).pop()} · {clip.channels === 1 ? "mono" : "stereo"} · {(clip.sourceLength ?? 0).toFixed(2)} s source</span>
       </div>
+      <div className="inspector-resize" title="Drag to resize clip details" onPointerDown={(e) => {
+        const start = inspectorWidth;
+        let next = start;
+        startDrag(e, (dx) => { next = clamp(start + dx, 180, 420); setInspectorWidth(next); }, () => localStorage.setItem("studio4000-editor-inspector", String(next)));
+      }} />
       <div className="col grow" style={{ minWidth: 0, minHeight: 0, gap: 0 }}>
-        <div className="row" style={{ padding: "6px 10px", gap: 6, borderBottom: "1px solid var(--line)" }}>
-          <span className="small faint">Waveform</span>
+        <div className="row editor-toolbar" style={{ padding: "6px 10px", gap: 6, borderBottom: "1px solid var(--line)" }}>
+          {(["move", "time", "split", "slip", "erase"] as ArrangeTool[]).map((id) => <button key={id} className={cx("btn sm ghost", tool === id && "on")} onClick={() => useStore.setState({ tool: id })}>{id[0].toUpperCase() + id.slice(1)}</button>)}
+          <button className="btn sm" onClick={selectWholeClip}>Select all</button>
+          <button className="btn sm" disabled={!chosenRange} onClick={async () => { const [start, end] = chosenRange!; await act("transport.setLoop", { start, end, enabled: true }); await act("transport.setPosition", { time: start }); await act("transport.play"); }}>Play selection</button>
+          <button className="btn sm accent" onClick={openNoiseReduction}>Noise Reduction</button>
           <button className="btn sm" title="Turn this hummed or sung clip into MIDI notes" onClick={() => runCommand("toMidi")}>Audio to MIDI</button>
           <div className="grow" />
           <button className="btn sm ghost icon" title="Zoom out" onClick={() => setZoom((z) => clamp(z / 1.4, 1, 32))}><Icon name="zoomOut" size={13} /></button>
@@ -138,8 +191,8 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
         </div>
         <div ref={scroller} className="grow" style={{ position: "relative", overflowX: "auto", overflowY: "hidden", minWidth: 0, padding: 12 }}
           onScroll={(e) => setScroll(e.currentTarget.scrollLeft)}>
-          <div className="editor-clip" style={{ width: contentW, cursor: "pointer", background: "linear-gradient(180deg, rgba(124,92,255,.25), rgba(124,92,255,.08))", border: "1px solid rgba(124,92,255,.5)" }}
-            onPointerDown={(e) => { if (e.button !== 0) return; const r = e.currentTarget.getBoundingClientRect(); act("transport.setPosition", { time: clip.start + (e.clientX - r.left) / pps }); }}
+          <div className={cx("editor-clip", `tool-${tool}`)} style={{ width: contentW, background: "linear-gradient(180deg, rgba(124,92,255,.25), rgba(124,92,255,.08))", border: "1px solid rgba(124,92,255,.5)" }}
+            onPointerDown={handleTool}
             onContextMenu={(e) => {
               const here = clip.start + (e.clientX - e.currentTarget.getBoundingClientRect().left) / pps;
               openMenu(e, [
@@ -154,6 +207,7 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
               ]);
             }}>
             <div className="clip-label">{clip.name} · gain {formatDb(clip.gainDb ?? 0)} dB</div>
+            {chosenRange && <div className="editor-time-selection" style={{ left: (chosenRange[0] - clip.start) * pps, width: Math.max(1, (chosenRange[1] - chosenRange[0]) * pps) }} />}
             <Waveform clip={{
               ...clip,
               gainPoints: (liveGain ?? clip.gainPoints),
@@ -211,6 +265,14 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
                 }, () => { setLiveFade(null); act("clip.set", { id: clip.id, fadeOut: next, fadeOutBend: bend }); });
               }}>OUT</div>
             <div ref={playhead} className="playhead" />
+            <div className="editor-edge left" title="Trim clip start" onPointerDown={(e) => {
+              let start = clip.start;
+              startDrag(e, (dx) => { start = clamp(clip.start + dx / pps, 0, clip.end - .01); }, () => void act("clip.trim", { id: clip.id, start }));
+            }} />
+            <div className="editor-edge right" title="Trim clip end" onPointerDown={(e) => {
+              let end = clip.end;
+              startDrag(e, (dx) => { end = Math.max(clip.start + .01, clip.end + dx / pps); }, () => void act("clip.trim", { id: clip.id, end }));
+            }} />
           </div>
         </div>
       </div>

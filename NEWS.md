@@ -9,6 +9,10 @@ EQ nodes and their frequency knobs use the same logarithmic range during a drag,
 
 Noise Reduction adds an Audition-style learned noise-print workflow. Select a noise-only range over an audio clip, capture its FFT profile, then hear Noise Reduction, Reduce By and Noise Floor changes in real time. The spectrum shows the learned print, Output Noise Only auditions exactly what is being removed, bypass gives instant before/after, and Print Cleaned Track creates a baked copy when the cleanup is ready.
 
+The bottom clip editor now carries the Move, Time, Split, Slip and Erase tools, plus direct edge trims and the existing gain, pan and fade editing. Its clip-details panel starts compact and has a drag handle for resizing. Select noise in that editor and open Noise Reduction there; the learned print stays attached to the clip, can be auditioned live, and can print either the selected range or the full track.
+
+Built-in effect windows now have **Detach**, opening a resizable native parameter window that can be moved onto another monitor. Clip-effect windows stay open through project refreshes, just like track and master effects.
+
 ### Collaboration codes that survive copy and paste
 Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.
 
@@ -37,6 +41,8 @@ Alt-drag shows a live ghost copy, applies overlap crossfades during the drag, an
 Normal clip moves now remain visible as a translucent ghost while crossing compatible tracks. Hold Ctrl while trimming or changing a fade on a multi-clip selection to apply the same edit to every selected clip.
 
 Every effect window has local Undo and Redo controls backed by the same reliable engine history as the app toolbar. Continuous control drags coalesce into one step. The compact mixer keeps pan and Mute/Solo/Mono/Arm controls on separate rows so they do not overlap.
+
+Track headers now show editable send chips in Arrange view. Scroll a chip to set its level, right-click it to bypass or remove it, or add/create a return without opening the mixer. Renaming an FX return updates every send label immediately. Duplicated tracks keep independent clips, effects and parameter state. Scrollbars retain a normal clickable pointer regardless of the active arrange tool.
 
 ### Print your effects
 Choose Bounce with Effects to New Track from a track's menu. The track and its inserts are rendered to audio below the original, with room for effect tails. The original stays editable and is muted for comparison, avoiding doubled playback.

@@ -82,6 +82,66 @@ namespace
     }
 
     //==============================================================================
+    struct GenericParameterEditor : public te::Plugin::EditorComponent, private juce::Timer
+    {
+        explicit GenericParameterEditor (te::Plugin& p) : plugin (p)
+        {
+            addAndMakeVisible (viewport);
+            viewport.setViewedComponent (&content, false);
+            viewport.setScrollBarsShown (true, false);
+            for (auto* parameter : plugin.getAutomatableParameters())
+            {
+                auto row = std::make_unique<Row>();
+                row->parameter = parameter;
+                row->name.setText (parameter->getParameterName(), juce::dontSendNotification);
+                row->name.setColour (juce::Label::textColourId, juce::Colour (0xffdfe4f2));
+                row->name.setJustificationType (juce::Justification::centredLeft);
+                row->slider.setRange (parameter->valueRange.start, parameter->valueRange.end, 0.0);
+                row->slider.setValue (parameter->getCurrentValue(), juce::dontSendNotification);
+                row->slider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 92, 24);
+                row->slider.onValueChange = [parameter, slider = &row->slider]
+                {
+                    parameter->setParameter ((float) slider->getValue(), juce::sendNotificationSync);
+                };
+                content.addAndMakeVisible (row->name);
+                content.addAndMakeVisible (row->slider);
+                rows.push_back (std::move (row));
+            }
+            setSize (640, juce::jlimit (180, 620, 24 + (int) rows.size() * 34));
+            startTimerHz (15);
+        }
+
+        bool allowWindowResizing() override { return true; }
+        bool isEditorResizable() override { return true; }
+        juce::ComponentBoundsConstrainer* getBoundsConstrainer() override { return nullptr; }
+        void resized() override
+        {
+            viewport.setBounds (getLocalBounds());
+            const int width = juce::jmax (420, viewport.getWidth() - viewport.getScrollBarThickness());
+            content.setSize (width, juce::jmax (getHeight(), 10 + (int) rows.size() * 34));
+            int y = 7;
+            for (auto& row : rows)
+            {
+                row->name.setBounds (10, y, 205, 27);
+                row->slider.setBounds (218, y, width - 228, 27);
+                y += 34;
+            }
+        }
+
+    private:
+        void timerCallback() override
+        {
+            for (auto& row : rows)
+                if (! row->slider.isMouseButtonDown())
+                    row->slider.setValue (row->parameter->getCurrentValue(), juce::dontSendNotification);
+        }
+        struct Row { te::AutomatableParameter* parameter = nullptr; juce::Label name; juce::Slider slider; };
+        te::Plugin& plugin;
+        juce::Viewport viewport;
+        juce::Component content;
+        std::vector<std::unique_ptr<Row>> rows;
+    };
+
     struct PluginWindow : public juce::DocumentWindow
     {
         explicit PluginWindow (te::Plugin& p)
@@ -124,7 +184,10 @@ namespace
         void recreateEditor()
         {
             setEditor (nullptr);
-            setEditor (plugin.createEditor());
+            auto next = plugin.createEditor();
+            if (next == nullptr)
+                next = std::make_unique<GenericParameterEditor> (plugin);
+            setEditor (std::move (next));
         }
 
         void recreateEditorAsync()

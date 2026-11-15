@@ -715,6 +715,7 @@ function TrackHeader({ track, selected, height, depth }: { track: Track; selecte
         {tight && controls}
       </div>
       {track.kind !== "group" && <TrackIo track={track} />}
+      {track.kind !== "return" && <TrackSends track={track} />}
       {!tight && <div className="row" style={{ gap: 4 }}>{controls}</div>}
       <div className="track-fx">
         <FxToggle trackId={track.id} plugins={track.plugins} />
@@ -778,6 +779,28 @@ function TrackIo({ track }: { track: Track }) {
       </button>
     </div>
   );
+}
+
+/** Compact sends are available in the arrange header as well as the mixer. */
+function TrackSends({ track }: { track: Track }) {
+  const project = useStore((s) => s.project)!;
+  const available = project.buses.filter((b) => !track.sends.some((s) => s.bus === b.bus) && track.returnBus !== b.bus);
+  const addMenu = (e: ReactMouseEvent<HTMLButtonElement>) => openMenu(e, [
+    ...available.map((b) => ({ label: `Send to ${b.name}`, icon: "send", run: () => act("send.add", { trackId: track.id, bus: b.bus, gainDb: -12 }) })),
+    { separator: true },
+    { label: "New reverb return + send", icon: "layers", run: async () => { const bus = await act("bus.create", { name: "Reverb", effect: "reverb" }); if (bus !== undefined) void act("send.add", { trackId: track.id, bus, gainDb: -12 }); } },
+    { label: "New delay return + send", icon: "layers", run: async () => { const bus = await act("bus.create", { name: "Delay", effect: "delay" }); if (bus !== undefined) void act("send.add", { trackId: track.id, bus, gainDb: -14 }); } },
+  ]);
+  return <div className="send-row">
+    {track.sends.map((send) => <button key={send.id} className={cx("io-chip send-chip", !send.enabled && "off")}
+      title={`Send to ${send.busName}: ${formatDb(send.gainDb)} dB. Scroll to change; right-click for options.`}
+      onWheel={(e) => { e.preventDefault(); void act("send.set", { id: send.id, gainDb: clamp(send.gainDb + (e.deltaY < 0 ? 1 : -1), -60, 6) }); }}
+      onContextMenu={(e) => openMenu(e, [
+        { label: send.enabled ? "Bypass send" : "Enable send", icon: "power", run: () => act("send.set", { id: send.id, enabled: !send.enabled }) },
+        { label: "Remove send", icon: "trash", danger: true, run: () => act("send.remove", { id: send.id }) },
+      ])}><Icon name="send" size={10} /><span className="ellipsis">{send.busName}</span><span className="mono">{Math.round(send.gainDb)}</span></button>)}
+    <button className="io-chip add-send" title="Add or create an effects send" onClick={addMenu}><Icon name="plus" size={10} /><span>Send</span></button>
+  </div>;
 }
 
 /* ------------------------------------------------------------------ automation lane */

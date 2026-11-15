@@ -104,9 +104,8 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
             {tracks.map((t) => <option key={t.id} value={t.id}>Key: {t.name}</option>)}
           </select>
         )}
-        {plugin.hasEditor && (
-          <button className="btn sm" onClick={() => act("plugin.openEditor", { id: plugin.id })} title="Open the plug-in's own window"><Icon name="window" size={12} /> Plug-in UI</button>
-        )}
+        <button className="btn sm" onClick={() => act("plugin.openEditor", { id: plugin.id })}
+          title="Open this effect in a native window that can move onto another monitor"><Icon name="window" size={12} /> {plugin.hasEditor ? "Plug-in UI" : "Detach"}</button>
         <div className="fx-history-controls" title="Undo or redo changes without closing this effect">
           <button className="btn sm ghost icon" disabled={!project?.canUndo} onClick={() => void changeHistory("undo")} title={project?.undoName ? `Undo ${project.undoName}` : "Nothing to undo"}><Icon name="undo" size={13} /></button>
           <button className="btn sm ghost icon" disabled={!project?.canRedo} onClick={() => void changeHistory("redo")} title={project?.redoName ? `Redo ${project.redoName}` : "Nothing to redo"}><Icon name="redo" size={13} /></button>

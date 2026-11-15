@@ -8,7 +8,11 @@ import { Icon, Modal } from "./ui";
 function findPlugin(id: string | null): { plugin: Plugin; owner: string } | null {
   const p = useStore.getState().project;
   if (!p || !id) return null;
-  for (const t of p.tracks) for (const pl of t.plugins) if (pl.id === id) return { plugin: pl, owner: t.name };
+  for (const t of p.tracks) {
+    for (const pl of t.plugins) if (pl.id === id) return { plugin: pl, owner: t.name };
+    for (const clip of t.clips) for (const pl of clip.plugins ?? [])
+      if (pl.id === id) return { plugin: pl, owner: `${t.name} / ${clip.name}` };
+  }
   for (const pl of p.master.plugins) if (pl.id === id) return { plugin: pl, owner: "Master" };
   return null;
 }
