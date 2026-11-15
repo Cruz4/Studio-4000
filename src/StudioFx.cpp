@@ -155,6 +155,8 @@ void NoiseReductionPlugin::prepare()
     for (auto* list : { &input, &overlap, &work })
         for (auto& channel : *list)
             channel.assign (fftSize * (list == &work ? 2 : 1), 0.0f);
+    for (auto& channel : spectralGain)
+        channel.assign (bins, 1.0f);
     clear();
 }
 
@@ -163,6 +165,8 @@ void NoiseReductionPlugin::clear()
     for (auto* list : { &input, &overlap, &work })
         for (auto& channel : *list)
             std::fill (channel.begin(), channel.end(), 0.0f);
+    for (auto& channel : spectralGain)
+        std::fill (channel.begin(), channel.end(), 1.0f);
     ring = 0; untilFrame = hop;
 }
 
@@ -208,9 +212,18 @@ void NoiseReductionPlugin::processFrame()
             const float real = w[(size_t) re], imag = im < 0 ? 0.0f : w[(size_t) im];
             const float magnitude = std::sqrt (real * real + imag * imag);
             const float learned = noise[(size_t) bin].load (std::memory_order_relaxed) * floorScale;
-            const float ratio = learned > 1.0e-9f ? magnitude / learned : 1000.0f;
-            const float detected = juce::jlimit (0.0f, 1.0f, 1.5f - ratio);
-            const float gain = 1.0f - amount * detected * (1.0f - minimum);
+            const float magnitudeSquared = magnitude * magnitude + 1.0e-18f;
+            const float noiseSquared = learned * learned;
+            // Subtract only energy matching the learned print. Bins that rise
+            // clearly above it (voice, drums or music) pass instead of making the
+            // captured spectrum behave like a gate on the whole clip.
+            const float cleanRatio = std::sqrt (juce::jlimit (0.0f, 1.0f,
+                (magnitudeSquared - noiseSquared) / magnitudeSquared));
+            const float target = 1.0f - amount * (1.0f - juce::jmax (minimum, cleanRatio));
+            auto& smoothed = spectralGain[(size_t) ch][(size_t) bin];
+            const float coefficient = target < smoothed ? 0.65f : 0.16f;
+            smoothed += coefficient * (target - smoothed);
+            const float gain = smoothed;
             reduced += 1.0f - gain;
             w[(size_t) re] *= gain;
             if (im >= 0) w[(size_t) im] *= gain;
@@ -220,7 +233,9 @@ void NoiseReductionPlugin::processFrame()
         for (int i = 0; i < fftSize; ++i)
         {
             const int at = (ring + i) % fftSize;
-            overlap[(size_t) ch][(size_t) at] += w[(size_t) i] * 2.0f / 3.0f;
+            // Four 75%-overlapped Hann frames sum to 2.0, so 0.5 restores
+            // unity gain when a bin is not being reduced.
+            overlap[(size_t) ch][(size_t) at] += w[(size_t) i] * 0.5f;
         }
     }
     reductionNow.store (100.0f * reduced / (float) (bins * 2), std::memory_order_relaxed);

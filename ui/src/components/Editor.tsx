@@ -193,6 +193,7 @@ function AudioInspector({ clip, project }: { clip: Clip; project: Project }) {
           onScroll={(e) => setScroll(e.currentTarget.scrollLeft)}>
           <div className={cx("editor-clip", `tool-${tool}`)} style={{ width: contentW, background: "linear-gradient(180deg, rgba(124,92,255,.25), rgba(124,92,255,.08))", border: "1px solid rgba(124,92,255,.5)" }}
             onPointerDown={handleTool}
+            onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); selectWholeClip(); }}
             onContextMenu={(e) => {
               const here = clip.start + (e.clientX - e.currentTarget.getBoundingClientRect().left) / pps;
               openMenu(e, [

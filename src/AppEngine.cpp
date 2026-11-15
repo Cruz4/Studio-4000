@@ -145,10 +145,13 @@ namespace
     struct PluginWindow : public juce::DocumentWindow
     {
         explicit PluginWindow (te::Plugin& p)
-            : DocumentWindow (p.getName(), juce::Colour (0xff0b0d12), DocumentWindow::closeButton, true),
+            : DocumentWindow (p.getName(), juce::Colour (0xff0b0d12), DocumentWindow::closeButton, false),
               plugin (p)
         {
+            // Create a fully independent desktop peer. An embedded/owned peer is
+            // clipped by the WebView host and cannot cross onto another monitor.
             setUsingNativeTitleBar (true);
+            addToDesktop();
             getConstrainer()->setMinimumOnscreenAmounts (0x10000, 50, 30, 50);
             setResizeLimits (100, 50, 4000, 4000);
             recreateEditor();

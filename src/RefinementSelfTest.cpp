@@ -163,6 +163,38 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             check ("learned noise reduction processes live audio and exposes its print",
                    std::isfinite (after) && after < before * .8f && telemetry["noisePrint"].size() == 128);
         }
+        {
+            auto denoise = make (NoiseReductionPlugin::xmlTypeName);
+            auto* learned = dynamic_cast<NoiseReductionPlugin*> (denoise.get());
+            std::vector<float> print ((1 << 11) / 2 + 1, 0.0f);
+            for (int bin = 3; bin <= 6; ++bin) print[(size_t) bin] = 28.0f;
+            learned->setNoisePrint (print);
+            set (*learned, "amount", 100); set (*learned, "reduce", 24);
+            juce::AudioBuffer<float> mixture (2, 48000 * 2);
+            for (int i = 0; i < mixture.getNumSamples(); ++i)
+                for (int ch = 0; ch < 2; ++ch)
+                    mixture.setSample (ch, i, .04f * std::sin ((float) (juce::MathConstants<double>::twoPi * 100.0 * i / 48000.0))
+                                                     + .2f * std::sin ((float) (juce::MathConstants<double>::twoPi * 1000.0 * i / 48000.0)));
+            auto component = [] (const juce::AudioBuffer<float>& buffer, double frequency)
+            {
+                const int first = buffer.getNumSamples() / 2, count = buffer.getNumSamples() - first;
+                double sine = 0.0, cosine = 0.0;
+                for (int i = 0; i < count; ++i)
+                {
+                    const double phase = juce::MathConstants<double>::twoPi * frequency * i / 48000.0;
+                    const float sample = buffer.getSample (0, first + i);
+                    sine += sample * std::sin (phase); cosine += sample * std::cos (phase);
+                }
+                return (float) (2.0 * std::sqrt (sine * sine + cosine * cosine) / count);
+            };
+            const float lowBefore = component (mixture, 100), voiceBefore = component (mixture, 1000);
+            process (*learned, mixture, 48000);
+            const float lowRatio = component (mixture, 100) / lowBefore;
+            const float voiceRatio = component (mixture, 1000) / voiceBefore;
+            check ("noise print targets captured frequencies without muting the voice",
+                   lowRatio < voiceRatio * .75f && voiceRatio > .75f,
+                   "noise=" + String (lowRatio, 3) + " voice=" + String (voiceRatio, 3));
+        }
         for (double rate : { 32000.0, 44100.0, 48000.0, 96000.0 })
         {
             const auto label = String ((int) rate) + " Hz ";
@@ -350,6 +382,13 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
 
         auto duplicateSource = call ("track.add", Obj().set ("kind", "audio").set ("name", "Independent source"))[0].toString();
         auto sourceEffect = call ("plugin.add", Obj().set ("trackId", duplicateSource).set ("plugin", "s4000eq"))["id"].toString();
+        call ("plugin.openEditor", Obj().set ("id", sourceEffect).set ("screenX", 180).set ("screenY", 140));
+        auto* detachedWindow = app.plugin (sourceEffect).windowState->pluginWindow.get();
+        check ("built-in effects pop out as independent desktop windows",
+               detachedWindow != nullptr && detachedWindow->isOnDesktop()
+                   && detachedWindow->getParentComponent() == nullptr && detachedWindow->getPeer() != nullptr
+                   && detachedWindow->getX() <= 180 && detachedWindow->getY() <= 140);
+        call ("plugin.closeEditor", Obj().set ("id", sourceEffect));
         auto duplicateTrack = call ("track.duplicate", Obj().set ("id", duplicateSource)).toString();
         const auto duplicateDescription = describeTrack (app, app.track (duplicateTrack));
         const auto duplicateEffect = duplicateDescription["plugins"][0]["id"].toString();

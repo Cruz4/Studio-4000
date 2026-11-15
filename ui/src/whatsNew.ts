@@ -40,7 +40,8 @@ export const WHATS_NEW: WhatsNewGroup[] = [
   ] },
   { title: "A smoother session", color: "#8cddbc", items: [
     "Hear EQ nodes, knobs, sliders and effects change while you move them.",
-    "Detach built-in effects into native resizable windows for another monitor.",
+    "Drag an FX window to an app edge to pop it onto the desktop or another monitor.",
+    "Capture noise once, retarget any range, or double-click to clean the whole clip.",
     "Edit sends in arrange headers; renamed FX returns update every send label.",
     "Duplicated tracks have independent clips and effects, and scrollbars stay clickable.",
     "Undo and Redo inside every effect restores live control changes reliably.",

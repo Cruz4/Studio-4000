@@ -428,7 +428,7 @@ export function createMock(emit: Emit) {
       pl.noisePrint = Array.from({ length: 128 }, (_, i) => -58 - Math.log10(1 + i) * 24 + Math.sin(i * .31) * 2);
       changed(); return structuredClone(pl.noisePrint);
     },
-    "plugin.openEditor": () => false,
+    "plugin.openEditor": (p) => { (window as unknown as { __s4MockOpenedEditor?: unknown }).__s4MockOpenedEditor = structuredClone(p); return true; },
     "chain.list": () => [...savedChains.keys()].map((name) => ({ name, file: name })),
     "chain.applyPreset": (p) => {
       const list = targetList(p);

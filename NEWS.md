@@ -11,7 +11,9 @@ Noise Reduction adds an Audition-style learned noise-print workflow. Select a no
 
 The bottom clip editor now carries the Move, Time, Split, Slip and Erase tools, plus direct edge trims and the existing gain, pan and fade editing. Its clip-details panel starts compact and has a drag handle for resizing. Select noise in that editor and open Noise Reduction there; the learned print stays attached to the clip, can be auditioned live, and can print either the selected range or the full track.
 
-Built-in effect windows now have **Detach**, opening a resizable native parameter window that can be moved onto another monitor. Clip-effect windows stay open through project refreshes, just like track and master effects.
+FX windows now pop out as independent native desktop windows. Click **Pop out**, or simply drag an FX header to any Studio 4000 edge; the desktop window opens under the pointer and can cross onto another monitor. Clip-effect windows stay open through project refreshes, just like track and master effects.
+
+Noise Reduction now separates learning from applying: capture a short noise-only selection once, then freely select another range or double-click the editor waveform to target the whole clip. The print stays saved on the effect while controls are auditioned live. Smoothed spectral subtraction reduces frequencies that match the captured print while leaving voice and music above that print intact, instead of broadly turning down the clip.
 
 ### Collaboration codes that survive copy and paste
 Join now removes invisible soft hyphens, zero-width characters and line wraps inserted by chat and email. Codes containing both a local and public address try each valid address in order instead of passing malformed text to WebSocket.

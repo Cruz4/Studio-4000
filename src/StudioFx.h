@@ -193,7 +193,7 @@ private:
     juce::dsp::FFT fft { order };
     juce::dsp::WindowingFunction<float> window { fftSize, juce::dsp::WindowingFunction<float>::hann, false };
     std::array<std::atomic<float>, bins> noise {};
-    std::array<std::vector<float>, 2> input, overlap, work;
+    std::array<std::vector<float>, 2> input, overlap, work, spectralGain;
     int ring = 0, untilFrame = hop;
     std::atomic<float> reductionNow { 0.0f };
 };

@@ -703,6 +703,19 @@ void registerPluginApi (AppEngine& app)
     {
         auto& plugin = app.plugin (reqStr (p, "id"));
 
+        // Drag-to-pop-out supplies global desktop coordinates. Store these before
+        // creating the native peer so its title bar opens under the pointer, even
+        // when the next monitor uses negative screen coordinates.
+        if (has (p, "screenX") && has (p, "screenY"))
+        {
+            auto bounds = plugin.windowState->lastWindowBounds.value_or (juce::Rectangle<int> (0, 0, 640, 420));
+            if (bounds.getWidth() < 100 || bounds.getHeight() < 50)
+                bounds.setSize (640, 420);
+            bounds.setPosition (juce::roundToInt (num (p, "screenX")) - 72,
+                                juce::roundToInt (num (p, "screenY")) - 18);
+            plugin.windowState->lastWindowBounds = bounds;
+        }
+
         plugin.showWindowExplicitly();
         return var (true);
     });

@@ -17,6 +17,7 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
     return { x: Math.max(12, (window.innerWidth - width) / 2 + i * 28), y: Math.max(56, window.innerHeight * 0.12 + i * 28) };
   });
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const detaching = useRef(false);
   const project = useStore((s) => s.project);
   const tracks = project?.tracks.filter((t) => t.kind !== "return") ?? [];
   const canReset = fx.params.some((p) => p.def !== undefined);
@@ -65,11 +66,20 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
     return () => window.removeEventListener("resize", keep);
   }, []);
 
+  const detach = async (screenX = window.screenX + window.outerWidth / 2, screenY = window.screenY + 48) => {
+    if (detaching.current) return;
+    detaching.current = true;
+    const opened = await act("plugin.openEditor", { id: plugin.id, screenX, screenY });
+    if (opened) onClose();
+    else detaching.current = false;
+  };
+
   return (
     <div className="fx-window" data-plugin={plugin.id} ref={ref} style={{ left: pos.x, top: pos.y, width: Math.min(width, window.innerWidth - 24), maxHeight: maxH, zIndex: 80 + stack, ["--accent" as string]: accent }}
       onPointerDown={() => useStore.setState((s) => ({ selectedPlugin: plugin.id, openPlugins: s.openPlugins.includes(plugin.id) ? [...s.openPlugins.filter((x) => x !== plugin.id), plugin.id] : s.openPlugins }))}>
       <div key={ping} className="fx-flash" />
       <div className="fx-window-head"
+        title="Drag normally inside Studio 4000. Drag to any app edge to pop out onto the desktop."
         onPointerDown={(e) => {
           if ((e.target as HTMLElement).closest("button,select,input")) return;
           (e.currentTarget as Element).setPointerCapture(e.pointerId);
@@ -77,6 +87,8 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
         }}
         onPointerMove={(e) => {
           if (!drag.current) return;
+          const atEdge = e.clientX <= 6 || e.clientX >= window.innerWidth - 6 || e.clientY <= 6 || e.clientY >= window.innerHeight - 6;
+          if (atEdge) { drag.current = null; void detach(e.screenX, e.screenY); return; }
           setPos({ x: Math.min(window.innerWidth - 120, Math.max(-width + 160, e.clientX - drag.current.dx)), y: Math.min(window.innerHeight - 50, Math.max(0, e.clientY - drag.current.dy)) });
         }}
         onPointerUp={() => (drag.current = null)}>
@@ -104,8 +116,8 @@ export function PluginWindow({ plugin, owner, onClose }: { plugin: Plugin; owner
             {tracks.map((t) => <option key={t.id} value={t.id}>Key: {t.name}</option>)}
           </select>
         )}
-        <button className="btn sm" onClick={() => act("plugin.openEditor", { id: plugin.id })}
-          title="Open this effect in a native window that can move onto another monitor"><Icon name="window" size={12} /> {plugin.hasEditor ? "Plug-in UI" : "Detach"}</button>
+        <button className="btn sm" onClick={() => void detach()}
+          title="Pop out into a separate desktop window that can move to another monitor"><Icon name="window" size={12} /> {plugin.hasEditor ? "Plug-in UI" : "Pop out"}</button>
         <div className="fx-history-controls" title="Undo or redo changes without closing this effect">
           <button className="btn sm ghost icon" disabled={!project?.canUndo} onClick={() => void changeHistory("undo")} title={project?.undoName ? `Undo ${project.undoName}` : "Nothing to undo"}><Icon name="undo" size={13} /></button>
           <button className="btn sm ghost icon" disabled={!project?.canRedo} onClick={() => void changeHistory("redo")} title={project?.redoName ? `Redo ${project.redoName}` : "Nothing to redo"}><Icon name="redo" size={13} /></button>

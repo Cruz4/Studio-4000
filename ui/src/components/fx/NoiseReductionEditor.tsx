@@ -20,6 +20,7 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
   const [start, end] = project.loop;
   const rangeOk = !!clip && end - start >= .1 && start < clip.end && end > clip.start;
   const points = curve.length ? curve.map((db, i) => `${(i / (curve.length - 1)) * 100},${100 - Math.max(0, Math.min(100, (db + 140) / 120 * 100))}`).join(" ") : "";
+  const hasPrint = curve.length > 0;
 
   const capture = async () => {
     if (!rangeOk || !clip) return toast("Select a noise-only time range over one audio clip first", "warning");
@@ -51,6 +52,7 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
     <Section title="Learn the noise">
       <div className="row wrap">
         <button className="btn accent" disabled={!rangeOk || busy} onClick={capture}>Capture Noise Print</button>
+        {hasPrint && <span className="noise-print-saved" title="The captured print stays saved while you select a different range or the whole clip">Noise print saved</span>}
         <span className={rangeOk ? "small" : "small dim"}>{rangeOk && clip ? `${clip.name}: ${start.toFixed(2)}–${end.toFixed(2)} s` : "Select a noise-only range (0.1 seconds or longer) over one audio clip"}</span>
       </div>
     </Section>
@@ -72,7 +74,7 @@ export function NoiseReductionEditor({ fx, pluginId }: { fx: Fx; pluginId: strin
       </div>
     </Section>
     <div className="row wrap"><span className="small dim grow">The editor time selection controls what you audition and can print. Use Output Noise Only and the effect power button for before/after.</span>
-      <button className="btn" disabled={!rangeOk} onClick={async () => { await act("transport.setLoop", { start, end, enabled: true }); await act("transport.setPosition", { time: start }); await act("transport.play"); }}>Preview selection</button>
+      <button className="btn" disabled={!hasPrint || !rangeOk} onClick={async () => { await act("transport.setLoop", { start, end, enabled: true }); await act("transport.setPosition", { time: start }); await act("transport.play"); }}>Preview selection</button>
       <button className="btn" disabled={!host || !points || !rangeOk} onClick={() => print(true)}>Print Selected Range</button>
       <button className="btn" disabled={!host || !points} onClick={() => print(false)}>Print Full Track</button>
     </div>
