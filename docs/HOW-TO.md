@@ -45,7 +45,7 @@ Voice and screen share are in the same panel. An optional password can lock the 
 2. On the Audio card, click **Set up** and choose the driver. Installed ASIO interfaces appear directly in the Driver list, for example **Focusrite USB ASIO (ASIO)** for a Scarlett interface. ASIO uses the same interface for input and output.
 3. Select a track, press **Shift+R** to arm it, then **R** to record. **Space** stops.
 
-**Ctrl+K** searches every command. **?** lists shortcuts. Projects are saved under `Music\Studio 4000\<project name>`. Manual Save writes `Project Name.s4000`; automatic recovery writes the separate `Project Name (Autosave).s4000` beside it. Only explicit Save or Save As updates the manual file—closing, recording, exporting and archiving use the recovery snapshot instead. Loading recovery stays unsaved until you explicitly press Save. Settings → General changes how often autosave runs.
+**Ctrl+K** searches every command. **?** lists shortcuts. Projects are saved under `Music\Studio 4000\<project name>`. Manual Save writes `Project Name.s4000`; timed autosave writes `Autosaves\Project Name (Autosave).s4000` inside the project. The welcome screen's **Manual saves** and **Autosaves** tabs show each version with its timestamp. Backups open as unsaved work with the original media folder. Closing a modified session asks **Save**, **Discard**, or **Cancel**; Discard removes that project's recovery copies and abandons the unsaved changes. Settings → General changes how often autosave runs.
 
 ## Tracks, clips, and the mixer
 

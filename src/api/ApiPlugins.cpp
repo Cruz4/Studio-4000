@@ -48,6 +48,8 @@ namespace
         float before = 0.0f, after = 0.0f;
     };
 
+}
+
     bool setParameterUndoably (te::Edit& edit, te::AutomatableParameter& parameter, float value)
     {
         value = parameter.valueRange.snapToLegalValue (value);
@@ -57,6 +59,8 @@ namespace
         return edit.getUndoManager().perform (new ParameterValueAction (parameter, value));
     }
 
+namespace
+{
     struct BuiltIn
     {
         String type, name, category;

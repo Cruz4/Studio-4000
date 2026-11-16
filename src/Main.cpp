@@ -78,6 +78,7 @@ public:
 
     void systemRequestedQuit() override
     {
+        if (quitPromptOpen) return;
         if (engine != nullptr && engine->currentEdit() != nullptr)
         {
             auto& transport = engine->edit().getTransport();
@@ -85,13 +86,23 @@ public:
             if (transport.isRecording())
                 transport.stop (false, true);
 
-            try
+            if (engine->hasUnsavedChanges())
             {
-                engine->writeAutosave();
-            }
-            catch (const std::exception& e)
-            {
-                juce::Logger::writeToLog ("Could not write shutdown autosave: " + juce::String (e.what()));
+                quitPromptOpen = true;
+                juce::AlertWindow::showYesNoCancelBox (juce::MessageBoxIconType::QuestionIcon,
+                    "Save changes?", "Save changes to " + engine->getEditFile().getFileNameWithoutExtension() + " before closing? Discard removes unsaved changes and this project's autosave.",
+                    "Save", "Discard", "Cancel", nullptr,
+                    juce::ModalCallbackFunction::create ([this] (int result)
+                    {
+                        quitPromptOpen = false;
+                        if (result == 0) return;
+                        try { engine->finishClosing (result == 1); quit(); }
+                        catch (const std::exception& e)
+                        {
+                            engine->emit ("toast", Obj().set ("level", "error").set ("message", juce::String (e.what())));
+                        }
+                    }));
+                return;
             }
         }
 
@@ -158,6 +169,7 @@ private:
     }
 
     std::atomic<bool> alive { true };
+    bool quitPromptOpen = false;
     std::atomic<bool> updateCheck { false };
     std::unique_ptr<AppEngine> engine;
     std::unique_ptr<AgentServer> agent;

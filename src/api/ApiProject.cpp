@@ -322,8 +322,16 @@ void registerProjectApi (AppEngine& app)
 
         for (auto& r : juce::StringArray::fromLines (app.settings().getValue ("recentProjects")))
             if (juce::File (r).existsAsFile())
+            {
+                const auto manual = juce::File (r);
+                juce::Array<var> autosaves;
+                for (auto backup : { manual.getParentDirectory().getChildFile ("Autosaves").getChildFile (manual.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension),
+                                     manual.getSiblingFile (manual.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension),
+                                     manual.getParentDirectory().getChildFile ("autosave").getChildFile (manual.getFileNameWithoutExtension() + ".autosave" + projectFileExtension) })
+                    if (backup.existsAsFile()) autosaves.add (Obj().set ("file", backup.getFullPathName()).set ("modified", backup.getLastModificationTime().toISO8601 (true)));
                 recent.add (Obj().set ("file", r).set ("name", juce::File (r).getFileNameWithoutExtension())
-                                 .set ("modified", juce::File (r).getLastModificationTime().toISO8601 (true)));
+                                 .set ("modified", juce::File (r).getLastModificationTime().toISO8601 (true)).set ("autosaves", autosaves));
+            }
 
         const auto versionFile = juce::File::getSpecialLocation (juce::File::currentApplicationFile).getSiblingFile ("version.json");
         const auto commit = juce::JSON::parse (versionFile.loadFileAsString())["commit"].toString().trim().toLowerCase();
@@ -396,14 +404,22 @@ void registerProjectApi (AppEngine& app)
 
     rpc.add ("edit.undo", K::read, "Undo the last change", "{}", [&app] (const var&)
     {
+        app.edit().getUndoManager().dispatchPendingMessages();
+        if (! app.edit().getUndoManager().canUndo()) return var (false);
         app.edit().undo();
+        app.edit().markAsChanged();
+        app.edit().getUndoManager().beginNewTransaction();
         app.pushSnapshotNow();
         return var (true);
     });
 
     rpc.add ("edit.redo", K::read, "Redo", "{}", [&app] (const var&)
     {
+        app.edit().getUndoManager().dispatchPendingMessages();
+        if (! app.edit().getUndoManager().canRedo()) return var (false);
         app.edit().redo();
+        app.edit().markAsChanged();
+        app.edit().getUndoManager().beginNewTransaction();
         app.pushSnapshotNow();
         return var (true);
     });
@@ -424,6 +440,8 @@ void registerProjectApi (AppEngine& app)
     {
         auto& um = app.edit().getUndoManager();
         const int steps = integer (p, "steps", 0);
+        um.dispatchPendingMessages();
+        if (steps == 0 || (steps > 0 ? ! um.canUndo() : ! um.canRedo())) return var (false);
 
         if (steps > 0)
             for (int i = 0; i < steps && um.canUndo(); ++i)
@@ -432,6 +450,8 @@ void registerProjectApi (AppEngine& app)
             for (int i = 0; i < -steps && um.canRedo(); ++i)
                 um.redo();
 
+        app.edit().markAsChanged();
+        um.beginNewTransaction();
         app.pushSnapshotNow();
         return var (true);
     });

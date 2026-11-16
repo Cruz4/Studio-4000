@@ -97,6 +97,24 @@ public:
                 const auto origin = args.size() > 2 ? args[2].toString() : String ("ui");
                 done (app.rpc.call (args[0].toString(), args.size() > 1 ? args[1] : var(), origin == "collab" || origin == "assistant" ? origin : String ("ui")));
             })
+            .withNativeFunction ("confirmProjectChange", [this] (const juce::Array<var>&, juce::WebBrowserComponent::NativeFunctionCompletion done)
+            {
+                if (app.currentEdit() != nullptr && app.edit().getTransport().isRecording()) app.edit().getTransport().stop (false, true);
+                if (! app.hasUnsavedChanges()) { done (true); return; }
+                juce::AlertWindow::showYesNoCancelBox (juce::MessageBoxIconType::QuestionIcon,
+                    "Save changes?", "Save changes to " + app.getEditFile().getFileNameWithoutExtension() + " before leaving this project? Discard removes unsaved changes and its autosave.",
+                    "Save", "Discard", "Cancel", nullptr,
+                    juce::ModalCallbackFunction::create ([this, done = std::move (done)] (int result)
+                    {
+                        if (result == 0) { done (false); return; }
+                        try { app.finishClosing (result == 1); done (true); }
+                        catch (const std::exception& e)
+                        {
+                            app.emit ("toast", Obj().set ("level", "error").set ("message", String (e.what())));
+                            done (false);
+                        }
+                    }));
+            })
             .withNativeFunction ("pickFile", [this] (const juce::Array<var>& args, juce::WebBrowserComponent::NativeFunctionCompletion done)
             {
                 pickFile (args.size() > 0 ? args[0] : var(), std::move (done));

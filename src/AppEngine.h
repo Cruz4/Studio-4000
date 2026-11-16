@@ -39,6 +39,8 @@ public:
     void save();
     /** Writes changed work to the separate recovery file without touching the working project file. */
     bool writeAutosave();
+    bool hasUnsavedChanges();
+    void finishClosing (bool saveChanges);
     /** Writes the session to a new file, copies its audio beside that file, and keeps working there. */
     void saveAs (const juce::File& file);
 
@@ -89,6 +91,7 @@ private:
     juce::File editFile;
 
     bool snapshotPending = false;
+    bool closing = false;
     int batchDepth = 0;
     int tickCount = 0;
     bool wasRecording = false;

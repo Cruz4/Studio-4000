@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { act } from "../store";
+import { act, useStore } from "../store";
 import { clamp, clipGainDbAt, formatDb } from "../util";
 import { startDrag } from "./ui";
 
@@ -33,6 +33,8 @@ export function ClipGain({ id, points, duration, offsetDelta, onDraft }: {
 }) {
   const [draft, setDraft] = useState<[number, number][] | null>(null);
   const [readout, setReadout] = useState<{ t: number; db: number } | null>(null);
+  const historyRevision = useStore((s) => s.historyRevision);
+  useEffect(() => { setDraft(null); setReadout(null); onDraft(null); }, [historyRevision]);
   const draftNotify = useRef(onDraft);
   draftNotify.current = onDraft;
   const stored = draft ?? points ?? [];

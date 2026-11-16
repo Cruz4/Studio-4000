@@ -36,6 +36,7 @@ function ago(iso: string) {
 export function Welcome() {
   const info = useStore((s) => s.info);
   const [name, setName] = useState("");
+  const [recentTab, setRecentTab] = useState<"saved" | "autosaves">("saved");
   const [bpm, setBpm] = useState(120);
   const [busy, setBusy] = useState<string | null>(null);
   const [device, setDevice] = useState<{ type: string; output: string; rate?: number; buffer?: number; latency?: number } | null>(null);
@@ -78,6 +79,7 @@ export function Welcome() {
   }, []);
 
   const create = async (template: string) => {
+    if (!await native.confirmProjectChange()) return;
     setBusy(template);
     const date = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
     const title = name.trim() || `${TEMPLATES.find((t) => t.id === template)?.title ?? "Session"} ${date}`;
@@ -90,6 +92,7 @@ export function Welcome() {
   };
 
   const open = async (file: string) => {
+    if (!await native.confirmProjectChange()) return;
     setBusy(file);
     await act("project.open", { file });
     refreshInfo();
@@ -171,18 +174,23 @@ export function Welcome() {
 
           <div className="card col" style={{ padding: 14, minHeight: 0 }}>
             <div className="row">
-              <span className="section-title grow">Recent</span>
+              <span className="section-title grow">Recent projects</span>
               <button className="btn sm" onClick={openProject}><Icon name="folder" size={12} /> Open…</button>
             </div>
+            <div className="row" role="tablist" aria-label="Project versions">
+              <button role="tab" aria-selected={recentTab === "saved"} className={cx("btn sm", recentTab === "saved" && "accent")} onClick={() => setRecentTab("saved")}>Manual saves</button>
+              <button role="tab" aria-selected={recentTab === "autosaves"} className={cx("btn sm", recentTab === "autosaves" && "accent")} onClick={() => setRecentTab("autosaves")}>Autosaves</button>
+            </div>
+            <span className="small dim">{recentTab === "saved" ? "Open the version you explicitly saved." : "Open a recovery snapshot as unsaved work. Times show when each snapshot was written."}</span>
             <div className="col" style={{ gap: 2, maxHeight: 320, overflow: "auto" }}>
-              {info?.recent.map((r) => (
+              {info?.recent.flatMap((r) => recentTab === "saved" ? [r] : (r.autosaves ?? []).map((a) => ({ ...a, name: `${r.name} (Autosave)` }))).map((r) => (
                 <div key={r.file} className="recent-item" onClick={() => !busy && open(r.file)} title={r.file}>
                   {busy === r.file ? <Spinner /> : <Icon name="wave" size={15} className="faint" />}
                   <span className="grow ellipsis">{r.name}</span>
                   <span className="small faint">{ago(r.modified)}</span>
                 </div>
               ))}
-              {!info?.recent.length && <span className="small faint">Your sessions will show up here.</span>}
+              {!(recentTab === "saved" ? info?.recent.length : info?.recent.some((r) => r.autosaves?.length)) && <span className="small faint">{recentTab === "saved" ? "Your sessions will show up here." : "No autosaves available yet."}</span>}
             </div>
           </div>
         </div>

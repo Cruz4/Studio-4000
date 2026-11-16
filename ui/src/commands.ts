@@ -77,6 +77,7 @@ export async function saveProjectAs() {
 export async function openProject() {
   const files = await native.pickFile({ mode: "open", title: "Open project", filters: "*.s4000;*.s3030", dir: S().info?.projectsDir });
   if (files?.[0]) {
+    if (!await native.confirmProjectChange()) return;
     await act("project.open", { file: files[0] });
     refreshInfo();
   }
@@ -442,7 +443,7 @@ export const commands: Command[] = [
   { id: "save", group: "Project", title: "Save", keys: "Ctrl+S", run: () => act("project.save"), when: hasProject },
   { id: "saveAs", group: "Project", title: "Save as…", keys: "Ctrl+Shift+S", run: saveProjectAs, when: hasProject },
   { id: "open", group: "Project", title: "Open project…", keys: "Ctrl+O", run: openProject },
-  { id: "new", group: "Project", title: "New project…", keys: "Ctrl+N", run: () => useStore.setState({ project: null }) },
+  { id: "new", group: "Project", title: "New project…", keys: "Ctrl+N", run: async () => { if (await native.confirmProjectChange()) useStore.setState({ project: null }); } },
   { id: "export", group: "Project", title: "Export mix or stems…", keys: "Ctrl+E", run: () => useStore.setState({ exportOpen: true }), when: hasProject },
   { id: "archive", group: "Project", title: "Archive project (zip with audio)", run: () => act("project.archive"), when: hasProject },
   { id: "reveal", group: "Project", title: "Show project folder", run: () => act("project.reveal", {}), when: hasProject },

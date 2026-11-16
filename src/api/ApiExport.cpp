@@ -504,7 +504,7 @@ void registerExportApi (AppEngine& app)
             {
                 auto rel = f.getRelativePathFrom (dir);
 
-                if (f == projectFile || rel.startsWith ("autosave") || rel.startsWith ("Bounces")
+                if (f == projectFile || rel.startsWithIgnoreCase ("autosave") || rel.startsWith ("Bounces")
                     || f.getFileNameWithoutExtension().endsWithIgnoreCase (" (Autosave)"))
                     continue;
 

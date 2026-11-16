@@ -39,6 +39,9 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
                && autosaveFile.getFileName() == manualFile.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension,
                autosaveFile.getFileName());
         check ("autosave leaves the manual project byte-for-byte unchanged", manualBytes == afterAutosaveBytes);
+        check ("autosaves are contained in the project's Autosaves folder", autosaveFile.getParentDirectory() == manualFile.getParentDirectory().getChildFile ("Autosaves"));
+        auto recent = call ("app.info")["recent"];
+        check ("startup lists autosaves separately from manual projects", recent[0]["autosaves"].size() == 1);
         call ("project.open", Obj().set ("file", manualFile.getFullPathName()));
         check ("opening the manual project excludes autosaved-only edits",
                app.rpc.invoke ("project.get", {}, "selftest")["tracks"].getArray()->size() == manualTrackCount);
@@ -53,6 +56,20 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         autosaveFile.deleteFile();
 
         auto track = call ("track.add", Obj().set ("kind", "audio").set ("name", "Effect checks"))[0].toString();
+        const auto originalVolume = app.audioTrack (track).getVolumePlugin()->getVolumeDb();
+        call ("track.set", Obj().set ("id", track).set ("volumeDb", -18.0));
+        call ("edit.undo");
+        check ("track fader undo restores its audio value", std::abs (app.audioTrack (track).getVolumePlugin()->getVolumeDb() - originalVolume) < 0.01f);
+        call ("edit.redo");
+        check ("track fader redo restores its audio value", std::abs (app.audioTrack (track).getVolumePlugin()->getVolumeDb() + 18.0f) < 0.01f);
+        const auto masterVolume = app.edit().getMasterVolumePlugin()->getVolumeDb();
+        call ("master.set", Obj().set ("volumeDb", -12.0));
+        call ("edit.undo");
+        check ("master fader undo restores its audio value", std::abs (app.edit().getMasterVolumePlugin()->getVolumeDb() - masterVolume) < 0.01f);
+        call ("edit.redo");
+        check ("master fader redo restores its audio value", std::abs (app.edit().getMasterVolumePlugin()->getVolumeDb() + 12.0f) < 0.01f);
+        call ("track.set", Obj().set ("id", track).set ("volumeDb", originalVolume));
+        call ("master.set", Obj().set ("volumeDb", masterVolume));
         auto banks = juce::JSON::parse (manifest.loadFileAsString());
         check ("preset manifest exists", banks.isObject());
         int factoryCount = 0, presetCount = 0;
@@ -301,6 +318,23 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
             if (writer == nullptr || !writer->writeFromAudioSampleBuffer (samples, 0, samples.getNumSamples())) throw RpcError ("Could not write audio-copy fixture");
         }
         auto audio = call ("clip.importAudio", Obj().set ("trackId", track).set ("file", audioFile.getFullPathName()).set ("start", 2)).toString();
+        const auto originalGain = (double) describeClip (app.clip (audio))["gainDb"];
+        call ("clip.set", Obj().set ("id", audio).set ("gainDb", -11.0));
+        call ("edit.undo");
+        check ("clip gain undo restores the displayed and audio level", std::abs ((double) describeClip (app.clip (audio))["gainDb"] - originalGain) < .01);
+        call ("edit.redo");
+        check ("clip gain redo restores the displayed and audio level", std::abs ((double) describeClip (app.clip (audio))["gainDb"] + 11.0) < .01);
+        juce::Array<var> envelope { var (juce::Array<var> { 0.0, -6.0 }), var (juce::Array<var> { .5, -12.0 }) };
+        call ("clip.setGainPoints", Obj().set ("id", audio).set ("points", var (envelope)));
+        call ("edit.undo");
+        check ("clip envelope undo restores the previous curve", describeClip (app.clip (audio))["gainPoints"].size() == 0);
+        call ("edit.redo");
+        check ("clip envelope redo restores its gain points", describeClip (app.clip (audio))["gainPoints"].size() == 2);
+        // A recovery in its subfolder must still resolve the original audio.
+        app.writeAutosave();
+        call ("project.open", Obj().set ("file", app.getAutosaveFile().getFullPathName()));
+        check ("opening an autosave retains the manual save target", app.getEditFile() == manualFile);
+        check ("subfolder autosaves resolve project audio", dynamic_cast<te::WaveAudioClip&> (app.clip (audio)).getSourceFileReference().getFile() == audioFile);
         call ("clip.set", Obj().set ("id", audio).set ("fadeIn", .2).set ("fadeOut", .3).set ("fadeInBend", .4).set ("gainDb", -3.0));
         call ("clip.setGainPoints", Obj().set ("id", audio).set ("points", juce::JSON::parse ("[[0,-3],[1,0],[2,-6]]")));
         call ("clip.setPanPoints", Obj().set ("id", audio).set ("points", juce::JSON::parse ("[[0,-0.2],[2,0.2]]")));
@@ -471,7 +505,15 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
         call ("chain.applyPreset", Obj().set ("trackId", printSource).set ("plugins", chainCatalogue[0]["plugins"]).set ("replace", true));
         check ("replacing effects preserves the independent mono check", sumsToMono (app.track (printSource).pluginList));
         call ("track.set", Obj().set ("id", printSource).set ("sumToMono", false));
-
+        call ("project.save");
+        juce::MemoryBlock beforeDiscard, afterDiscard;
+        app.getEditFile().loadFileAsData (beforeDiscard);
+        call ("track.set", Obj().set ("id", printSource).set ("volumeDb", -22.0));
+        app.writeAutosave();
+        app.finishClosing (false);
+        app.getEditFile().loadFileAsData (afterDiscard);
+        check ("Discard removes recovery without changing the manual file", ! app.getAutosaveFile().existsAsFile() && beforeDiscard == afterDiscard);
+        check ("shutdown cannot recreate a discarded autosave", ! app.writeAutosave() && ! app.getAutosaveFile().existsAsFile());
     }
     catch (const std::exception& e) { check ("refinement test completes", false, e.what()); }
     std::cout << (failures ? "REFINEMENT SELFTEST FAILED" : "REFINEMENT SELFTEST PASSED") << std::endl;

@@ -139,6 +139,8 @@ function panText(p: number) {
 function Strip({ track, project, devices, selected, full }: { track: Track; project: Project; devices: Devices | null; selected: boolean; full?: boolean }) {
   const [vol, setVol] = useState<number | null>(null);
   const [pan, setPan] = useState<number | null>(null);
+  const historyRevision = useStore((s) => s.historyRevision);
+  useEffect(() => { setVol(null); setPan(null); }, [historyRevision]);
   const db = vol ?? track.volumeDb ?? 0;
   const p = pan ?? track.pan ?? 0;
   const inserts = track.plugins.filter((x) => !(track.kind === "instrument" && x.synth));
@@ -222,6 +224,8 @@ function Strip({ track, project, devices, selected, full }: { track: Track; proj
 
 function MasterStrip({ project, devices, full }: { project: Project; devices: Devices | null; full?: boolean }) {
   const [vol, setVol] = useState<number | null>(null);
+  const historyRevision = useStore((s) => s.historyRevision);
+  useEffect(() => { setVol(null); }, [historyRevision]);
   const db = vol ?? project.master.volumeDb ?? 0;
   const outs = devices?.outputs ?? [];
   return (

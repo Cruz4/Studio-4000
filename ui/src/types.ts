@@ -210,6 +210,6 @@ export interface AppInfo {
   projectsDir: string;
   dataDir: string;
   hasProject: boolean;
-  recent: { file: string; name: string; modified: string }[];
+  recent: { file: string; name: string; modified: string; autosaves?: { file: string; modified: string }[] }[];
   onboarded: boolean;
 }

@@ -17,6 +17,7 @@ void registerExportApi (AppEngine&);
 void registerSmartApi (AppEngine&);
 void registerAiApi (AppEngine&);
 void registerDeviceApi (AppEngine&);
+bool setParameterUndoably (te::Edit&, te::AutomatableParameter&, float);
 
 //==============================================================================
 /** Shared helpers used across API groups and templates. */

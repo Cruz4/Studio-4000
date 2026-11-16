@@ -106,6 +106,7 @@ export function emit(type: string, payload: unknown) {
 }
 
 export const native = {
+  confirmProjectChange: () => isNative ? nativeCall("confirmProjectChange") as Promise<boolean> : Promise.resolve(true),
   pickFile: (opts: { mode?: "open" | "save" | "folder"; title?: string; filters?: string; multiple?: boolean; dir?: string; file?: string }) =>
     nativeCall("pickFile", opts) as Promise<string[]>,
   http: (req: { url: string; method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) =>

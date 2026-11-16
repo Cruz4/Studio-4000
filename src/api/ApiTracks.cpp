@@ -498,8 +498,8 @@ void registerTrackApi (AppEngine& app)
 
         if (vp != nullptr)
         {
-            if (has (p, "volumeDb"))  vp->setVolumeDb (juce::jlimit (-100.0f, 15.0f, (float) num (p, "volumeDb")));
-            if (has (p, "pan"))       vp->setPan (juce::jlimit (-1.0f, 1.0f, (float) num (p, "pan")));
+            if (has (p, "volumeDb")) setParameterUndoably (app.edit(), *vp->volParam, te::decibelsToVolumeFaderPosition (juce::jlimit (-100.0f, 15.0f, (float) num (p, "volumeDb"))));
+            if (has (p, "pan")) setParameterUndoably (app.edit(), *vp->panParam, juce::jlimit (-1.0f, 1.0f, (float) num (p, "pan")));
         }
 
         if (has (p, "output"))
@@ -671,8 +671,8 @@ void registerTrackApi (AppEngine& app)
         if (has (p, "sumToMono")) setSumToMono (app, app.edit().getMasterPluginList(), flag (p, "sumToMono"));
         if (auto vp = app.edit().getMasterVolumePlugin())
         {
-            if (has (p, "volumeDb"))  vp->setVolumeDb (juce::jlimit (-100.0f, 15.0f, (float) num (p, "volumeDb")));
-            if (has (p, "pan"))       vp->setPan (juce::jlimit (-1.0f, 1.0f, (float) num (p, "pan")));
+            if (has (p, "volumeDb")) setParameterUndoably (app.edit(), *vp->volParam, te::decibelsToVolumeFaderPosition (juce::jlimit (-100.0f, 15.0f, (float) num (p, "volumeDb"))));
+            if (has (p, "pan")) setParameterUndoably (app.edit(), *vp->panParam, juce::jlimit (-1.0f, 1.0f, (float) num (p, "pan")));
         }
 
         return var (true);
@@ -719,7 +719,7 @@ void registerTrackApi (AppEngine& app)
         if (send == nullptr)
             throw RpcError ("Not a send");
 
-        if (has (p, "gainDb"))   send->setGainDb (juce::jlimit (-100.0f, 6.0f, (float) num (p, "gainDb")));
+        if (has (p, "gainDb")) setParameterUndoably (app.edit(), *send->getAutomatableParameterByID ("send level"), te::decibelsToVolumeFaderPosition (juce::jlimit (-100.0f, 6.0f, (float) num (p, "gainDb"))));
         if (has (p, "enabled"))  send->setEnabled (flag (p, "enabled"));
         return var (true);
     });

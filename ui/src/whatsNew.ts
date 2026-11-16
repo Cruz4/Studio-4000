@@ -8,9 +8,9 @@ export interface WhatsNewGroup {
 
 export const WHATS_NEW: WhatsNewGroup[] = [
   { title: "Save without surprises", color: "#ffd36d", items: [
-    "Autosave writes Project Name (Autosave).s4000 beside the manual project.",
-    "Closing the app never silently saves over your last manual project file.",
-    "Loading recovery stays unsaved until you explicitly press Save.",
+    "Autosaves stay in their own folder. Startup tabs show manual saves and backups.",
+    "Closing asks Save, Discard or Cancel. Discard removes unsaved work and recovery.",
+    "Undo/redo restores track, master and send levels and refreshes clip displays.",
   ] },
   { title: "Reference another app", color: "#29c1ff", items: [
     "Use a floating Reference FX window that keeps analyzing while hidden.",
