@@ -390,7 +390,18 @@ AppEngine::~AppEngine()
 
     if (editPtr != nullptr)
     {
-        save();
+        // Closing the app must never turn an automatic recovery write into a manual save.
+        // Preserve changed work in the visibly separate autosave, leaving the user's
+        // authoritative project file byte-for-byte as it was at their last Save.
+        try
+        {
+            if (editPtr->getTransport().isRecording())
+                editPtr->getTransport().stop (false, true);
+
+            writeAutosave();
+        }
+        catch (...) {}
+
         detachEdit();
     }
 
@@ -412,7 +423,7 @@ juce::File AppEngine::getBouncesDir() const     { return getProjectDir().getChil
 
 juce::File AppEngine::getAutosaveFile() const
 {
-    return getProjectDir().getChildFile ("autosave").getChildFile (editFile.getFileNameWithoutExtension() + ".autosave" + projectFileExtension);
+    return editFile.getSiblingFile (editFile.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension);
 }
 
 void AppEngine::emit (const String& type, const var& payload)
@@ -424,7 +435,7 @@ void AppEngine::emit (const String& type, const var& payload)
 //==============================================================================
 void AppEngine::ensureProjectStructure()
 {
-    for (auto* sub : { "Audio", "Bounces", "autosave", "Imported" })
+    for (auto* sub : { "Audio", "Bounces", "Imported" })
         getProjectDir().getChildFile (sub).createDirectory();
 }
 
@@ -469,6 +480,35 @@ void AppEngine::save()
     te::EditFileOperations (*editPtr).save (false, true, false);
     lastAutosave = juce::Time::getCurrentTime();
     emit ("saved", Obj().set ("file", editFile.getFullPathName()));
+    pushSnapshotNow();
+}
+
+bool AppEngine::writeAutosave()
+{
+    if (editPtr == nullptr)
+        return false;
+
+    // A just-finished edit can still be queued in Tracktion's undo manager.
+    // Flush it before deciding there is nothing to recover (especially on shutdown).
+    editPtr->getUndoManager().dispatchPendingMessages();
+
+    if (snapshotPending && ! editPtr->hasChangedSinceSaved())
+        editPtr->markAsChanged();
+
+    if (! editPtr->hasChangedSinceSaved())
+        return false;
+
+    auto file = getAutosaveFile();
+
+    if (file == editFile)
+        throw RpcError ("Autosave path must be different from the project file");
+
+    if (! file.getParentDirectory().createDirectory()
+        || ! te::EditFileOperations (*editPtr).writeToFile (file, false))
+        throw RpcError ("Could not write the separate autosave: " + file.getFullPathName());
+
+    emit ("autosaved", Obj().set ("file", file.getFullPathName()));
+    return true;
 }
 
 void AppEngine::saveAs (const juce::File& requested)
@@ -529,10 +569,16 @@ juce::File AppEngine::findRecoveryFile() const
     if (editPtr == nullptr)
         return {};
 
-    auto autosave = getAutosaveFile();
+    const auto legacy = getProjectDir().getChildFile ("autosave")
+                                       .getChildFile (editFile.getFileNameWithoutExtension() + ".autosave" + projectFileExtension);
+    juce::File newest;
 
-    if (autosave.existsAsFile() && autosave.getLastModificationTime() > editFile.getLastModificationTime() + juce::RelativeTime::seconds (2))
-        return autosave;
+    for (auto candidate : { getAutosaveFile(), legacy })
+        if (candidate.existsAsFile() && (! newest.existsAsFile() || candidate.getLastModificationTime() > newest.getLastModificationTime()))
+            newest = candidate;
+
+    if (newest.existsAsFile() && newest.getLastModificationTime() > editFile.getLastModificationTime())
+        return newest;
 
     return {};
 }
@@ -552,7 +598,10 @@ void AppEngine::recoverFromAutosave()
 
     loaded->editFileRetriever = [target] { return target; };
     attachEdit (std::move (loaded), target);
-    save();
+    // Loading recovery changes the in-memory session only. The original project
+    // remains untouched until the user explicitly presses Save.
+    editPtr->markAsChanged();
+    pushSnapshotNow();
 }
 
 void AppEngine::attachEdit (std::unique_ptr<te::Edit> newEdit, const juce::File& file)
@@ -918,10 +967,16 @@ void AppEngine::autosaveIfNeeded()
 
     if (editPtr->hasChangedSinceSaved())
     {
-        auto f = getAutosaveFile();
-        f.getParentDirectory().createDirectory();
-        te::EditFileOperations (*editPtr).writeToFile (f, false);
-        emit ("autosaved", Obj().set ("file", f.getFullPathName()));
+        try
+        {
+            writeAutosave();
+        }
+        catch (const std::exception& e)
+        {
+            emit ("toast", Obj().set ("level", "error")
+                                .set ("title", "Autosave failed")
+                                .set ("message", String (e.what())));
+        }
     }
 }
 
@@ -973,7 +1028,18 @@ void AppEngine::changeListenerCallback (juce::ChangeBroadcaster*)
         {
             if (editPtr != nullptr)
             {
-                save();
+                // A finished take is protected immediately, but only in the
+                // separate recovery file. Manual Save owns the project file.
+                try
+                {
+                    writeAutosave();
+                }
+                catch (const std::exception& e)
+                {
+                    emit ("toast", Obj().set ("level", "error")
+                                        .set ("title", "Autosave failed")
+                                        .set ("message", String (e.what())));
+                }
                 markProjectChanged();
             }
         });

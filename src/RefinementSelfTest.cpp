@@ -22,6 +22,36 @@ int runRefinementSelfTest (AppEngine& app, const juce::File& manifest)
     try
     {
         call ("project.new", Obj().set ("dir", directory.getFullPathName()).set ("name", "Refinements").set ("template", "empty"));
+        call ("project.save");
+        const auto manualFile = app.getEditFile();
+        const auto autosaveFile = app.getAutosaveFile();
+        autosaveFile.deleteFile();
+        const int manualTrackCount = app.rpc.invoke ("project.get", {}, "selftest")["tracks"].getArray()->size();
+        juce::MemoryBlock manualBytes;
+        manualFile.loadFileAsData (manualBytes);
+        check ("a clean manually saved project does not create an autosave", ! app.writeAutosave() && ! autosaveFile.existsAsFile());
+        call ("track.add", Obj().set ("kind", "audio").set ("name", "Autosave-only change"));
+        const bool autosaved = app.writeAutosave();
+        juce::MemoryBlock afterAutosaveBytes;
+        manualFile.loadFileAsData (afterAutosaveBytes);
+        check ("autosave uses a separate clearly named project",
+               autosaved && autosaveFile.existsAsFile()
+               && autosaveFile.getFileName() == manualFile.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension,
+               autosaveFile.getFileName());
+        check ("autosave leaves the manual project byte-for-byte unchanged", manualBytes == afterAutosaveBytes);
+        call ("project.open", Obj().set ("file", manualFile.getFullPathName()));
+        check ("opening the manual project excludes autosaved-only edits",
+               app.rpc.invoke ("project.get", {}, "selftest")["tracks"].getArray()->size() == manualTrackCount);
+        app.recoverFromAutosave();
+        auto recoveredProject = app.rpc.invoke ("project.get", {}, "selftest");
+        juce::MemoryBlock afterRecoveryBytes;
+        manualFile.loadFileAsData (afterRecoveryBytes);
+        check ("recovery loads the autosaved state as unsaved work",
+               recoveredProject["tracks"].getArray()->size() == manualTrackCount + 1 && (bool) recoveredProject["modified"]);
+        check ("recovery does not overwrite the manual project", manualBytes == afterRecoveryBytes);
+        call ("project.open", Obj().set ("file", manualFile.getFullPathName()));
+        autosaveFile.deleteFile();
+
         auto track = call ("track.add", Obj().set ("kind", "audio").set ("name", "Effect checks"))[0].toString();
         auto banks = juce::JSON::parse (manifest.loadFileAsString());
         check ("preset manifest exists", banks.isObject());

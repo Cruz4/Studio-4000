@@ -989,9 +989,35 @@ bool SelfTest::runStep()
             call ("project.save");
             auto file = app.getEditFile();
             auto before = app.rpc.invoke ("project.get", {}, "selftest")["tracks"].getArray()->size();
+            juce::MemoryBlock originalBytes;
+            file.loadFileAsData (originalBytes);
+
+            call ("track.add", Obj().set ("kind", "audio").set ("name", "Autosave-only change"));
+            auto autosave = app.getAutosaveFile();
+            const bool wroteAutosave = app.writeAutosave();
+            juce::MemoryBlock afterAutosaveBytes;
+            file.loadFileAsData (afterAutosaveBytes);
+
+            check ("autosave has a clearly separate filename",
+                   autosave.getFileName() == file.getFileNameWithoutExtension() + " (Autosave)" + projectFileExtension,
+                   autosave.getFileName());
+            check ("autosave writes a separate recovery project", wroteAutosave && autosave.existsAsFile(), autosave.getFullPathName());
+            check ("autosave never overwrites the working project", originalBytes == afterAutosaveBytes);
+
             call ("project.open", Obj().set ("file", file.getFullPathName()));
             auto after = app.rpc.invoke ("project.get", {}, "selftest")["tracks"].getArray()->size();
             check ("project saves and reopens", before == after, String (before) + " -> " + String (after) + " tracks");
+
+            app.recoverFromAutosave();
+            auto recovered = app.rpc.invoke ("project.get", {}, "selftest");
+            juce::MemoryBlock afterRecoveryBytes;
+            file.loadFileAsData (afterRecoveryBytes);
+            check ("loading autosave restores its newer state", recovered["tracks"].getArray()->size() == before + 1);
+            check ("loaded autosave remains unsaved", (bool) recovered["modified"]);
+            check ("loading autosave leaves the original file untouched", originalBytes == afterRecoveryBytes);
+
+            call ("project.open", Obj().set ("file", file.getFullPathName()));
+            autosave.deleteFile();
             return true;
         }
 

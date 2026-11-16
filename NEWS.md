@@ -1,4 +1,9 @@
-Updates from November 12–15, 2026
+Updates from November 12–16, 2026
+
+### Save without surprises
+Autosave and manual Save are now strictly separate. Manual work stays in `Project Name.s4000`; automatic recovery writes to `Project Name (Autosave).s4000` beside it. Closing Studio 4000, stopping a recording, exporting, and archiving no longer silently save changed work over the manual project. Only explicit Save or Save As updates that file.
+
+Loading a newer autosave restores it into memory as unsaved work. The original project file remains byte-for-byte unchanged until the user explicitly presses Save. Older hidden autosaves are still recognized for recovery, while new archives exclude both legacy and clearly named autosave copies.
 
 ### Reference another app
 Add a Reference Track from the track toolbar, then choose a Windows app, window or screen and enable Share audio. Its draggable, non-blocking FX-style analyzer keeps capturing and averaging while hidden. The Reference Match bar loads saved spectra, explicitly chooses a target track and applies EQ without reopening the analyzer, and can be closed completely when it is not needed. Saved profiles draw their own amber trace, and applying one immediately opens the new editable Parametric EQ. Studio 4000 also shows the live reference spectrum, stereo field and an optional DAW-master overlay, and can record the source to a stereo Reference track.

@@ -37,10 +37,12 @@ public:
     void createProject (const juce::File& projectDir, const String& name);
     void openProject (const juce::File& file);
     void save();
+    /** Writes changed work to the separate recovery file without touching the working project file. */
+    bool writeAutosave();
     /** Writes the session to a new file, copies its audio beside that file, and keeps working there. */
     void saveAs (const juce::File& file);
 
-    /** Returns an autosave file that is newer than the saved project, if any. */
+    /** Returns a separate autosave file that is newer than the saved project, if any. */
     juce::File findRecoveryFile() const;
     void recoverFromAutosave();
 

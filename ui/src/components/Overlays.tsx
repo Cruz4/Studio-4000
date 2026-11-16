@@ -66,8 +66,8 @@ export function RecoveryBanner() {
   return (
     <div className="banner">
       <Icon name="alert" size={15} />
-      <span className="grow">This project has a newer autosave than the last save, probably from a crash. Restore it?</span>
-      <button className="btn sm" onClick={async () => { await act("project.recover"); close(); refreshProject(); toast("Autosave restored", "success"); }}>Restore autosave</button>
+      <span className="grow">A newer separate autosave is available. Load it as unsaved recovery? Your original project stays unchanged until you press Save.</span>
+      <button className="btn sm" onClick={async () => { await act("project.recover"); close(); refreshProject(); toast("Autosave loaded. Original project is unchanged until you Save.", "success"); }}>Load autosave</button>
       <button className="btn sm ghost" onClick={close}>Keep saved version</button>
     </div>
   );

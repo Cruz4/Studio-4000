@@ -429,7 +429,9 @@ void registerExportApi (AppEngine& app)
              [&app, jobs] (const var& p)
     {
         auto& edit = app.edit();
-        app.save();
+        // Rendering reads the live Edit. Protect it with a recovery snapshot,
+        // but never turn Export into an implicit manual project save.
+        app.writeAutosave();
 
         const auto what = str (p, "what", "mix");
         const auto format = str (p, "format", "wav");
@@ -485,12 +487,16 @@ void registerExportApi (AppEngine& app)
 
     rpc.add ("project.archive", K::read, "Zips the project folder (audio included) into Bounces", "{}", [&app] (const var&)
     {
-        app.save();
+        // Archive the current in-memory state without silently overwriting the
+        // user's last manual save. A changed session is snapshotted separately.
+        app.writeAutosave();
 
         auto dir = app.getProjectDir();
+        auto projectFile = app.getEditFile();
+        auto snapshotFile = app.edit().hasChangedSinceSaved() ? app.getAutosaveFile() : projectFile;
         auto zip = app.getBouncesDir().getNonexistentChildFile (app.getEditFile().getFileNameWithoutExtension() + " archive", ".zip", false);
 
-        juce::Thread::launch ([&app, dir, zip]
+        juce::Thread::launch ([&app, dir, zip, projectFile, snapshotFile]
         {
             juce::ZipFile::Builder builder;
 
@@ -498,11 +504,15 @@ void registerExportApi (AppEngine& app)
             {
                 auto rel = f.getRelativePathFrom (dir);
 
-                if (rel.startsWith ("autosave") || rel.startsWith ("Bounces"))
+                if (f == projectFile || rel.startsWith ("autosave") || rel.startsWith ("Bounces")
+                    || f.getFileNameWithoutExtension().endsWithIgnoreCase (" (Autosave)"))
                     continue;
 
                 builder.addFile (f, f.hasFileExtension ("wav;flac;ogg;mp3") ? 0 : 6, rel);
             }
+
+            if (snapshotFile.existsAsFile())
+                builder.addFile (snapshotFile, 6, projectFile.getFileName());
 
             zip.getParentDirectory().createDirectory();
             bool ok = false;

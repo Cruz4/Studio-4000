@@ -7,6 +7,11 @@ export interface WhatsNewGroup {
 }
 
 export const WHATS_NEW: WhatsNewGroup[] = [
+  { title: "Save without surprises", color: "#ffd36d", items: [
+    "Autosave writes Project Name (Autosave).s4000 beside the manual project.",
+    "Closing the app never silently saves over your last manual project file.",
+    "Loading recovery stays unsaved until you explicitly press Save.",
+  ] },
   { title: "Reference another app", color: "#29c1ff", items: [
     "Use a floating Reference FX window that keeps analyzing while hidden.",
     "Load saved spectra and choose a target from the persistent background Match bar.",

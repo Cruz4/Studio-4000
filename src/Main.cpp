@@ -85,7 +85,14 @@ public:
             if (transport.isRecording())
                 transport.stop (false, true);
 
-            engine->save();
+            try
+            {
+                engine->writeAutosave();
+            }
+            catch (const std::exception& e)
+            {
+                juce::Logger::writeToLog ("Could not write shutdown autosave: " + juce::String (e.what()));
+            }
         }
 
         quit();

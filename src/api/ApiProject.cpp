@@ -380,7 +380,7 @@ void registerProjectApi (AppEngine& app)
         return var (app.getEditFile().getFullPathName());
     });
 
-    rpc.add ("project.recover", K::read, "Restores the newer autosave of the open project", "{}", [&app] (const var&)
+    rpc.add ("project.recover", K::read, "Loads the newer autosave as unsaved recovery without overwriting the original project", "{}", [&app] (const var&)
     {
         app.recoverFromAutosave();
         return var (true);
